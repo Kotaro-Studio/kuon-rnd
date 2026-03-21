@@ -1,10 +1,13 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
+// app/layout.tsx
+import type { Metadata } from "next";
+import "./globals.css";
 
-// サイト全体の検索エンジン向け設定（SEO）
 export const metadata: Metadata = {
-  title: '空音開発 | Kuon Rnd',
-  description: '芸術と科学の境界線を越える。音・映像・テクノロジーを高次元で融合させる研究開発スタジオ。',
+  title: "空音開発 - Kuon R&D",
+  description: "芸術と科学の境界線を越える研究開発スタジオ",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -14,41 +17,51 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body style={{ margin: 0, padding: 0, backgroundColor: '#fcfcfc', color: '#1a1a1a', fontFamily: 'sans-serif' }}>
+      <body>
         
-        {/* 全ページ共通の固定ヘッダー */}
-        <header style={{
+        {/* --- ヘッダー（メニュー復活版） --- */}
+        <header style={{ 
+          padding: '1.5rem 5%', 
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          background: 'rgba(5, 5, 10, 0.8)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)', /* Safari用のすりガラス設定 */
           position: 'sticky',
           top: 0,
-          zIndex: 1000,
-          backgroundColor: 'rgba(252, 252, 252, 0.85)', // ほんのり透ける白
-          backdropFilter: 'blur(10px)', // すりガラス効果で上品に
-          borderBottom: '1px solid rgba(0,0,0,0.05)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '20px 40px',
+          zIndex: 100,
+          display: 'flex',                 /* ★横並びにする魔法 */
+          justifyContent: 'space-between', /* ★左（ロゴ）と右（メニュー）に分ける */
+          alignItems: 'center'             /* ★縦の真ん中を揃える */
         }}>
-          
-          {/* ▼ 左側のロゴ部分：ここを「空音開発」に変更し、明朝体にしました ▼ */}
-          <div style={{ fontSize: '22px', fontWeight: 'bold', letterSpacing: '0.1em', fontFamily: 'serif' }}>
-            <Link href="/" style={{ textDecoration: 'none', color: '#000' }}>
-              空音開発
-            </Link>
-          </div>
+          {/* 左側：ロゴ */}
+          <h1 style={{ fontSize: '1.2rem', fontWeight: '300', letterSpacing: '0.15em', margin: 0 }}>
+            空音開発 <span style={{ color: 'var(--accent)', fontSize: '0.8em', marginLeft: '0.5rem', fontWeight: '400' }}>Kuon R&D</span>
+          </h1>
 
-          {/* 右側のナビゲーションメニュー */}
-          <nav>
-            <Link href="/" style={{ marginLeft: '40px', textDecoration: 'none', color: '#555', fontSize: '13px', letterSpacing: '0.1em', transition: 'color 0.2s' }}>HOME</Link>
-            <Link href="/profile" style={{ marginLeft: '40px', textDecoration: 'none', color: '#555', fontSize: '13px', letterSpacing: '0.1em', transition: 'color 0.2s' }}>PROFILE</Link>
-            <Link href="/contact" style={{ marginLeft: '40px', textDecoration: 'none', color: '#555', fontSize: '13px', letterSpacing: '0.1em', transition: 'color 0.2s' }}>CONTACT</Link>
+          {/* 右側：ナビゲーションメニュー */}
+          <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+            <a href="#vision" className="nav-link">Vision</a>
+            <a href="#technology" className="nav-link">Technology</a>
+            <a href="#studio" className="nav-link">Studio</a>
+            <a href="#contact" className="nav-button">Contact</a>
           </nav>
         </header>
 
-        {/* 各ページの中身（page.tsx）がここに入ります */}
-        <main>
+        {/* --- メインコンテンツ --- */}
+        <main style={{ flex: 1 }}>
           {children}
         </main>
+
+        {/* --- フッター --- */}
+        <footer style={{ 
+          padding: '3rem 5%', 
+          textAlign: 'center', 
+          opacity: 0.4, 
+          fontSize: '0.8rem',
+          letterSpacing: '0.05em'
+        }}>
+          © 2026 Kuon R&D.
+        </footer>
 
       </body>
     </html>
