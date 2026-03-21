@@ -1,0 +1,245 @@
+/* =========================================
+   app/page.module.css
+   空音開発 LP専用スタイル（アニメーション対応版）
+   ========================================= */
+
+/* --- アニメーション定義（@keyframes） --- */
+
+/* 下からフェードインしながら現れる */
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 境界線が静かに光る（パルス） */
+@keyframes borderPulse {
+  0%, 100% {
+    border-color: rgba(0, 0, 0, 0.05);
+  }
+  50% {
+    border-color: rgba(26, 26, 26, 0.3);
+  }
+}
+
+/* --- 全体レイアウト --- */
+.container {
+  font-family: sans-serif;
+  color: #1a1a1a;
+  background-color: #fcfcfc;
+}
+
+/* --- 1. Hero セクション --- */
+.hero {
+  padding: 180px 20px; /* 余白を少し大きく */
+  text-align: center;
+}
+
+.catchcopy {
+  font-family: serif;
+  font-size: 56px; /* 少し大きく */
+  fontWeight: normal;
+  letter-spacing: 0.15em; /* 文字間隔を広く */
+  margin-bottom: 25px;
+  line-height: 1.3;
+  /* アニメーション適用 */
+  animation: fadeInSlideUp 1s ease-out forwards;
+}
+
+.subcopy {
+  font-size: 16px;
+  color: #666;
+  letter-spacing: 0.2em; /* 文字間隔を広く */
+  line-height: 2.2;
+  /* アニメーション適用（少し遅れて） */
+  animation: fadeInSlideUp 1s ease-out 0.3s forwards;
+  opacity: 0; /* 初期状態は消しておく */
+}
+
+/* --- 2. CORE TECHNOLOGIESセクション --- */
+.pillars {
+  padding: 120px 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  text-align: center;
+  fontSize: 26px;
+  font-family: serif;
+  letter-spacing: 0.25em;
+  margin-bottom: 100px;
+}
+
+.pillarGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 60px;
+}
+
+.pillarCard {
+  padding: 50px 40px;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  textAlign: center;
+  /* アニメーションの土台 */
+  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+  will-change: transform, box-shadow; /* パフォーマンス最適化 */
+}
+
+/* 【ホバーアニメーション】カードが浮き上がり、影と境界線が変化 */
+.pillarCard:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+  animation: borderPulse 2s infinite; /* ホバー中はパルス光 */
+}
+
+.pillarIcon {
+  font-size: 36px;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.pillarTitle {
+  font-size: 19px;
+  fontWeight: bold;
+  letter-spacing: 0.15em;
+  margin-bottom: 20px;
+}
+
+.pillarText {
+  font-size: 14.5px;
+  color: #666;
+  line-height: 1.9;
+  textAlign: justify;
+}
+
+/* --- 3. PROJECTSセクション --- */
+.projects {
+  padding: 120px 20px;
+  background-color: #f9f9f9;
+}
+
+.projectsGrid {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flexDirection: column;
+  gap: 35px;
+}
+
+.projectCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 35px 45px;
+  background-color: #fff;
+  border-left: 2px solid rgba(26, 26, 26, 0.1); /* 最初は薄く */
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+  /* アニメーションの土台 */
+  transition: border-left 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* 【ホバーアニメーション】境界線が濃くなり、少し右に動く */
+.projectCard:hover {
+  border-left: 4px solid #1a1a1a;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+  transform: translateX(5px);
+}
+
+.projectInfo {
+  display: flex;
+  flexDirection: column;
+}
+
+.projectName {
+  font-size: 22px;
+  fontWeight: bold;
+  font-family: serif;
+  margin-bottom: 7px;
+  letter-spacing: 0.05em;
+}
+
+.projectDesc {
+  font-size: 13.5px;
+  color: #888;
+  letter-spacing: 0.08em;
+}
+
+.arrow {
+  font-size: 22px;
+  color: #ccc;
+  /* アニメーションの土台 */
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* 【ホバーアニメーション】矢印が右に動き、色が濃くなる */
+.projectCard:hover .arrow {
+  transform: translateX(5px);
+  color: #1a1a1a;
+}
+
+/* --- 4. ABOUTセクション --- */
+.about {
+  padding: 150px 20px;
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.aboutImageWrapper {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.aboutNameJa {
+  font-size: 22px;
+  font-family: serif;
+  margin-bottom: 12px;
+  letter-spacing: 0.1em;
+}
+
+.aboutTitle {
+  font-size: 13px;
+  color: #666;
+  letter-spacing: 0.15em;
+  margin-bottom: 40px;
+}
+
+.aboutLink {
+  display: inline-block;
+  padding: 14px 50px;
+  border: 1px solid #1a1a1a;
+  text-decoration: none;
+  color: #1a1a1a;
+  font-size: 13px;
+  letter-spacing: 0.25em;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 【ホバーアニメーション】反転 */
+.aboutLink:hover {
+  background-color: #1a1a1a;
+  color: #fff;
+}
+
+/* --- フッター --- */
+.footer {
+  padding: 50px 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #bbb;
+  border-top: 1px solid rgba(0,0,0,0.03);
+  letter-spacing: 0.1em;
+}
