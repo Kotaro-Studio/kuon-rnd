@@ -1,176 +1,221 @@
-"use client"; // 👈 これを一番上に追加します！
-
-// app/page.tsx
+"use client";
 import React from 'react';
+import Image from 'next/image'; // ★Next.jsの超高速画像ツールをインポート
 
-// --- 1. LP本体のデータ定義（内容を変える場合はここを編集） ---
+// --- LP本体のデータ定義（朝比奈さんの哲学を美しい文章へ昇華） ---
 
-// 【ヒーローセクション】
+// 【1. ヒーローセクション：ファーストビュー】
 const heroContent = {
-  title1: "芸術と科学",
-  title2: "の境界線を越える",
-  description: "金田式DC録音の圧倒的リアリズムと、Next.js/Cloudflareのエッジテクノロジーが融合。音響工学・Web・GPSアルゴリズムが描く、未来の研究開発スタジオ。",
-  cta: "Vision & Technology"
+  title: "芸術と科学の融合",
+  subtitle: "形なきものに意味を与え、Nothingnessの中に在る存在を創造する",
+  // ★ 文字列(" ")ではなく、JSX(<>)にすることで改行(<br />)を有効にしました
+  description: (
+    <>
+      金田式DC録音の圧倒的リアリズム、GPSによる精密な時空解析<br />
+      そして WordPress を超える最新のWebエッジテクノロジー<br />
+      音響工学・Web・GPSアルゴリズムが描く、未来の研究開発スタジオ。
+    </>
+  ),
+  cta: "Discover Kuon's Technology"
 };
 
-// 【3Dグラスカード（フィーチャー）】
+// 【2. Visionセクション：空音開発について】
+const visionContent = {
+  title: "空音開発 - Kuon R&D について",
+  quote: "芸術の「空」であり、技術は「魂」である",
+  // ★ こちらもJSX(<>)に変更し、より読みやすいよう改行のリズムを整えました
+  text: (
+    <>
+      「空音（くおん）」という名は、仏教用語の「久遠（永続）」と「空（形なき存在）」に由来します。<br />
+      音は波であり、GPSは空からの情報です。<br />
+      それぞれ実体はなくとも、これらは世界を少しだけ美しく、少しだけ生きやすくするためのこの世界の重要なシステムの一部で在ると言えます。<br />
+      <br />
+      音楽家:朝比奈幸太郎がたくさんの巨匠から受け継いだ技術と哲学を結集し、 Nothingness（何もなくても在る）の中から、意味のないもの（芸術）に意味を生み出すため、『空即是色』の世界を提供する異端の研究開発スタジオです。
+    </>
+  ),
+  profileImage: "/kotaro.jpeg",
+  profileCta: "About Kotaro Asahina"
+};
+
+// 【3. Technologyセクション：3つの核心技術（3Dグラスカード）】
 const featureCards = [
   {
-    icon: "🎙️", 
+    image: "/audio.png", 
     title: "Audio Engineering", 
-    description: "金田式DC録音による究極のアナログサウンド。位相とダイナミクスを完全に保持し、空気感までをも記録する。",
-    tag: "純粋アナログ"
+    tag: "純粋アナログと叡智の継承",
+    description: (
+      <>
+        金田式DC録音のDNAを受け継ぎ、無指向性マイクを厳選されたパーツとハンダ技術で一本一本手作りで制作。<br /><br />
+        バーチ材を用いた密閉型スピーカー、選び抜かれたコンデンサーを惜しみなく投入したアンプ設計。<br /><br />
+        <strong>Revox Restoring:</strong> また、人類が到達した最高峰のマスターレコーダーRevoxの叡智を、次世代に繋ぐ使命としてレストアを行っています。
+      </>
+    )
   },
   {
-    icon: "⚡", 
-    title: "Web Technology", 
-    description: "Next.jsとCloudflareによる世界最速の配信インフラ。1msのエッジ応答速度が、シームレスな体験を実現。",
-    tag: "超高速エッジ"
-  },
-  {
-    icon: "📡", 
+    image: "/gps.png", 
     title: "GPS Algorithm", 
-    description: "高精度な位置情報と時刻同期を統合する独自アルゴリズム。芸術と科学、空間と時間の交差点を解析する。",
-    tag: "時空解析"
+    tag: "時空解析と社会実装",
+    description: (
+      <>
+        株式会社ジオセンス・小林英一氏より学んだC言語を駆使し、通常の測位に加え、センチメートル級の精度を誇るRTK測位プログラムを開発。<br /><br />
+        善意の基地局も準備中です。<br /><br />
+        <strong>ペット探偵業界への提供:</strong> 空間と時間の交差点を解析する技術を、実社会の課題解決（ペット探偵システムの開発）に提供しています。
+      </>
+    )
+  },
+  {
+    image: "/web.png", 
+    title: "Program Development", 
+    tag: "技術を統合する、知的なアプリ",
+    description: (
+      <>
+        空音開発が設計するEQパラメータの自動添付や、初心者の音声編集を自動化するアプリを開発。<br /><br />
+        オーディオとGPSの技術を有機的に統合します。<br /><br />
+        <strong>Web Technology:</strong> また、ウェブ開発においては、WordPressを使わない、Headless CMSやエッジコンピューティングといった最新のWeb技術を用いて、超高速でセキュアなWebサイトを提供します。
+      </>
+    )
   }
 ];
 
-// 【ビジョン（アバウト）】
-const visionContent = {
-  quote: "「技術」は「芸術」の僕であり、",
-  quoteEnd: "「芸術」は「技術」の魂である。",
-  text: "空音開発は、単なるWeb制作スタジオではありません。オーディオフィルの執念、最先端の分散システム、そしてGPS演算技術までを一つの有機体として統合する、異端の研究開発スタジオです。私たちは、技術が芸術の高みへ到達する瞬間を創造します。"
-};
 
-
-// --- 2. LP本体のコンポーネント（デザイン） ---
+// --- LP本体のコンポーネント（デザイン） ---
 
 export default function Home() {
   return (
     // サイト全体のコンテナ（layout.tsxのmainの中に入ります）
     <div style={{ padding: '0 5%' }}>
       
-      {/* --- ■ ヒーローセクション（ファーストビュー） --- */}
+      {/* --- ■ 1. ヒーローセクション（ファーストビュー） --- */}
       <section style={{ 
-        padding: '12rem 0 8rem 0', 
+        padding: '12rem 0 10rem 0', 
         textAlign: 'center' 
       }}>
-        {/* メインタイトル：極限まで洗練されたタイポグラフィ */}
-        <h2 style={{ 
-          fontSize: '4.5rem', 
-          fontWeight: '100', 
-          letterSpacing: '0.2em', 
-          lineHeight: '1.2', 
-          margin: '0 0 2rem 0'
-        }}>
-          <span style={{ display: 'block' }}>{heroContent.title1}</span>
-          <span style={{ display: 'block', paddingLeft: '2em' }}>{heroContent.title2}</span>
-        </h2>
-        {/* 説明文：読みやすい上品なグレー */}
-        <p style={{ 
-          maxWidth: '800px', 
-          margin: '0 auto 3rem auto', 
-          color: 'var(--text-muted)', 
-          fontSize: '1rem', 
-          lineHeight: '2', 
-          letterSpacing: '0.05em'
-        }}>
-          {heroContent.description}
-        </p>
-        {/* CTAボタン：背景に溶け込むようなデザイン */}
-        <button style={{ 
-          background: 'none', 
-          border: '1px solid rgba(255,255,255,0.1)', 
-          color: 'var(--text-main)', 
-          padding: '1rem 2.5rem', 
-          borderRadius: '50px', 
-          fontSize: '0.8rem', 
-          letterSpacing: '0.1em', 
-          cursor: 'pointer',
-          transition: 'all 0.3s'
-        }}
-        // マウスホバーでアクセントカラーに光る
-        onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
-        onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--text-main)'; }}
-        >
-          {heroContent.cta}
-        </button>
+        <h2 style={{ fontSize: '4.5rem', fontWeight: '100', letterSpacing: '0.2em', lineHeight: '1.4', margin: '0 0 2rem 0' }}>{heroContent.title}</h2>
+        <p style={{ color: 'var(--accent)', fontSize: '1.2rem', fontWeight: '300', letterSpacing: '0.15em', marginBottom: '2rem' }}>{heroContent.subtitle}</p>
+        {/* ★説明文の表示部分。そのままJSXとしてレンダリングされます */}
+        <p style={{ maxWidth: '850px', margin: '0 auto 4rem auto', color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: '2.2', letterSpacing: '0.05em' }}>{heroContent.description}</p>
+        <a href="#vision" className="nav-button" style={{ display: 'inline-block', padding: '1rem 3rem', borderRadius: '50px', fontSize: '0.9rem', letterSpacing: '0.1em', transition: 'all 0.3s' }}>{heroContent.cta}</a>
       </section>
 
-      {/* --- ■ 3Dグラスモーフィズム・フィーチャーセクション（核心部分） --- */}
-      {/* ★globals.css で定義した「perspective-container」を親要素に指定
-        ★これで子供のカードが3D空間として配置される
-      */}
-      <section className="perspective-container" style={{ 
-        padding: '6rem 0', 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
-        gap: '2.5rem'
+      {/* --- ■ 2. Visionセクション（About Kuon）：id="vision" --- */}
+      <section id="vision" style={{ 
+        padding: '8rem 0', 
+        borderTop: '1px solid rgba(0,0,0,0.03)'
       }}>
-        {featureCards.map((card, index) => (
-          /* ★globals.css で定義した「glass-card」を指定
-            ★すりガラス＋ホバー時の3D傾き効果がここですべて適用される
-          */
-          <div key={index} className="glass-card" style={{ 
-            padding: '3rem', 
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            {/* ホバー時に光る背景グラデーション（未来感を演出） */}
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0) 70%)',
-              opacity: 0.1, // 初期は薄く
-              transition: 'opacity 0.5s'
-            }}/>
+        <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: '300', color: 'var(--accent)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '1rem' }}>Vision</h3>
+          <h4 style={{ fontSize: '2.5rem', fontWeight: '200', letterSpacing: '0.1em', margin: '0' }}>{visionContent.title}</h4>
+        </div>
 
-            {/* コンテンツ */}
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ fontSize: '3rem', margin: '0 0 1.5rem 0' }}>{card.icon}</div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '300', margin: '0 0 1rem 0', letterSpacing: '0.1em' }}>{card.title}</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.8', margin: '0 0 2rem 0' }}>{card.description}</p>
-              {/* アクセントカラーのタグ */}
-              <span style={{ 
-                fontSize: '0.7rem', 
-                color: 'var(--accent)', 
-                border: '1px solid var(--accent)', 
-                padding: '0.4rem 1rem', 
-                borderRadius: '50px'
-              }}>
-                {card.tag}
-              </span>
-            </div>
+        <div style={{ 
+          display: 'flex', 
+          gap: '4rem', 
+          alignItems: 'center', 
+          maxWidth: '1000px', 
+          margin: '0 auto'
+        }}>
+          {/* 左側：プロフィール画像とリンクボタン */}
+          <div style={{ textAlign: 'center', flexShrink: 0 }}>
+            <Image 
+              src={visionContent.profileImage}
+              alt="Kotaro Asahina"
+              width={200}
+              height={200}
+              style={{ 
+                borderRadius: '50%',
+                border: '4px solid rgba(255,255,255,0.8)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                objectFit: 'cover',
+                marginBottom: '1.5rem'
+              }}
+            />
+            <br />
+            <a href="/profile" className="nav-button" style={{ fontSize: '0.8rem', padding: '0.6rem 2rem', letterSpacing: '0.1em' }}>
+              {visionContent.profileCta}
+            </a>
           </div>
-        ))}
+
+          {/* 右側：哲学文 */}
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '1.8rem', fontWeight: '100', letterSpacing: '0.15em', lineHeight: '1.8', margin: '0 0 2rem 0', color: 'var(--text-main)' }}>{visionContent.quote}</p>
+            {/* ★文章の表示部分。改行が反映されます */}
+            <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: '2.2', letterSpacing: '0.05em' }}>{visionContent.text}</p>
+          </div>
+        </div>
       </section>
 
-      {/* --- ■ ビジョン/アバウトセクション（静謐なメッセージ） --- */}
-      <section style={{ 
-        padding: '10rem 0', 
-        maxWidth: '700px', 
-        margin: '0 auto', 
-        textAlign: 'center' 
+      {/* --- ■ 3. Technologyセクション（3つの核心技術）：id="technology" --- */}
+      <section id="technology" style={{ 
+        padding: '8rem 0',
+        background: 'rgba(255,255,255,0.3)',
+        borderTop: '1px solid rgba(0,0,0,0.03)',
+        borderBottom: '1px solid rgba(0,0,0,0.03)'
       }}>
-        <h4 style={{ 
-          fontSize: '1.8rem', 
-          fontWeight: '100', 
-          letterSpacing: '0.2em', 
-          lineHeight: '1.8', 
-          margin: '0 0 3rem 0',
-          color: 'var(--text-main)'
-        }}>
-          {visionContent.quote}<br />
-          <span style={{ color: 'var(--accent)' }}>{visionContent.quoteEnd}</span>
-        </h4>
-        <p style={{ 
-          color: 'var(--text-muted)', 
-          fontSize: '0.95rem', 
-          lineHeight: '2', 
-          letterSpacing: '0.05em'
-        }}>
-          {visionContent.text}
-        </p>
+        <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: '300', color: 'var(--accent)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '1rem' }}>Technology</h3>
+          <h4 style={{ fontSize: '2.5rem', fontWeight: '200', letterSpacing: '0.1em', margin: 0 }}>芸術と科学の、交差点。</h4>
+        </div>
+
+        <div className="perspective-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2.5rem' }}>
+          {featureCards.map((card, index) => (
+            <div key={index} className="glass-card" style={{ 
+              padding: '2.5rem', 
+              position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column'
+            }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(2, 132, 199, 0.08) 0%, rgba(2, 132, 199, 0) 70%)', opacity: 0, transition: 'opacity 0.5s' }} onMouseOver={(e) => { e.currentTarget.style.opacity = 1; }} onMouseOut={(e) => { e.currentTarget.style.opacity = 0; }} />
+
+              <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
+                <div style={{ position: 'relative', width: '100%', height: '150px', marginBottom: '1.5rem', borderRadius: '12px', overflow: 'hidden' }}>
+                  <Image 
+                    src={card.image}
+                    alt={card.title}
+                    layout="fill"
+                    objectFit="cover"
+                    style={{ filter: 'contrast(0.9) brightness(1.02)' }}
+                  />
+                </div>
+                
+                <span style={{ display: 'inline-block', fontSize: '0.75rem', color: 'var(--accent)', border: '1px solid var(--accent)', padding: '0.4rem 1rem', borderRadius: '50px', marginBottom: '1rem', letterSpacing: '0.05em' }}>{card.tag}</span>
+
+                <h3 style={{ fontSize: '1.6rem', fontWeight: '400', margin: '0 0 1.5rem 0', letterSpacing: '0.1em' }}>{card.title}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '2', margin: 0 }}>{card.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* --- ■ 4. Contactセクション（Formspree）：id="contact" --- */}
+      <section id="contact" style={{ padding: '10rem 0 12rem 0', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: '300', color: 'var(--accent)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '1rem' }}>Contact</h3>
+        <h4 style={{ fontSize: '2.5rem', fontWeight: '200', letterSpacing: '0.1em', margin: '0 0 2rem 0' }}>さあ、一緒にプロジェクトを、始めよう</h4>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '4rem', fontSize: '1rem', letterSpacing: '0.05em' }}>金田式DC録音コンサルティング、GPSシステムの導入、最新Webエッジインフラの構築など、<br />技術と芸術に関するご相談はこちらから。</p>
+        
+        <form 
+          action="https://formspree.io/f/xyknanzy" 
+          method="POST" 
+          className="glass-card"
+          style={{ maxWidth: '650px', margin: '0 auto', padding: '3.5rem', display: 'flex', flexDirection: 'column', gap: '1.8rem', textAlign: 'left' }}
+        >
+          <div>
+            <label htmlFor="name" style={{ display: 'block', marginBottom: '0.6rem', color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.05em' }}>お名前</label>
+            <input type="text" id="name" name="name" required style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.08)', background: 'rgba(255,255,255,0.7)', color: 'var(--text-main)', fontSize: '1rem', outlineColor: 'var(--accent)' }} />
+          </div>
+
+          <div>
+            <label htmlFor="email" style={{ display: 'block', marginBottom: '0.6rem', color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.05em' }}>メールアドレス</label>
+            <input type="email" id="email" name="email" required style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.08)', background: 'rgba(255,255,255,0.7)', color: 'var(--text-main)', fontSize: '1rem', outlineColor: 'var(--accent)' }} />
+          </div>
+
+          <div>
+            <label htmlFor="message" style={{ display: 'block', marginBottom: '0.6rem', color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.05em' }}>お問い合わせ内容</label>
+            <textarea id="message" name="message" rows={6} required style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.08)', background: 'rgba(255,255,255,0.7)', color: 'var(--text-main)', fontSize: '1rem', outlineColor: 'var(--accent)', resize: 'vertical', lineHeight: '1.6' }} />
+          </div>
+
+          <button type="submit" className="nav-button" style={{ marginTop: '1.5rem', padding: '1rem 3rem', alignSelf: 'center', cursor: 'pointer', background: 'transparent', fontSize: '0.9rem' }}>
+            メッセージを送る
+          </button>
+        </form>
       </section>
 
     </div>

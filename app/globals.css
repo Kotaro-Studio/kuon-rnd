@@ -1,19 +1,13 @@
 /* app/globals.css */
 
-/* 1. サイト全体の色定義 */
 :root {
-  --bg-color: #05050a; /* 深淵のような漆黒 */
-  --text-main: #f8fafc; /* 透き通るような白 */
-  --text-muted: #94a3b8; /* 上品なグレー */
-  --accent: #06b6d4; /* 差し色のシアン（光） */
+  --bg-color: #fafafa; /* 清潔感のある白 */
+  --text-main: #111827; /* 視認性の高いダークグレー */
+  --text-muted: #6b7280; /* 上品なグレー */
+  --accent: #0284c7; /* 知的なシアンブルー */
 }
 
-/* 2. 余白のリセットと基本設定 */
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+* { box-sizing: border-box; padding: 0; margin: 0; }
 
 body {
   background-color: var(--bg-color);
@@ -23,40 +17,32 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  /* 背景にうっすらと光のグラデーションを配置 */
+  background-image: 
+    radial-gradient(at 10% 10%, rgba(2, 132, 199, 0.05) 0px, transparent 50%),
+    radial-gradient(at 90% 90%, rgba(2, 132, 199, 0.05) 0px, transparent 50%);
 }
 
-/* 3. 未来的な3Dグラスモーフィズムの定義（後でLPで使います） */
-.perspective-container {
-  perspective: 1200px; /* 奥行きの空間を作る */
-}
+.perspective-container { perspective: 1200px; }
 
 .glass-card {
-  /* すりガラスの本体 */
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  
-  /* ガラスの縁取り（光の反射） */
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* 透明感のあるホワイトグラス */
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 16px;
-  
-  /* 影とアニメーションの準備 */
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
-              box-shadow 0.5s ease, 
-              background 0.5s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.5s ease, background 0.5s ease;
 }
 
-/* マウスを乗せたときに浮き上がる魔法 */
 .glass-card:hover {
   transform: translateY(-8px) rotateX(4deg) rotateY(-4deg);
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 20px 40px rgba(6, 182, 212, 0.15), 
-              inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 40px rgba(2, 132, 199, 0.1), inset 0 0 0 1px #ffffff;
 }
-/* --- ここから下を追加 --- */
 
-/* メニューの通常リンク */
+/* メニューのリンク装飾 */
 .nav-link {
   color: var(--text-muted);
   text-decoration: none;
@@ -64,11 +50,8 @@ body {
   letter-spacing: 0.05em;
   transition: color 0.3s ease;
 }
-.nav-link:hover {
-  color: var(--text-main); /* ホバーで白く光る */
-}
+.nav-link:hover { color: var(--text-main); }
 
-/* メニューの「Contact」ボタン */
 .nav-button {
   color: var(--accent);
   text-decoration: none;
@@ -79,6 +62,7 @@ body {
   border-radius: 50px;
   transition: all 0.3s ease;
 }
-.nav-button:hover {
-  background: rgba(6, 182, 212, 0.1); /* ホバーで背景がシアンに光る */
-}
+.nav-button:hover { background: rgba(2, 132, 199, 0.05); }
+
+/* スムーススクロールの魔法 */
+html { scroll-behavior: smooth; }
