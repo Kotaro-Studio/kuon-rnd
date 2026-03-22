@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import Image from 'next/image';
-import Link from 'next/link'; // ★リンク用の超高速ツールをインポート
+import Link from 'next/link';
 
 // --- LP本体のデータ定義（朝比奈さんの哲学を美しい文章へ昇華） ---
 
@@ -34,7 +34,7 @@ const visionContent = {
   profileCta: "About Kotaro Asahina"
 };
 
-// 【3. Technologyセクション：3つの核心技術（3Dグラスカード）】
+// 【3. Technologyセクション：3つの核心技術】
 const featureCards = [
   {
     image: "/audio.png", 
@@ -47,7 +47,6 @@ const featureCards = [
         <strong>Revox Restoring:</strong> また、人類が到達した最高峰のマスターレコーダーRevoxの叡智を、次世代に繋ぐ使命としてレストアを行っています。
       </>
     ),
-    // ★ここに追加：カード下部に表示する美しいリンク集
     links: [
       { url: "/microphone", text: "無指向性マイクの哲学へ" },
       { url: "/revox", text: "Revox レストアの哲学へ" }
@@ -63,7 +62,11 @@ const featureCards = [
         善意の基地局も準備中です。<br /><br />
         <strong>ペット探偵業界への提供:</strong> 空間と時間の交差点を解析する技術を、実社会の課題解決（ペット探偵システムの開発）に提供しています。
       </>
-    )
+    ),
+    // ★追加：GPSページへのリンク
+    links: [
+      { url: "/gps", text: "GPSテクノロジーの哲学へ" }
+    ]
   },
   {
     image: "/web.png", 
@@ -75,7 +78,11 @@ const featureCards = [
         オーディオとGPSの技術を有機的に統合します。<br /><br />
         <strong>Web Technology:</strong> また、ウェブ開発においては、WordPressを使わない、Headless CMSやエッジコンピューティングといった最新のWeb技術を用いて、超高速でセキュアなWebサイトを提供します。
       </>
-    )
+    ),
+    // ★追加：Web開発ページへのリンク
+    links: [
+      { url: "/web", text: "Web・アプリ開発の哲学へ" }
+    ]
   }
 ];
 
@@ -87,13 +94,12 @@ export default function Home() {
     <div style={{ padding: '0 5%' }}>
       
       {/* --- ■ 1. ヒーローセクション --- */}
-      {/* ★ className="section-responsive" を追加し、スマホでの余白を最適化 */}
       <section className="section-responsive" style={{ padding: '12rem 0 10rem 0', textAlign: 'center' }}>
-        {/* ★ className="title-responsive" を追加し、スマホでの巨大文字のはみ出しを防止 */}
         <h2 className="title-responsive" style={{ fontSize: '4.5rem', fontWeight: '100', letterSpacing: '0.2em', lineHeight: '1.4', margin: '0 0 2rem 0' }}>{heroContent.title}</h2>
         <p style={{ color: 'var(--accent)', fontSize: '1.2rem', fontWeight: '300', letterSpacing: '0.15em', marginBottom: '2rem' }}>{heroContent.subtitle}</p>
         <p style={{ maxWidth: '850px', margin: '0 auto 4rem auto', color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: '2.2', letterSpacing: '0.05em' }}>{heroContent.description}</p>
-        <a href="#vision" className="nav-button" style={{ display: 'inline-block', padding: '1rem 3rem', borderRadius: '50px', fontSize: '0.9rem', letterSpacing: '0.1em', transition: 'all 0.3s' }}>{heroContent.cta}</a>
+        {/* ★修正：リンク先を #vision から #technology に変更 */}
+        <a href="#technology" className="nav-button" style={{ display: 'inline-block', padding: '1rem 3rem', borderRadius: '50px', fontSize: '0.9rem', letterSpacing: '0.1em', transition: 'all 0.3s' }}>{heroContent.cta}</a>
       </section>
 
       {/* --- ■ 2. Visionセクション --- */}
@@ -103,7 +109,6 @@ export default function Home() {
           <h4 className="title-responsive" style={{ fontSize: '2.5rem', fontWeight: '200', letterSpacing: '0.1em', margin: '0' }}>{visionContent.title}</h4>
         </div>
 
-        {/* ★ className="flex-responsive" を追加し、スマホでは縦1列になるように魔法をかける */}
         <div className="flex-responsive" style={{ display: 'flex', gap: '4rem', alignItems: 'center', maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', flexShrink: 0 }}>
             <Image 
@@ -111,7 +116,7 @@ export default function Home() {
               alt="Kotaro Asahina"
               width={200}
               height={200}
-              unoptimized={true} // ★Cloudflareエラー回避の安全装置
+              unoptimized={true}
               style={{ borderRadius: '50%', border: '4px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', objectFit: 'cover', marginBottom: '1.5rem' }}
             />
             <br />
@@ -134,7 +139,6 @@ export default function Home() {
           <h4 className="title-responsive" style={{ fontSize: '2.5rem', fontWeight: '200', letterSpacing: '0.1em', margin: 0 }}>芸術と科学の、交差点。</h4>
         </div>
 
-        {/* ★ className="grid-responsive" を追加し、スマホでは横3列から縦1列へ変更 */}
         <div className="perspective-container grid-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2.5rem' }}>
           {featureCards.map((card, index) => (
             <div key={index} className="glass-card" style={{ padding: '2.5rem', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -150,27 +154,30 @@ export default function Home() {
                 <h3 style={{ fontSize: '1.6rem', fontWeight: '400', margin: '0 0 1.5rem 0', letterSpacing: '0.1em' }}>{card.title}</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '2', margin: 0, flex: 1 }}>{card.description}</p>
                 
-                {/* ★追加：極めて美しく配置された専用リンクボタン */}
+                {/* ★修正：リンクボタンのデザインをより目立ち、直感的にクリックできるように強化 */}
                 {card.links && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '2rem', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '1.5rem' }}>
                     {card.links.map((link, i) => (
                       <Link key={i} href={link.url}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '0.8rem 1rem', backgroundColor: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.03)', borderRadius: '8px',
-                          color: 'var(--text-main)', fontSize: '0.85rem', letterSpacing: '0.1em', textDecoration: 'none', transition: 'all 0.4s ease'
+                          padding: '0.8rem 1.2rem', 
+                          backgroundColor: 'rgba(2, 132, 199, 0.04)', // ほんのりシアンの背景
+                          border: '1px solid rgba(2, 132, 199, 0.3)', // はっきりとしたシアンの縁取り
+                          borderRadius: '8px',
+                          color: 'var(--accent)', // 文字もシアンで目立たせる
+                          fontWeight: '500', // 少し太字に
+                          fontSize: '0.85rem', letterSpacing: '0.1em', textDecoration: 'none', transition: 'all 0.3s ease'
                         }}
                         onMouseOver={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.9)';
-                          e.currentTarget.style.borderColor = 'var(--accent)';
-                          e.currentTarget.style.color = 'var(--accent)';
-                          e.currentTarget.style.boxShadow = '0 5px 15px rgba(2, 132, 199, 0.1)';
-                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.backgroundColor = 'var(--accent)'; // ホバーでシアン一色に
+                          e.currentTarget.style.color = '#fff'; // 文字は白に反転
+                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(2, 132, 199, 0.2)'; // 影をつけて浮かせる
+                          e.currentTarget.style.transform = 'translateY(-3px)';
                         }}
                         onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.5)';
-                          e.currentTarget.style.borderColor = 'rgba(0,0,0,0.03)';
-                          e.currentTarget.style.color = 'var(--text-main)';
+                          e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.04)';
+                          e.currentTarget.style.color = 'var(--accent)';
                           e.currentTarget.style.boxShadow = 'none';
                           e.currentTarget.style.transform = 'translateY(0)';
                         }}
