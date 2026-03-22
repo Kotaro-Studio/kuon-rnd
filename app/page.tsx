@@ -162,7 +162,7 @@ export default function Home() {
               padding: '2.5rem', 
               position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column'
             }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(2, 132, 199, 0.08) 0%, rgba(2, 132, 199, 0) 70%)', opacity: 0, transition: 'opacity 0.5s' }} onMouseOver={(e) => { e.currentTarget.style.opacity = 1; }} onMouseOut={(e) => { e.currentTarget.style.opacity = 0; }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(2, 132, 199, 0.08) 0%, rgba(2, 132, 199, 0) 70%)', opacity: 0, transition: 'opacity 0.5s' }} onMouseOver={(e) => { e.currentTarget.style.opacity = "1"; }} onMouseOut={(e) => { e.currentTarget.style.opacity = "0"; }} />
 
               <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
                 <div style={{ position: 'relative', width: '100%', height: '150px', marginBottom: '1.5rem', borderRadius: '12px', overflow: 'hidden' }}>
