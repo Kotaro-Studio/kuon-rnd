@@ -1,245 +1,225 @@
 /* =========================================
    app/page.module.css
-   空音開発 LP専用スタイル（アニメーション対応版）
+   空音開発 LP - Appleライクなミニマルデザイン
    ========================================= */
 
-/* --- アニメーション定義（@keyframes） --- */
-
-/* 下からフェードインしながら現れる */
-@keyframes fadeInSlideUp {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-/* 境界線が静かに光る（パルス） */
-@keyframes borderPulse {
-  0%, 100% {
-    border-color: rgba(0, 0, 0, 0.05);
-  }
-  50% {
-    border-color: rgba(26, 26, 26, 0.3);
-  }
-}
-
-/* --- 全体レイアウト --- */
 .container {
-  font-family: sans-serif;
-  color: #1a1a1a;
-  background-color: #fcfcfc;
+  /* Appleの美しいオフホワイト背景とタイポグラフィ */
+  background-color: #fbfbfd;
+  color: #1d1d1f;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* --- 1. Hero セクション --- */
+/* --- Hero --- */
 .hero {
-  padding: 180px 20px; /* 余白を少し大きく */
+  padding: 200px 20px 150px;
   text-align: center;
 }
-
 .catchcopy {
   font-family: serif;
-  font-size: 56px; /* 少し大きく */
-  fontWeight: normal;
-  letter-spacing: 0.15em; /* 文字間隔を広く */
-  margin-bottom: 25px;
-  line-height: 1.3;
-  /* アニメーション適用 */
-  animation: fadeInSlideUp 1s ease-out forwards;
+  font-size: 64px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  margin-bottom: 30px;
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
 .subcopy {
-  font-size: 16px;
-  color: #666;
-  letter-spacing: 0.2em; /* 文字間隔を広く */
+  font-size: 18px;
+  color: #86868b;
+  letter-spacing: 0.15em;
   line-height: 2.2;
-  /* アニメーション適用（少し遅れて） */
-  animation: fadeInSlideUp 1s ease-out 0.3s forwards;
-  opacity: 0; /* 初期状態は消しておく */
+  opacity: 0;
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
 }
 
-/* --- 2. CORE TECHNOLOGIESセクション --- */
-.pillars {
-  padding: 120px 20px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
+/* --- セクション共通 --- */
 .sectionTitle {
   text-align: center;
-  fontSize: 26px;
-  font-family: serif;
-  letter-spacing: 0.25em;
-  margin-bottom: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #86868b;
+  letter-spacing: 0.3em;
+  margin-bottom: 80px;
 }
 
+/* --- 3本柱 (Engineering) --- */
+.pillars {
+  padding: 100px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 .pillarGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 60px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
 }
-
 .pillarCard {
-  padding: 50px 40px;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  textAlign: center;
-  /* アニメーションの土台 */
-  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
-  will-change: transform, box-shadow; /* パフォーマンス最適化 */
+  padding: 60px 40px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.02);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* 【ホバーアニメーション】カードが浮き上がり、影と境界線が変化 */
 .pillarCard:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.05);
-  animation: borderPulse 2s infinite; /* ホバー中はパルス光 */
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
 }
-
-.pillarIcon {
-  font-size: 36px;
-  margin-bottom: 25px;
-  color: #333;
-}
-
 .pillarTitle {
-  font-size: 19px;
-  fontWeight: bold;
-  letter-spacing: 0.15em;
+  font-size: 20px;
+  font-weight: 600;
   margin-bottom: 20px;
+  letter-spacing: 0.05em;
 }
-
 .pillarText {
-  font-size: 14.5px;
-  color: #666;
-  line-height: 1.9;
-  textAlign: justify;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #86868b;
 }
 
-/* --- 3. PROJECTSセクション --- */
+/* --- PROJECTS (洗練された3列カード) --- */
 .projects {
   padding: 120px 20px;
-  background-color: #f9f9f9;
 }
-
 .projectsGrid {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
-  display: flex;
-  flexDirection: column;
-  gap: 35px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
 }
-
 .projectCard {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 35px 45px;
-  background-color: #fff;
-  border-left: 2px solid rgba(26, 26, 26, 0.1); /* 最初は薄く */
+  flex-direction: column;
+  justify-content: space-between; /* 上に文字、下に矢印を美しく配置 */
+  padding: 50px;
+  background: #ffffff;
+  border-radius: 24px; /* Appleライクな滑らかな角丸 */
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.01);
-  /* アニメーションの土台 */
-  transition: border-left 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  /* ジョブズが愛した、吸い付くようなイージング */
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 【ホバーアニメーション】境界線が濃くなり、少し右に動く */
+/* ホバー時の美しい浮き上がり */
 .projectCard:hover {
-  border-left: 4px solid #1a1a1a;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.03);
-  transform: translateX(5px);
-}
-
-.projectInfo {
-  display: flex;
-  flexDirection: column;
+  transform: translateY(-12px) scale(1.01);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08);
 }
 
 .projectName {
-  font-size: 22px;
-  fontWeight: bold;
-  font-family: serif;
-  margin-bottom: 7px;
-  letter-spacing: 0.05em;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
 }
-
 .projectDesc {
-  font-size: 13.5px;
-  color: #888;
-  letter-spacing: 0.08em;
+  font-size: 15px;
+  color: #86868b;
+  line-height: 1.8;
 }
 
+/* 矢印のコンテナをカードの右下に固定 */
+.cardFooter {
+  margin-top: 60px;
+  display: flex;
+  justify-content: flex-end;
+}
 .arrow {
-  font-size: 22px;
-  color: #ccc;
-  /* アニメーションの土台 */
-  transition: transform 0.3s ease, color 0.3s ease;
+  font-size: 24px;
+  color: #d2d2d7;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* 【ホバーアニメーション】矢印が右に動き、色が濃くなる */
 .projectCard:hover .arrow {
-  transform: translateX(5px);
-  color: #1a1a1a;
+  transform: translateX(10px);
+  color: #1d1d1f;
 }
 
-/* --- 4. ABOUTセクション --- */
+/* --- ABOUT --- */
 .about {
   padding: 150px 20px;
   text-align: center;
-  max-width: 650px;
-  margin: 0 auto;
 }
-
 .aboutImageWrapper {
-  width: 110px;
-  height: 110px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   overflow: hidden;
   margin: 0 auto 30px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
-
 .aboutNameJa {
-  font-size: 22px;
   font-family: serif;
-  margin-bottom: 12px;
+  font-size: 24px;
+  margin-bottom: 10px;
   letter-spacing: 0.1em;
 }
-
 .aboutTitle {
-  font-size: 13px;
-  color: #666;
-  letter-spacing: 0.15em;
+  font-size: 14px;
+  color: #86868b;
   margin-bottom: 40px;
+  letter-spacing: 0.1em;
 }
-
 .aboutLink {
   display: inline-block;
-  padding: 14px 50px;
-  border: 1px solid #1a1a1a;
-  text-decoration: none;
-  color: #1a1a1a;
-  font-size: 13px;
-  letter-spacing: 0.25em;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* 【ホバーアニメーション】反転 */
-.aboutLink:hover {
-  background-color: #1a1a1a;
+  padding: 16px 40px;
+  background-color: #1d1d1f;
   color: #fff;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+.aboutLink:hover {
+  transform: scale(1.05);
+  background-color: #333336;
 }
 
-/* --- フッター --- */
+/* --- Footer --- */
 .footer {
-  padding: 50px 20px;
+  padding: 60px 20px;
   text-align: center;
   font-size: 12px;
-  color: #bbb;
-  border-top: 1px solid rgba(0,0,0,0.03);
-  letter-spacing: 0.1em;
+  color: #86868b;
+}
+/* =========================================================
+   📱 スマホ用レスポンシブ設定（画面幅が768px以下の場合に発動）
+========================================================= */
+@media (max-width: 768px) {
+  
+  /* 1. 横並び（flex）を「縦1列」に強制変更する魔法 */
+  .flex-responsive {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 3rem !important; /* 縦に並んだ時の隙間をスマホ用に最適化 */
+  }
+
+  /* 2. 3列や2列のグリッド（網目）を「縦1列」に強制変更する魔法 */
+  .grid-responsive {
+    grid-template-columns: 1fr !important; /* 1列(1fr)にする */
+    gap: 2rem !important;
+  }
+
+  /* 3. 巨大な余白（padding）をスマホ用にスッキリ縮小する魔法 */
+  .section-responsive {
+    padding: 6rem 5% 5rem 5% !important; 
+  }
+
+  /* 4. スマホ画面からはみ出す巨大な文字サイズを最適化する魔法 */
+  .title-responsive {
+    font-size: 2rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* 5. 画像がスマホ画面からはみ出さないようにする安全装置 */
+  .image-wrapper-responsive {
+    width: 100% !important;
+    height: auto !important;
+  }
 }
