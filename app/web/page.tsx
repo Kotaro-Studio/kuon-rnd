@@ -8,7 +8,7 @@ import Link from 'next/link';
 // 1. 導入：Headless CMSとエッジコンピューティングの哲学
 const introduction = {
   title: "Pure Digital Architecture",
-  subtitle: "削ぎ落とされたノイズ。光の速さで届く純粋な情報。",
+  subtitle: "削ぎ落とされたノイズ<br />光の速さで届ける情報",
   image: "/A_sophisticated_and_futuristic_visualization_of_mo-1774174072344.png", 
   text: (
     <>
