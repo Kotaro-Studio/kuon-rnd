@@ -3,8 +3,8 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "空音開発",
-  description: "芸術と科学を融合させる研究開発スタジオ",
+  title: "空音開発 - Kuon R&D",
+  description: "芸術と科学の境界線を越える研究開発スタジオ",
   icons: { icon: "/icon.png" },
 };
 
@@ -14,11 +14,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         
         {/* --- ヘッダー --- */}
-        {/* ★直接タグに display: 'flex' や justifyContent などの指示を復活させ、絶対に無視されないようにします */}
         <header className="kuon-header" style={{ 
-          display: 'flex',               // ★復活：横並び
-          justifyContent: 'space-between', // ★復活：左右の両端に離す
-          alignItems: 'center',          // ★復活：縦の中央揃え
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           padding: '1.5rem 5%', 
           borderBottom: '1px solid rgba(0,0,0,0.05)',
           background: 'rgba(255, 255, 255, 0.8)',
@@ -33,15 +32,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </h1>
           </Link>
 
-          {/* ★ナビゲーションも同様に、隙間(gap)の指示を直接復活させます */}
           <nav className="kuon-nav" style={{
-            display: 'flex',  // ★復活：横並び
-            gap: '2rem',      // ★復活：メニュー間の隙間
+            display: 'flex',
+            gap: '2rem',
             alignItems: 'center'
           }}>
             <Link href="/" className="nav-link">Top</Link>
             <Link href="/profile" className="nav-link">About me</Link>
             <Link href="/#technology" className="nav-link">Technology</Link>
+            
+            {/* ★ ここに「Web App」のリンクを追加しました！ */}
+            <Link href="/webapp" className="nav-link">Web App</Link>
+            
             <Link href="/#contact" className="nav-button">Contact</Link>
           </nav>
         </header>
