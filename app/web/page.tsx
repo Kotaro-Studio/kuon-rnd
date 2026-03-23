@@ -29,7 +29,7 @@ const introduction = {
 // 2. アプリ開発：ミリ秒とピクセルのアルゴリズム
 const application = {
   title: "Algorithmic Precision",
-  subtitle: "センチメートル級の精度を、アプリケーションへ。",
+  subtitle: "センチメートル級の精度を、アプリケーションへ",
   image: "/An_abstract_visualization_of_cutting-edge_app_deve-1774174217352.png", 
   text: (
     <>
@@ -50,7 +50,7 @@ const application = {
 // 3. 結び：芸術と科学の融合
 const digitalCanvas = {
   title: "Digital Canvas",
-  subtitle: "エンジニアの美学。",
+  subtitle: "エンジニアの美学",
   image: "/A_stunning_visualization_of_the_perfect_fusion_bet-1774174311436.png", 
   text: (
     <>
