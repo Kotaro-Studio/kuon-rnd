@@ -7,7 +7,7 @@ import Link from 'next/link'; // ★Next.jsの高速リンクをインポート
 
 const introduction = {
   title: "Revox Restoring",
-  subtitle: "叡智を、次の世代へ繋ぐ使命。",
+  subtitle: "叡智を、次の世代へ繋ぐ使命",
   image: "/revox01.jpeg", 
   text: (
     <>

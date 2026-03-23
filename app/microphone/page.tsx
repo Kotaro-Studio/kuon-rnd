@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 const introduction = {
   title: "Microphone Crafting",
-  subtitle: "無指向性ステレオペア録音の、美学",
+  subtitle: "無指向性ステレオペア録音の美学",
   image: "/mic01.jpeg", 
   text: (
     <>
