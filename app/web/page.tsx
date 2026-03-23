@@ -8,7 +8,7 @@ import Link from 'next/link';
 // 1. 導入：Headless CMSとエッジコンピューティングの哲学
 const introduction = {
   title: "Pure Digital Architecture",
-  subtitle: "削ぎ落とされたノイズ<br />光の速さで届ける情報",
+  subtitle: "光の速さで届ける情報",
   image: "/A_sophisticated_and_futuristic_visualization_of_mo-1774174072344.png", 
   text: (
     <>
@@ -29,7 +29,7 @@ const introduction = {
 // 2. アプリ開発：ミリ秒とピクセルのアルゴリズム
 const application = {
   title: "Algorithmic Precision",
-  subtitle: "センチメートル級の精度を、アプリケーションの挙動へ。",
+  subtitle: "センチメートル級の精度を、アプリケーションへ。",
   image: "/An_abstract_visualization_of_cutting-edge_app_deve-1774174217352.png", 
   text: (
     <>
@@ -50,7 +50,7 @@ const application = {
 // 3. 結び：芸術と科学の融合
 const digitalCanvas = {
   title: "Digital Canvas",
-  subtitle: "コードの1行に宿る、エンジニアの魂と美学。",
+  subtitle: "エンジニアの美学。",
   image: "/A_stunning_visualization_of_the_perfect_fusion_bet-1774174311436.png", 
   text: (
     <>
