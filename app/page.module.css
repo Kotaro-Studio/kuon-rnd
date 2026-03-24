@@ -189,37 +189,65 @@
   color: #86868b;
 }
 /* =========================================================
+   空音開発 共通レイアウトクラス（PC用）
+========================================================= */
+.kuon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+}
+
+.kuon-flex {
+  display: flex;
+  gap: 4rem;
+  align-items: center;
+}
+
+.kuon-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kuon-nav {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+/* =========================================================
    📱 スマホ用レスポンシブ設定（画面幅が768px以下の場合に発動）
 ========================================================= */
 @media (max-width: 768px) {
   
-  /* 1. 横並び（flex）を「縦1列」に強制変更する魔法 */
-  .flex-responsive {
+  /* グリッド（3列）を絶対に「縦1列」にする */
+  .kuon-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 横並びを「縦並び・中央揃え」にする */
+  .kuon-flex {
     flex-direction: column !important;
-    align-items: center !important;
-    gap: 3rem !important; /* 縦に並んだ時の隙間をスマホ用に最適化 */
+    text-align: center !important;
+    gap: 2.5rem !important;
   }
 
-  /* 2. 3列や2列のグリッド（網目）を「縦1列」に強制変更する魔法 */
-  .grid-responsive {
-    grid-template-columns: 1fr !important; /* 1列(1fr)にする */
-    gap: 2rem !important;
+  /* ヘッダーの潰れを解消し、縦に美しく積む */
+  .kuon-header {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    padding: 1rem 5% !important;
   }
 
-  /* 3. 巨大な余白（padding）をスマホ用にスッキリ縮小する魔法 */
-  .section-responsive {
-    padding: 6rem 5% 5rem 5% !important; 
+  /* ナビゲーションメニューの折り返しを許可 */
+  .kuon-nav {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.8rem 1.5rem !important;
   }
 
-  /* 4. スマホ画面からはみ出す巨大な文字サイズを最適化する魔法 */
-  .title-responsive {
-    font-size: 2rem !important;
-    line-height: 1.4 !important;
-  }
-  
-  /* 5. 画像がスマホ画面からはみ出さないようにする安全装置 */
-  .image-wrapper-responsive {
-    width: 100% !important;
-    height: auto !important;
-  }
+  /* 余白と巨大文字の最適化 */
+  .sp-padding { padding: 6rem 5% !important; }
+  .hero-title { font-size: 2.5rem !important; line-height: 1.4 !important; }
+  .section-title { font-size: 2rem !important; }
 }
