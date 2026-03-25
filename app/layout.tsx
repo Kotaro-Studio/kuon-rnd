@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja">
+    <html lang="ja" style={{ scrollBehavior: 'smooth' }}>
       <body>
         
         {/* --- ヘッダー --- */}
@@ -41,7 +41,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/profile" className="nav-link">About me</Link>
             <Link href="/#technology" className="nav-link">Technology</Link>
             
-            {/* ★ ここに「Web App」のリンクを追加しました！ */}
+            {/* ★ ここに「GPS Tool」のリンクを追加し、アンカーリンクでセクションへジャンプさせます */}
+            <Link href="/gps#gps-tools" className="nav-link">GPS Tool</Link>
+
             <Link href="/webapp" className="nav-link">Web App</Link>
             
             <Link href="/#contact" className="nav-button">Contact</Link>
