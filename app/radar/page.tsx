@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
+// 💡 万が一ローカルCSSが消されても大丈夫なように、CDNからもCSSを読み込む設定を追加します
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 const WEATHER_API_KEY = "d19b041224aa52f1c3d7dc72ab434cfd";
 
 export default function CatOneTacticalRadarV5() {
-  // 🚨 Hydrationエラーの原因だった mounted ステートを完全に削除しました
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const SECRET_PASSWORD = "1012";
@@ -28,12 +28,20 @@ export default function CatOneTacticalRadarV5() {
   const [searchTime, setSearchTime] = useState<number>(30);
   const [envData, setEnvData] = useState<{ temp: number, windDeg: number, windSpeed: number, isDark: boolean } | null>(null);
 
-  // 地図初期化（ログイン完了後にのみ実行されるため安全）
+  // 🚨 APIキーが読み込めているかチェックするステート
+  const [hasToken, setHasToken] = useState<boolean>(true);
+
   useEffect(() => {
     if (!isAuthenticated || !mapContainer.current || map.current) return;
 
-    // トークンの読み込みをコンポーネント内に移動し、エラーを防止
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
+    // トークン取得チェック
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) {
+      setHasToken(false);
+      return; // トークンがなければ地図の描画をストップ
+    }
+    
+    mapboxgl.accessToken = token;
 
     try {
       map.current = new mapboxgl.Map({
@@ -107,7 +115,7 @@ export default function CatOneTacticalRadarV5() {
     if (petType === 'cat') baseMins *= 0.5;
     if (petType === 'cat' && envData?.isDark) baseMins *= 1.2;
 
-    const url = `https://api.mapbox.com/isochrone/v1/mapbox/walking/${originPoint[0]},${originPoint[1]}?contours_minutes=${Math.floor(baseMins)}&polygons=true&access_token=${mapboxgl.accessToken}`;
+    const url = `https://api.mapbox.com/isochrone/v1/mapbox/walking/${originPoint[0]},${originPoint[1]}?contours_minutes=${Math.floor(baseMins)}&polygons=true&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`;
 
     try {
       const res = await fetch(url);
@@ -166,7 +174,6 @@ export default function CatOneTacticalRadarV5() {
     backgroundColor: active ? color : '#1e293b', color: active ? '#fff' : '#94a3b8', transition: 'all 0.2s'
   });
 
-  // ログイン画面（サーバーでもクライアントでも同一のHTMLを出力し、エラーを防ぐ）
   if (!isAuthenticated) {
     return (
       <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -181,12 +188,29 @@ export default function CatOneTacticalRadarV5() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#000', fontFamily: 'monospace', color: '#fff' }}>
+      {/* 💡 CSSをHTMLタグとして強制的に読み込む（ビルド時のCSS消失対策） */}
+      <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css" rel="stylesheet" />
+
       <header style={{ backgroundColor: '#0f172a', padding: '1rem 2rem', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#38bdf8', fontWeight: 'bold', letterSpacing: '0.1em' }}>CATONE COMMAND CENTER</span>
         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Powered by Sunrise Sunset API & OpenWeather</span>
       </header>
 
       <div style={{ flex: 1, position: 'relative' }}>
+        {/* 🚨 APIキーが見つからない場合の警告画面 */}
+        {!hasToken && (
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: '#000', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '2px solid #ef4444', padding: '2rem', borderRadius: '8px', maxWidth: '500px', textAlign: 'center' }}>
+              <span style={{ fontSize: '3rem' }}>⚠️</span>
+              <h3 style={{ color: '#ef4444', marginTop: '1rem' }}>Mapbox APIキーが設定されていません</h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.6', marginTop: '1rem' }}>
+                本番環境（VercelやCloudflareなど）のダッシュボードで、環境変数（Environment Variables）に<br/>
+                <strong style={{ color: '#fff' }}>NEXT_PUBLIC_MAPBOX_TOKEN</strong> を追加し、再デプロイしてください。
+              </p>
+            </div>
+          </div>
+        )}
+
         <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
 
         <div style={{ position: 'absolute', top: '1rem', left: '1rem', width: '380px', backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid #334155', borderRadius: '8px', overflow: 'hidden', zIndex: 10 }}>
@@ -254,8 +278,6 @@ export default function CatOneTacticalRadarV5() {
             {activeTab === 'report' && (
               <div style={{ textAlign: 'center', padding: '1rem 0' }}>
                 <p style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: '1rem' }}>GPSログをドロップして解析を開始してください。</p>
-                
-                {/* 🛠️ 修正: レポートタブでもNMEAログをドロップできるように復元しました */}
                 <div 
                   onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file) parseNmeaLog(file); }} 
                   onDragOver={(e) => e.preventDefault()} 
@@ -270,7 +292,7 @@ export default function CatOneTacticalRadarV5() {
                       const step = Math.ceil((rawCoordinates?.length || 0) / 90);
                       const thinned = rawCoordinates?.filter((_, i) => i % step === 0);
                       const coordsStr = thinned?.map(c => `${c[0]},${c[1]}`).join(';');
-                      const url = `https://api.mapbox.com/matching/v5/mapbox/walking/${coordsStr}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+                      const url = `https://api.mapbox.com/matching/v5/mapbox/walking/${coordsStr}?geometries=geojson&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`;
                       try {
                         const res = await fetch(url);
                         const data = await res.json();
