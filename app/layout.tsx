@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link"; 
+import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -40,12 +40,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="nav-link">Top</Link>
             <Link href="/profile" className="nav-link">About me</Link>
             <Link href="/#technology" className="nav-link">Technology</Link>
-            
-            {/* ★ ここに「GPS Tool」のリンクを追加し、アンカーリンクでセクションへジャンプさせます */}
             <Link href="/gps#gps-tools" className="nav-link">GPS Tool</Link>
-
-            <Link href="/webapp" className="nav-link">Web App</Link>
-            
+            <Link href="/audio-apps" className="nav-link">Audio App</Link>
             <Link href="/#contact" className="nav-button">Contact</Link>
           </nav>
         </header>
