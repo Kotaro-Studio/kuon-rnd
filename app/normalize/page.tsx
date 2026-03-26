@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
 export default function NormalizeAppPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -58,7 +58,7 @@ export default function NormalizeAppPage() {
     
     setCurrentStep('processing');
     setDownloadUrl(null);
-    setProcessLog("音響空間を解析・構築中...");
+    setProcessLog("音響を解析・構築中...");
 
     try {
       const arrayBuffer = await selectedFile.arrayBuffer();
