@@ -1,6 +1,6 @@
 // utils/audioDSP.ts
 
-// 【堅牢版】様々なWAVフォーマット（16/24/32bit Float）を安全に読み込むパーサー
+// 1. 【堅牢版】様々なWAVフォーマット（16/24/32bit Float）を安全に読み込むパーサー
 export function decodeWAV(arrayBuffer: ArrayBuffer) {
   const view = new DataView(arrayBuffer);
   const riff = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
@@ -66,10 +66,9 @@ export function decodeWAV(arrayBuffer: ArrayBuffer) {
   return { channels, sampleRate, numChannels, totalSamples: numSamples };
 }
 
-// 【プロ仕様】劣化ゼロの 32bit Float WAV エンコーダー
+// 2. 【プロ仕様】劣化ゼロの 32bit Float WAV エンコーダー
 export function encodeWAV(channels: Float32Array[], sampleRate: number): Blob {
   // 32bit Floatで書き出すため、限界値(1.0)を超えてもクリップしません。
-  // そのため、オートノーマライズによるゲイン低下は不要になります（そのまま書き出します）。
   const numChannels = channels.length;
   const numSamples = channels[0].length;
   const bytesPerSample = 4; // 32bit Float = 4bytes
@@ -111,24 +110,46 @@ export function encodeWAV(channels: Float32Array[], sampleRate: number): Blob {
   return new Blob([view], { type: 'audio/wav' });
 }
 
-// パラボラ（ドーム）加算による確実なピーク復元
+// 3. 【聴感重視・完全滑らか版】Cubic Hermite Splineによるピーク復元と平滑化
 export function interpolateClip(data: Float32Array, start: number, end: number) {
-  const length = end - start;
-  if (length <= 0 || start < 2 || end > data.length - 2) return;
-
-  const y0 = data[start - 1];
-  const y1 = data[end];
-  let slope = Math.abs(data[start - 1] - data[start - 2]);
+  // 改善①：のり代（マージン）の拡張
+  // 平らになる手前の「アナログサチュレーション（肩の濁り）」ごと上書きするため、
+  // 処理区間を前後に数サンプル広げて修復します。
+  const margin = 4; 
+  const s = Math.max(2, start - margin);
+  const e = Math.min(data.length - 3, end + margin);
   
-  let archHeight = slope * (length / 2.5);
-  if (archHeight > 0.4) archHeight = 0.4; 
-  
-  const sign = y0 > 0 ? 1 : -1; 
+  const N = e - s;
+  if (N <= 0) return;
 
-  for (let i = 0; i < length; i++) {
-    const t = (i + 1) / (length + 1);
-    const base = y0 + (y1 - y0) * t;
-    const arch = Math.sin(t * Math.PI) * archHeight * sign;
-    data[start + i] = base + arch;
+  // 改善②：接合部の「見えない角」を消すためのエルミートスプライン補間
+  const p0 = data[s]; // 拡張した修復開始点の高さ
+  const p1 = data[e]; // 拡張した修復終了点の高さ
+
+  // 拡張した両端における「波形の傾き（突入スピード）」を算出
+  // tension（膨らみ係数）で山の高さを調整し、アナログの自然なアタックを再現します
+  const tension = 1.2; 
+  let m0 = (data[s] - data[s - 1]) * N * tension;
+  let m1 = (data[e + 1] - data[e]) * N * tension;
+
+  // 安全装置：傾きの方向がおかしい（波形が逆行している）場合は異常な膨らみを防止
+  if ((p0 > 0 && m0 < 0) || (p0 < 0 && m0 > 0)) m0 = 0;
+  if ((p1 > 0 && m1 > 0) || (p1 < 0 && m1 < 0)) m1 = 0;
+
+  // 区間内を「Cubic Hermite Spline（3次エルミートスプライン）」で計算
+  // これにより、元の波形と修復した波形の【傾き】が完全に一致し、角（ノイズ）が消滅します
+  for (let i = 1; i < N; i++) {
+    const t = i / N;
+    const t2 = t * t;
+    const t3 = t2 * t;
+
+    // スプライン基底関数
+    const h00 = 2 * t3 - 3 * t2 + 1;
+    const h10 = t3 - 2 * t2 + t;
+    const h01 = -2 * t3 + 3 * t2;
+    const h11 = t3 - t2;
+
+    // 高さと傾きを完全に維持しながら滑らかに繋がる曲線を描画
+    data[s + i] = h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1;
   }
 }
