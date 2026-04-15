@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useLang } from '@/context/LangContext';
 
 const content = {
   ja: {
@@ -51,7 +52,7 @@ const content = {
     ctaTitle: 'マイクを手に入れて、\nこのアプリを解放する。',
     ctaDesc: 'マイクロフォンのご購入後、パスワードをメールにてお送りします。',
     ctaBtn: 'マイクロフォンを購入する',
-    ctaBtnSub: 'Kotaro Studioにて販売中 — ¥13,900〜',
+    ctaBtnSub: '空音開発で直接購入 — P-86S ¥13,900（税込）',
     ctaAlready: 'すでにパスワードをお持ちの方',
     ctaAppLink: 'アプリを開く →',
     footerCopy: '© 2025 空音開発 Kuon R&D. All rights reserved.',
@@ -104,11 +105,64 @@ const content = {
     ctaTitle: 'Get the mic.\nUnlock the app.',
     ctaDesc: 'Your password will be sent by email after purchase.',
     ctaBtn: 'Buy the Microphone',
-    ctaBtnSub: 'Available at kotarohattori.com — ¥13,900',
+    ctaBtnSub: 'Direct purchase from Kuon R&D — P-86S ¥13,900',
     ctaAlready: 'Already have a password?',
     ctaAppLink: 'Open the App →',
     footerCopy: '© 2025 Kuon R&D. All rights reserved.',
     privacy: 'All audio processing runs locally in your browser. Your files are never uploaded anywhere.',
+  },
+  es: {
+    toggleBtn: 'Español',
+    badge: 'MICROPHONE OWNERS EXCLUSIVE',
+    title: 'KUON NORMALIZE',
+    titleReading: 'Motor de audio en el navegador',
+    subtitle: 'Desde el día que recibes el micro,\ntu navegador se convierte en estudio.',
+    heroNote: '※ Herramienta exclusiva para propietarios del micrófono omnidireccional de Kuon R&D',
+    featuresLabel: 'WHAT IT DOES',
+    featuresTitle: 'Tres procesos.\nUn sonido perfecto.',
+    featuresDesc: 'Suelta tu archivo y elige el objetivo. Sin DAW. Todos los procesos corren dentro del navegador — tu audio nunca sale de tu dispositivo.',
+    feat1Title: 'Normalización pura',
+    feat1Desc: 'Conserva todo el rango dinámico mientras alinea el pico a -0.1 dB. El primer paso perfecto al editar música.',
+    feat1Mode: 'PEAK MODE',
+    feat2Title: 'Optimización de loudness',
+    feat2Desc: 'Ajuste automático al estándar de loudness de YouTube y Podcast. Un limiter interno evita cualquier re-clipping.',
+    feat2Mode: 'LOUDNESS MODE',
+    feat3Title: 'EQ Signature de Asahina',
+    feat3Desc: 'Elimina sutilmente la turbidez por debajo de 80 Hz y añade aire natural por encima de 10 kHz. Ajuste personalizado para sacar el máximo al micro Kuon.',
+    feat3Mode: 'SIGNATURE EQ',
+    magicLabel: 'MAGIC SWITCHES',
+    magicTitle: 'Tres interruptores.\nInfinitas posibilidades.',
+    magicDesc: 'Combínalos libremente. Todos activos, solo uno, o cualquier variación. Encontrar la combinación perfecta es el arte de la ingeniería.',
+    switch1Name: 'Inversión de fase',
+    switch1Desc: 'Corrige la fase invertida durante la grabación. Especialmente eficaz en micros de coro.',
+    switch2Name: 'EQ Signature de Asahina',
+    switch2Desc: 'Un EQ sutil y a medida optimizado para grabaciones con el micro omnidireccional Kuon.',
+    switch3Name: 'Reverberación natural de sala',
+    switch3Desc: 'Solo 6 % wet. Imperceptible, pero enriquece el espacio de tu grabación.',
+    micLabel: 'THE KEY',
+    micTitle: 'Una única condición\npara desbloquear la app.',
+    micDesc1: 'Compra un micrófono omnidireccional de Kuon R&D y recibe tu contraseña por correo o en la caja. Introdúcela una vez y la app es tuya para siempre.',
+    micDesc2: 'El micro omnidireccional Kuon capta el sonido uniformemente en 360°. Coro, instrumentos acústicos, grabación de campo — sobresale en cualquier escenario. Y esta app fue diseñada conociendo a fondo el carácter de ese micrófono.',
+    micSpec1Label: 'Patrón polar',
+    micSpec1Value: 'Omnidireccional (360°)',
+    micSpec2Label: 'Ideal para',
+    micSpec2Value: 'Coro / Instrumentos / Campo',
+    micSpec3Label: 'Acceso a la app',
+    micSpec3Value: 'Contraseña incluida',
+    micSpec4Label: 'Diseñador',
+    micSpec4Value: 'K. Asahina / Kuon R&D',
+    exclusiveLabel: 'SOBRE LA DISPONIBILIDAD',
+    exclusiveTitle: 'Esta app nunca\nse venderá por separado.',
+    exclusiveDesc: 'KUON NORMALIZE está disponible únicamente con un micrófono de Kuon R&D. Es una decisión deliberada: solo quienes poseen el micro pueden acceder a la herramienta diseñada para completar su sonido. Esa es la filosofía de Kuon R&D.',
+    ctaLabel: 'GET STARTED',
+    ctaTitle: 'Consigue el micro.\nDesbloquea la app.',
+    ctaDesc: 'Tu contraseña se enviará por correo tras la compra.',
+    ctaBtn: 'Comprar el micrófono',
+    ctaBtnSub: 'Compra directa en Kuon R&D — P-86S ¥13,900',
+    ctaAlready: '¿Ya tienes contraseña?',
+    ctaAppLink: 'Abrir la app →',
+    footerCopy: '© 2025 Kuon R&D. Todos los derechos reservados.',
+    privacy: 'Todo el procesamiento de audio se realiza localmente en tu navegador. Tus archivos nunca se suben a ninguna parte.',
   }
 };
 
@@ -143,8 +197,60 @@ function WaveformVisual() {
   );
 }
 
+/* ─── 直接購入ボタン（Stripe Checkout 接続）───
+   microphone LP と同じ挙動: /api/checkout に POST → Stripe 決済画面へ遷移
+   product は P-86S 固定（このアプリは P-86S 購入者向けバンドル） */
+function BuyMicButton({
+  style,
+  className,
+  label,
+}: {
+  style: React.CSSProperties;
+  className?: string;
+  label: React.ReactNode;
+}) {
+  const [loading, setLoading] = useState(false);
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product: 'p-86s' }),
+      });
+      const d = (await r.json()) as { url?: string; error?: string };
+      if (d.url) {
+        window.location.href = d.url;
+      } else {
+        console.error('Checkout error:', d.error);
+        setLoading(false);
+      }
+    } catch (e) {
+      console.error(e);
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      className={className}
+      style={{
+        ...style,
+        border: 'none',
+        cursor: loading ? 'wait' : 'pointer',
+        opacity: loading ? 0.75 : 1,
+      }}
+    >
+      {loading ? '…' : label}
+    </button>
+  );
+}
+
 export default function NormalizeLandingPage() {
-  const [lang, setLang] = useState<'ja' | 'en'>('ja');
+  // サイト共通 useLang() に統合（§19）— アプリロジックには一切触れない
+  const { lang } = useLang();
   const t = content[lang];
 
   const C = {
@@ -294,31 +400,7 @@ export default function NormalizeLandingPage() {
             {t.titleReading}
           </div>
 
-          {/* 言語切替 */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
-            <button
-              className="lang-btn"
-              onClick={() => setLang(lang === 'ja' ? 'en' : 'ja')}
-              style={{
-                background: C.white,
-                border: `1.5px solid ${C.border}`,
-                color: C.inkMid,
-                padding: '7px 20px',
-                borderRadius: '100px',
-                cursor: 'pointer',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-              }}
-            >
-              <span>🌐</span>
-              <span>{t.toggleBtn}</span>
-            </button>
-          </div>
+          {/* 言語切替はサイト共通ヘッダーに統合済み（§19） */}
 
           {/* サブタイトル */}
           <p style={{
@@ -465,23 +547,18 @@ export default function NormalizeLandingPage() {
             <p style={{ color: C.inkMid, fontSize: '0.95rem', lineHeight: 1.85, marginBottom: '40px' }}>
               {t.micDesc2}
             </p>
-            <a
-              href="https://kotarohattori.com"
-              target="_blank"
-              rel="noopener noreferrer"
+            <BuyMicButton
               className="cta-mic"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',
                 background: `linear-gradient(135deg, ${C.accent}, ${C.accentDark})`,
                 color: C.white, padding: '16px 36px', borderRadius: '100px',
-                fontSize: '0.95rem', fontWeight: 700, textDecoration: 'none',
+                fontSize: '0.95rem', fontWeight: 700,
                 boxShadow: `0 8px 28px rgba(5,150,105,0.22)`,
                 transition: 'all 0.25s ease',
               }}
-            >
-              <span>🎙️</span>
-              <span>{t.ctaBtn}</span>
-            </a>
+              label={<><span>🎙️</span><span>{t.ctaBtn}</span></>}
+            />
             <div style={{ marginTop: '10px', fontSize: '0.75rem', color: C.inkMuted }}>
               {t.ctaBtnSub}
             </div>
@@ -568,23 +645,18 @@ export default function NormalizeLandingPage() {
             {t.ctaDesc}
           </p>
 
-          <a
-            href="https://kotarohattori.com"
-            target="_blank"
-            rel="noopener noreferrer"
+          <BuyMicButton
             className="cta-mic"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
               background: `linear-gradient(135deg, ${C.accent}, ${C.accentDark})`,
               color: C.white, padding: '20px 56px', borderRadius: '100px',
-              fontSize: '1.05rem', fontWeight: 700, textDecoration: 'none',
+              fontSize: '1.05rem', fontWeight: 700,
               boxShadow: `0 8px 32px rgba(5,150,105,0.25)`,
               transition: 'all 0.25s ease', marginBottom: '14px',
             }}
-          >
-            <span>🎙️</span>
-            <span>{t.ctaBtn} →</span>
-          </a>
+            label={<><span>🎙️</span><span>{t.ctaBtn} →</span></>}
+          />
 
           <div style={{ fontSize: '0.78rem', color: C.inkMuted, marginBottom: '40px' }}>
             {t.ctaBtnSub}

@@ -575,5 +575,75 @@ STEP 5: git push → Cloudflare Pages 自動デプロイ → 本番確認
 
 ---
 
-最終更新: 2026年4月
-次のアクション: 音声サンプルのアップロード → Stripe Payment Link 取得 → /microphone リデザイン
+## 19. 【最重要】アプリ系ページに関する絶対ルール
+
+> このセクションは最優先。他のルールと矛盾した場合、こちらを優先する。
+
+### 背景
+
+`/audio-apps` および配下のアプリ群（`/declipper`, `/normalize`, `/piano-declipper`, `/itadaki-lp`, `/normalize-lp`, `/noise-reduction`, `/dual-mono` など）は、空音開発のマイクを購入した顧客に対して**現在進行形で提供されている現役のプロダクション機能**である。音声処理のコア機能が止まる・壊れることは、顧客との信頼を直接損ねる事故となる。
+
+### 絶対条件
+
+以下はアプリ系ページに関して Claude（および全ての開発者）が守るべき不可侵ルール:
+
+1. **音声処理ロジックには絶対に触れない**
+   - Web Audio API の呼び出し、AudioBuffer 操作、FFT / 畳み込み / フィルタなどの DSP コード
+   - ファイル I/O、ドラッグ&ドロップ、書き出し（WAV / MP3 エンコード）処理
+   - State フロー（`useState` / `useReducer` の更新ロジック）、`useEffect` の依存配列
+   - イベントハンドラーの中身
+
+2. **データ構造・API・URL は維持**
+   - ページのルーティングパス（`/declipper` 等）は変更しない
+   - 既存の query string、localStorage キー、URL hash は維持
+   - 既存 API エンドポイントとリクエスト/レスポンス形式を変更しない
+
+3. **変更を許可するのは "表示レイヤー" のみ**
+   - CSS / インラインスタイル（レスポンシブ、色、余白、タイポグラフィ）
+   - 表示テキストの多言語化（`useLang()` による切り替え、既存の日本語文言を 3 言語対応に）
+   - セクション見出し、ボタンラベル、説明文などの静的テキスト
+
+4. **変更手順（必須）**
+   - 変更前に必ず当該ページをブラウザで動作確認し、何が動いているか把握する
+   - 変更は最小差分で、1 コミット 1 機能
+   - 型チェック (`npx tsc --noEmit`) 実行
+   - ローカル（`npm run dev`）でアプリが動作することを目視確認してから push
+   - 不安があれば別ブランチで検証してから main にマージ
+
+5. **やってはいけないこと（具体例）**
+   - NG: `page.tsx` を丸ごと書き直す
+   - NG: 独自のアプリ内言語トグルを削除するついでに state 管理を変更する
+   - NG: AudioContext の初期化タイミングを変える
+   - NG: Web Worker のメッセージ形式を変える
+   - NG: 依存パッケージ（`@types/*` 除く）の追加・削除
+   - NG: Cloudflare の環境変数を変えずに env 依存のコードを追加
+
+### 独自言語トグルの扱い
+
+各アプリページに独自の日英トグルが実装されているが、サイト全体で `useLang()` による 3 言語切り替えに統一する方針となった。独自トグルは**表示レイヤーのみ**で以下のように置き換える:
+
+- 独自トグルボタンの UI を削除（表示レイヤーのみ）
+- 文言切り替えの参照元を `useLang()` の `lang` に差し替え
+- **`useState('ja' | 'en')` のような状態がアプリロジックに使われていないことを確認してから**削除する。アプリ動作に影響していた場合はその state は維持し、`useLang()` と同期させる
+
+---
+
+## 20. 作業履歴
+
+### 2026-04-15 セッション（大規模改修）
+
+| カテゴリ | 変更内容 |
+|---|---|
+| 音声配信 | `kuon-rnd-audio-worker/src/index.ts` の Range リクエストバグ修正（R2 の `.get()` に `range` オプションを渡していなかった問題）。`wrangler deploy` で本番反映済み。 |
+| /microphone | LP 全面リデザイン（試聴プレーヤー、購入 CTA の浮遊ボタン、マウス追従パララックス、登場アニメーション `buyCtaIn` キーフレームで transform 衝突解消）。フィールド録音セクション削除。Mic D = Earthworks QTC30 に修正。製作者名を `/profile` へリンク化。ヘンデル音源ファイル名を `ヘンデル組曲ニ短調.mp3` に統一。価格表示を ¥13,900 に戻す。 |
+| Stripe 決済 | `/api/checkout/route.ts` 実装（Restricted Key 対応、オリジン自動検出で `NEXT_PUBLIC_BASE_URL` 不要）。Price ID: `p-86s`=`price_1SuT6IGbZ5gwwaLkc7rjciqU`, `x-86s`=`price_1SuTKHGbZ5gwwaLkR6ew580Z`。Cloudflare Pages に `STRIPE_SECRET_KEY`（Restricted `rk_live_...`）を登録済み。 |
+| 言語システム | 5 言語（ja/en/es/pt/de）→ **3 言語（ja/en/es）** に縮小。`context/LangContext.tsx` の Lang 型更新、`detectLang()` のフォールバック簡略化。サイト全体を `useLang()` に統一中。 |
+| /profile | 独自 3 言語トグルを削除し、サイト共通の `useLang()` に統合。pt/de ブロック削除。 |
+| ヘッダー | `app/header.tsx` 新設。明朝×サンセリフの統一タイポグラフィ、レスポンシブ、スクロール連動のガラスモーフィズム、モバイルはハンバーガー → 全画面オーバーレイ（明朝フォントで大きめメニュー、番号付き、スクロールロック）。IntersectionObserver による scroll-spy でトップページのアンダーライン誤表示を解消。 |
+| /（Top） | `useLang()` に統合し 3 言語対応（ja/en/es）。Technology カードを `grid auto-fit minmax` で確実な折返し。全セクションを `clamp()` で完全レスポンシブ化。`wordBreak: keep-all` で日本語の不自然な改行防止。 |
+| ビルド対応 | `tsconfig.json` に `"kuon-rnd-audio-worker"` を exclude 追加（Next.js ビルド時に Worker の型を拾ってしまう問題を解消）。.gitignore に `node_modules/`（recursive）、`.claude/`、`.wrangler/`、`.dev.vars` を追加。 |
+
+---
+
+最終更新: 2026年4月15日
+次のアクション: アプリ系ページの独自言語トグル撤廃とサイト共通 `useLang()` への統一（§19 の絶対条件を遵守）

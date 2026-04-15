@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useLang } from '@/context/LangContext';
 
 const content = {
   ja: {
@@ -76,6 +77,43 @@ const content = {
     ctaBtn: 'Get Password & Open App',
     ctaSub: 'Stripe Checkout — SSL Encrypted',
     footerCopy: '© 2025 Kuon R&D. All rights reserved.',
+  },
+  es: {
+    toggleBtn: 'Español',
+    badge: 'ASYMMETRICAL DECLIPPER',
+    title: 'KUON ITADAKI',
+    titleReading: 'Motor de recuperación de picos',
+    subtitle: 'Recupera los picos perdidos\nde tus grabaciones analógicas.',
+    problemLabel: 'THE PROBLEM',
+    problemTitle: 'La distorsión que las herramientas\nestándar no pueden arreglar.',
+    problemDesc: 'Al grabar, superar el headroom del equipo analógico produce un clipping asimétrico: fondo plano en la parte negativa y saturación redondeada en la positiva. Los desclippers estándar fallan aquí. KUON ITADAKI utiliza un algoritmo propietario (spline Hermite cúbica) para reconstruir perfectamente los picos perdidos en curvas naturales con forma de cúpula.',
+    algoLabel: 'ALGORITHM',
+    algoName: 'Interpolación Spline Hermite Cúbica',
+    algo1: 'Detectar región clipada',
+    algo2: 'Anclar puntos límite',
+    algo3: 'Reconstrucción por spline',
+    evidenceLabel: 'VISUAL PROOF',
+    evidenceTitle: 'Ver para creer.',
+    evidenceSubtitle: 'El poder de restauración',
+    evidenceOverallCaption: 'Forma de onda general — Arriba: Antes (planamente aplastado) / Abajo: Después (picos perdidos restaurados)',
+    evidenceZoomCaption: 'Vista ampliada — Arriba: Antes (la parte negativa se aplana) / Abajo: Después (valle redondo reconstruido)',
+    howToLabel: 'HOW TO USE',
+    howToTitle: 'Encontrando tu\npunto dulce.',
+    step1: 'STEP 01', step1Title: 'Suelta tu WAV',
+    step1Desc: 'Simplemente arrastra y suelta tu archivo WAV en la ventana del navegador para empezar.',
+    step2: 'STEP 02', step2Title: 'Ejecuta Auto Repair',
+    step2Desc: 'Haz clic en "Auto Repair" primero. El motor escaneará automáticamente los límites extremos del archivo.',
+    step3: 'STEP 03', step3Title: 'Ajusta los sliders',
+    step3Desc: 'Si Auto Repair no es perfecto, ajusta los sliders Upper/Lower. Apunta justo dentro de la región plana y haz clic en Manual Repair.',
+    proTipLabel: 'PRO TIP',
+    proTipTitle: 'Post-procesado del archivo restaurado',
+    proTipDesc: 'KUON ITADAKI exporta en WAV de 32-bit Float para almacenar de forma segura los picos recién expandidos sin re-clipear. Una vez importado en tu DAW, normaliza o gestiona el gain con cuidado y luego aplica tu procesamiento de loudness estándar. El resultado: una mezcla final asombrosamente clara.',
+    priceLabel: 'Acceso de por vida',
+    priceValue: '$14.99',
+    priceSub: 'Compra única, acceso permanente',
+    ctaBtn: 'Obtener contraseña y abrir la app',
+    ctaSub: 'Stripe Checkout — cifrado SSL',
+    footerCopy: '© 2025 Kuon R&D. Todos los derechos reservados.',
   }
 };
 
@@ -116,7 +154,8 @@ function WaveformSVG({ clipped }: { clipped: boolean }) {
 }
 
 export default function ItadakiLandingPage() {
-  const [lang, setLang] = useState<'ja' | 'en'>('ja');
+  // サイト共通 useLang() に統合（§19）— アプリロジックには一切触れない
+  const { lang } = useLang();
   const t = content[lang];
 
   const C = {
@@ -253,32 +292,7 @@ export default function ItadakiLandingPage() {
             {t.titleReading}
           </div>
 
-          {/* ★ 言語切替ボタン — タイトル直下 */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '36px' }}>
-            <button
-              className="lang-btn"
-              onClick={() => setLang(lang === 'ja' ? 'en' : 'ja')}
-              style={{
-                background: C.white,
-                border: `1.5px solid ${C.border}`,
-                color: C.inkMid,
-                padding: '8px 22px',
-                borderRadius: '100px',
-                cursor: 'pointer',
-                fontSize: '0.83rem',
-                fontWeight: 600,
-                letterSpacing: '0.3px',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              }}
-            >
-              <span>🌐</span>
-              <span>{t.toggleBtn}</span>
-            </button>
-          </div>
+          {/* 言語切替はサイト共通ヘッダーに統合済み（§19） */}
 
           {/* サブタイトル */}
           <p style={{

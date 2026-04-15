@@ -1,96 +1,122 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLang } from '@/context/LangContext';
+import type { Lang } from '@/context/LangContext';
 
-const apps = [
+type L3 = Record<Lang, string>;
+
+const apps: Array<{
+  id: string;
+  badge: string;
+  badgeType: 'paid' | 'exclusive' | 'free';
+  name: string;
+  nameJa: string;
+  tagline: L3;
+  desc: L3;
+  href: string;
+  accentColor: string;
+  accentLight: string;
+  icon: string;
+  status: string;
+  price: L3;
+}> = [
   {
     id: 'itadaki',
     badge: 'DECLIP',
-    badgeType: 'paid' as const,
+    badgeType: 'paid',
     name: 'KUON ITADAKI',
     nameJa: '',
     tagline: {
       ja: 'アンプの限界で失われたピークを、\n数学的に甦らせる。',
       en: 'Mathematically restore the peaks\ndestroyed by analog clipping.',
+      es: 'Restaura matemáticamente los picos\nperdidos por el clipping analógico.',
     },
     desc: {
       ja: 'エルミートスプライン補間による非対称クリッピング専用修復エンジン。失われた波形を自然なドーム状の曲線として再構築します。',
       en: 'A declipping engine using Cubic Hermite Spline interpolation, purpose-built for asymmetrical analog distortion.',
+      es: 'Motor de restauración basado en interpolación Hermite cúbica, diseñado para la distorsión analógica asimétrica.',
     },
     href: '/itadaki-lp',
     accentColor: '#0099BB',
     accentLight: '#E6F6FA',
     icon: '◈',
     status: 'AVAILABLE',
-    price: { ja: '¥1,980', en: '$14.99' },
+    price: { ja: '¥1,980', en: '$14.99', es: '$14.99' },
   },
   {
     id: 'normalize',
     badge: 'NORMALIZE',
-    badgeType: 'exclusive' as const,
+    badgeType: 'exclusive',
     name: 'KUON NORMALIZE',
     nameJa: '',
     tagline: {
       ja: 'マイクを買った、その日から。\nブラウザが、スタジオになる。',
       en: 'The day you get the mic,\nyour browser becomes a studio.',
+      es: 'Desde el día que recibes el micro,\ntu navegador se convierte en estudio.',
     },
     desc: {
       ja: 'ピークノーマライズ・ラウドネス最適化・シグネチャーEQ・ホールリバーブを搭載。マイク購入者限定。',
       en: 'Peak normalize, loudness optimization, signature EQ, and hall reverb. Mic owners exclusive.',
+      es: 'Normalización de picos, optimización de loudness, EQ signature y reverb de sala. Exclusivo para compradores del micrófono.',
     },
     href: '/normalize-lp',
     accentColor: '#059669',
     accentLight: '#ECFDF5',
     icon: '◉',
     status: 'AVAILABLE',
-    price: { ja: 'マイク同梱', en: 'Mic Bundle' },
+    price: { ja: 'マイク同梱', en: 'Mic Bundle', es: 'Incluido con mic' },
   },
   {
     id: 'noise-reduction',
     badge: 'NOISE REDUCTION',
-    badgeType: 'free' as const,
+    badgeType: 'free',
     name: 'KUON DENOISE',
     nameJa: '',
     tagline: {
       ja: 'エアコン、機材ハム、環境音。\n定常ノイズをスペクトルから消す。',
       en: 'AC hum, gear noise, ambience.\nErase steady noise from the spectrum.',
+      es: 'Zumbido, ruido del equipo, ambiente.\nBorra el ruido constante del espectro.',
     },
     desc: {
       ja: 'スペクトル減算法によるブラウザ完結型ノイズリダクション。周波数スペクトルを可視化しながら除去強度をリアルタイムに調整できます。',
       en: 'Browser-native noise reduction via spectral subtraction. Visualize the frequency spectrum and adjust removal strength in real time.',
+      es: 'Reducción de ruido nativa del navegador mediante sustracción espectral. Visualiza el espectro y ajusta la intensidad en tiempo real.',
     },
     href: '/noise-reduction',
     accentColor: '#7C3AED',
     accentLight: '#F5F3FF',
     icon: '◎',
     status: 'AVAILABLE',
-    price: { ja: '完全無料', en: 'Free' },
+    price: { ja: '完全無料', en: 'Free', es: 'Gratis' },
   },
   {
     id: 'dual-mono',
     badge: 'DUAL MONO',
-    badgeType: 'free' as const,
+    badgeType: 'free',
     name: 'KUON DUAL',
     nameJa: '',
     tagline: {
       ja: 'モノラルに、広がりを与える。\nデュアルモノ、または擬似ステレオへ。',
       en: 'Give mono a sense of space.\nConvert to dual mono or pseudo stereo.',
+      es: 'Dale amplitud al mono.\nConvierte a dual mono o pseudo estéreo.',
     },
     desc: {
       ja: 'モノラル音声をデュアルモノまたはHaas効果＋MS処理による擬似ステレオに変換。ステレオ幅をスライダーでコントロールできます。',
       en: 'Convert mono to dual mono or pseudo stereo using Haas effect and M/S processing. Control stereo width with a slider.',
+      es: 'Convierte audio mono a dual mono o pseudo estéreo mediante el efecto Haas y procesamiento M/S. Controla la amplitud con un slider.',
     },
     href: '/dual-mono',
     accentColor: '#D97706',
     accentLight: '#FFFBEB',
     icon: '◑',
     status: 'AVAILABLE',
-    price: { ja: '完全無料', en: 'Free' },
+    price: { ja: '完全無料', en: 'Free', es: 'Gratis' },
   },
 ];
 
 /* ─── ANIMATED BADGE ─── */
-function AnimatedBadge({ type, lang }: { type: 'paid' | 'exclusive' | 'free'; lang: 'ja' | 'en' }) {
+function AnimatedBadge({ type, lang }: { type: 'paid' | 'exclusive' | 'free'; lang: Lang }) {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -128,7 +154,7 @@ function AnimatedBadge({ type, lang }: { type: 'paid' | 'exclusive' | 'free'; la
           transform:    pulse ? 'scale(1.4)' : 'scale(1)',
           transition:   'transform 0.6s ease',
         }} />
-        {lang === 'ja' ? '完全無料' : 'FREE'}
+        {({ ja: '完全無料', en: 'FREE', es: 'GRATIS' } as L3)[lang]}
       </span>
     );
   }
@@ -161,7 +187,7 @@ function AnimatedBadge({ type, lang }: { type: 'paid' | 'exclusive' | 'free'; la
           transform:    pulse ? 'scale(1.4)' : 'scale(1)',
           transition:   'transform 0.6s ease',
         }} />
-        {lang === 'ja' ? '限定公開' : 'EXCLUSIVE'}
+        {({ ja: '限定公開', en: 'EXCLUSIVE', es: 'EXCLUSIVO' } as L3)[lang]}
       </span>
     );
   }
@@ -194,13 +220,13 @@ function AnimatedBadge({ type, lang }: { type: 'paid' | 'exclusive' | 'free'; la
         transform:    pulse ? 'scale(1.4)' : 'scale(1)',
         transition:   'transform 0.6s ease',
       }} />
-      {lang === 'ja' ? '有料' : 'PAID'}
+      {({ ja: '有料', en: 'PAID', es: 'PREMIUM' } as L3)[lang]}
     </span>
   );
 }
 
 /* ─── PRICE TAG ─── */
-function PriceTag({ type, price, lang }: { type: 'paid' | 'exclusive' | 'free'; price: { ja: string; en: string }; lang: 'ja' | 'en' }) {
+function PriceTag({ type, price, lang }: { type: 'paid' | 'exclusive' | 'free'; price: L3; lang: Lang }) {
   if (type === 'free') {
     return (
       <span style={{
@@ -239,7 +265,8 @@ function PriceTag({ type, price, lang }: { type: 'paid' | 'exclusive' | 'free'; 
 
 /* ─── MAIN ─── */
 export default function AudioAppsPage() {
-  const [lang, setLang] = useState<'ja' | 'en'>('ja');
+  // サイト共通の useLang() に統合（§19 アプリ絶対保護ルール遵守：表示レイヤーのみ変更）
+  const { lang } = useLang();
 
   const C = {
     bg:          '#FFFFFF',
@@ -317,31 +344,7 @@ export default function AudioAppsPage() {
         textAlign: 'center',
         animation: 'fadeInUp 0.6s ease both',
       }}>
-        {/* 言語切替 — センター */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '48px' }}>
-          <button
-            className="lang-btn"
-            onClick={() => setLang(lang === 'ja' ? 'en' : 'ja')}
-            style={{
-              background:   C.white,
-              border:       `1.5px solid ${C.border}`,
-              color:        C.inkMid,
-              padding:      '7px 20px',
-              borderRadius: '100px',
-              cursor:       'pointer',
-              fontSize:     '0.82rem',
-              fontWeight:   600,
-              transition:   'all 0.2s',
-              display:      'flex',
-              alignItems:   'center',
-              gap:          '6px',
-              boxShadow:    '0 2px 8px rgba(0,0,0,0.07)',
-            }}
-          >
-            <span>🌐</span>
-            <span>{lang === 'ja' ? 'English' : '日本語'}</span>
-          </button>
-        </div>
+        {/* 言語切替はサイト共通ヘッダーに統合済み（§19） */}
 
         <div style={{
           fontSize:      '0.68rem',
@@ -363,9 +366,11 @@ export default function AudioAppsPage() {
           marginBottom:  '24px',
           whiteSpace:    'pre-line',
         }}>
-          {lang === 'ja'
-            ? '音と向き合うための道具'
-            : 'Tools for those who\ntake sound seriously.'}
+          {({
+            ja: '音と向き合うための道具',
+            en: 'Tools for those who\ntake sound seriously.',
+            es: 'Herramientas para quienes\ntoman el sonido en serio.',
+          } as L3)[lang]}
         </h1>
 
         <p style={{
@@ -375,9 +380,11 @@ export default function AudioAppsPage() {
           maxWidth:   '480px',
           margin:     '0 auto',
         }}>
-          {lang === 'ja'
-            ? 'アプリはすべて、ブラウザだけでインストール不要'
-            : 'Every Kuon R&D audio tool runs entirely in your browser. Nothing to install.'}
+          {({
+            ja: 'アプリはすべて、ブラウザだけでインストール不要',
+            en: 'Every Kuon R&D audio tool runs entirely in your browser. Nothing to install.',
+            es: 'Todas las apps de Kuon R&D funcionan en tu navegador. Nada que instalar.',
+          } as L3)[lang]}
         </p>
       </div>
 
@@ -545,12 +552,14 @@ export default function AudioAppsPage() {
               color:       C.inkMuted,
               marginBottom:'4px',
             }}>
-              {lang === 'ja' ? '次のツールを開発中' : 'Next tool in development'}
+              {({ ja: '次のツールを開発中', en: 'Next tool in development', es: 'Próxima herramienta en desarrollo' } as L3)[lang]}
             </div>
             <div style={{ fontSize: '0.82rem', color: C.inkMuted, lineHeight: 1.7 }}>
-              {lang === 'ja'
-                ? '空音開発は新しい音響ツールを継続的にリリースします'
-                : 'Kuon R&D continuously releases new audio engineering tools.'}
+              {({
+                ja: '空音開発は新しい音響ツールを継続的にリリースします',
+                en: 'Kuon R&D continuously releases new audio engineering tools.',
+                es: 'Kuon R&D lanza continuamente nuevas herramientas de audio.',
+              } as L3)[lang]}
             </div>
           </div>
         </div>

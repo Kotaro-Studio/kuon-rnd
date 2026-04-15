@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type Lang = 'ja' | 'en' | 'es' | 'pt' | 'de';
+export type Lang = 'ja' | 'en' | 'es';
 
 interface LangContextType {
   lang: Lang;
@@ -14,14 +14,13 @@ const LangContext = createContext<LangContextType>({
   setLang: () => {},
 });
 
-const VALID_LANGS: Lang[] = ['ja', 'en', 'es', 'pt', 'de'];
+const VALID_LANGS: Lang[] = ['ja', 'en', 'es'];
 
 function detectLang(browserLang: string): Lang {
   const l = browserLang.toLowerCase();
   if (l.startsWith('ja')) return 'ja';
   if (l.startsWith('es')) return 'es';
-  if (l.startsWith('pt')) return 'pt';
-  if (l.startsWith('de')) return 'de';
+  // Portuguese / Italian / French speakers get English as closest fallback
   return 'en';
 }
 

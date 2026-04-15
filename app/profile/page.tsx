@@ -109,66 +109,6 @@ const content: Record<Lang, ProfileContent> = {
     link2: 'Instagram',
     footer: '© 2026 Kuon R&D / Kotaro Asahina. Todos los derechos reservados.',
   },
-  pt: {
-    titles: 'Músico / Artista de Gravação / Fundador da Kuon R&D',
-    nameJa: '朝比奈 幸太郎',
-    nameEn: 'Kotaro Asahina',
-    p1: <>
-      Estudou etnomusicologia em um conservatório de música e iniciou sua carreira como pianista.<br />
-      Enquanto atuava no Japão, viajou à Suécia para pesquisar improvisação com Lindha Kallerdahl. Seu álbum de estreia foi gravado em Colônia, Alemanha, com Achim Tang, e lançado simultaneamente no Japão e na Alemanha.<br />
-      No estúdio, recebeu formação fundamental em acústica de Stephan Desire.
-    </>,
-    p2: <>
-      Após retornar ao Japão, estudou sob a orientação de Akihiko Goshima, autoridade máxima na gravação DC no estilo Kaneda.<br />
-      Mais tarde, fundou o coletivo artístico Pinocoa, produzindo gravações e álbuns que abrangem tango argentino, música clássica e música antiga para artistas de todo o mundo.
-    </>,
-    p3: <>
-      Enquanto continuava seu trabalho como produtor, estudou programação em C e tecnologia GPS com Kazuhide Kobayashi da Geosense Inc., e adquiriu habilidades em produção de vídeo com Koji Murakami da Murakami Archives.<br />
-      Essa base interdisciplinar estabeleceu sua prática criativa única, abrangendo som, imagem e tecnologia.
-    </>,
-    p4: <>
-      Hoje também restaura equipamentos vintage (Revox e outros) e projeta microfones, amplificadores e alto-falantes originais, aprofundando sua experiência em hardware.<br />
-      Desde 2025, retornou aos estudos no selo de Goshima, buscando o domínio da técnica de gravação DC Kaneda, inventada por Akihiko Kaneda.<br />
-      Também publica &ldquo;Curanz Sounds&rdquo;, um protocolo para explorar cientificamente a pureza do som e seu potencial terapêutico.
-    </>,
-    p5: <>
-      Em 2026, como fundador da Kuon R&D — um estúdio que explora a fronteira entre arte e ciência — integra o desenvolvimento de algoritmos proprietários aplicando tecnologia GPS com o desenvolvimento avançado de aplicações web.<br />
-      Apaixonado por formar a próxima geração de engenheiros e preservar o conhecimento técnico, busca uma nova fronteira onde engenharia acústica, tecnologia de ponta e expressão artística convergem no mais alto nível.
-    </>,
-    link1: 'Site Oficial & Blog',
-    link2: 'Instagram',
-    footer: '© 2026 Kuon R&D / Kotaro Asahina. Todos os direitos reservados.',
-  },
-  de: {
-    titles: 'Musiker / Aufnahmekünstler / Gründer von Kuon R&D',
-    nameJa: '朝比奈 幸太郎',
-    nameEn: 'Kotaro Asahina',
-    p1: <>
-      Studierte Ethnomusikologie an einer Musikhochschule und startete anschließend eine Karriere als Pianist.<br />
-      Während er in Japan auftrat, reiste er für Improvisationsforschung mit Lindha Kallerdahl nach Schweden. Sein Debütalbum wurde in Köln, Deutschland, mit Achim Tang aufgenommen und gleichzeitig in Japan und Deutschland veröffentlicht.<br />
-      Bei den Aufnahmen erhielt er eine grundlegende Ausbildung in Akustik von Stephan Desire.
-    </>,
-    p2: <>
-      Nach seiner Rückkehr nach Japan studierte er bei Akihiko Goshima, der führenden Autorität der Kaneda-DC-Aufnahmetechnik.<br />
-      Später gründete er das Künstlerkollektiv Pinocoa, das Aufnahmen und Alben für Künstler weltweit produzierte — von argentinischem Tango über Klassik bis zur Alten Musik.
-    </>,
-    p3: <>
-      Während er weiterhin als Produzent tätig war, studierte er C-Programmierung und GPS-Technologie bei Kazuhide Kobayashi von Geosense Inc. und erwarb Videoproduktionsfähigkeiten bei Koji Murakami von Murakami Archives.<br />
-      Diese interdisziplinäre Grundlage etablierte seine einzigartige kreative Praxis, die Klang, Bild und Technologie umfasst.
-    </>,
-    p4: <>
-      Heute restauriert er auch Vintage-Geräte (Revox u.a.) und entwickelt originale Mikrofone, Verstärker und Lautsprecher und vertieft so seine Expertise in Hardware.<br />
-      Seit 2025 studiert er erneut bei Goshimas Label und verfolgt die Meisterschaft der von Akihiko Kaneda erfundenen Kaneda-DC-Aufnahmetechnik.<br />
-      Er veröffentlicht zudem &bdquo;Curanz Sounds&ldquo;, ein Protokoll zur wissenschaftlichen Erforschung der Klangreinheit und ihres heilenden Potenzials.
-    </>,
-    p5: <>
-      2026 integriert er als Gründer von Kuon R&D — einem Studio an der Grenze zwischen Kunst und Wissenschaft — proprietäre Algorithmenentwicklung mit GPS-Technologie und fortgeschrittene Webanwendungsentwicklung.<br />
-      Mit Leidenschaft für die Ausbildung der nächsten Ingenieursgeneration und die Bewahrung technischen Wissens strebt er eine neue Grenze an, an der Akustiktechnik, Spitzentechnologie und künstlerischer Ausdruck auf höchstem Niveau zusammentreffen.
-    </>,
-    link1: 'Offizielle Website & Blog',
-    link2: 'Instagram',
-    footer: '© 2026 Kuon R&D / Kotaro Asahina. Alle Rechte vorbehalten.',
-  },
 };
 
 export default function ProfilePage() {
