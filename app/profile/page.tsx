@@ -1,8 +1,24 @@
 "use client";
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React from 'react';
+import { useLang } from '@/context/LangContext';
+import type { Lang } from '@/context/LangContext';
 
-const content = {
+type ProfileContent = {
+  titles: string;
+  nameJa: string;
+  nameEn: string;
+  p1: React.ReactNode;
+  p2: React.ReactNode;
+  p3: React.ReactNode;
+  p4: React.ReactNode;
+  p5: React.ReactNode;
+  link1: string;
+  link2: string;
+  footer: string;
+};
+
+const content: Record<Lang, ProfileContent> = {
   ja: {
     titles: '音楽家 / 録音アーティスト / 空音開発 代表',
     nameJa: '朝比奈 幸太郎',
@@ -52,8 +68,8 @@ const content = {
     </>,
     p4: <>
       Today he also restores vintage equipment (Revox and others) and designs original microphones, amplifiers, and speakers, deepening his expertise in hardware.<br />
-      Since 2025 he has returned to study under Goshima's label, pursuing the mastery of the Kaneda DC recording technique invented by Akihiko Kaneda.<br />
-      He also publishes "Curanz Sounds," a protocol for scientifically exploring the purity of sound and its healing potential.
+      Since 2025 he has returned to study under Goshima&apos;s label, pursuing the mastery of the Kaneda DC recording technique invented by Akihiko Kaneda.<br />
+      He also publishes &ldquo;Curanz Sounds,&rdquo; a protocol for scientifically exploring the purity of sound and its healing potential.
     </>,
     p5: <>
       In 2026, as founder of Kuon R&D — a studio exploring the boundary between art and science — he integrates proprietary algorithm development applying GPS technology with advanced web application development.<br />
@@ -83,7 +99,7 @@ const content = {
     p4: <>
       Actualmente también restaura equipos vintage (Revox y otros) y diseña micrófonos, amplificadores y altavoces originales, profundizando su conocimiento en hardware.<br />
       Desde 2025 ha retomado sus estudios en el sello de Goshima, explorando los secretos de la técnica de grabación DC Kaneda, inventada por Akihiko Kaneda.<br />
-      También publica "Curanz Sounds", un protocolo para investigar científicamente la pureza del sonido y su potencial terapéutico.
+      También publica &ldquo;Curanz Sounds&rdquo;, un protocolo para investigar científicamente la pureza del sonido y su potencial terapéutico.
     </>,
     p5: <>
       En 2026, como fundador de Kuon R&D — un estudio que explora la frontera entre el arte y la ciencia — integra el desarrollo de algoritmos propios aplicando tecnología GPS con el desarrollo avanzado de aplicaciones web.<br />
@@ -93,18 +109,70 @@ const content = {
     link2: 'Instagram',
     footer: '© 2026 Kuon R&D / Kotaro Asahina. Todos los derechos reservados.',
   },
+  pt: {
+    titles: 'Músico / Artista de Gravação / Fundador da Kuon R&D',
+    nameJa: '朝比奈 幸太郎',
+    nameEn: 'Kotaro Asahina',
+    p1: <>
+      Estudou etnomusicologia em um conservatório de música e iniciou sua carreira como pianista.<br />
+      Enquanto atuava no Japão, viajou à Suécia para pesquisar improvisação com Lindha Kallerdahl. Seu álbum de estreia foi gravado em Colônia, Alemanha, com Achim Tang, e lançado simultaneamente no Japão e na Alemanha.<br />
+      No estúdio, recebeu formação fundamental em acústica de Stephan Desire.
+    </>,
+    p2: <>
+      Após retornar ao Japão, estudou sob a orientação de Akihiko Goshima, autoridade máxima na gravação DC no estilo Kaneda.<br />
+      Mais tarde, fundou o coletivo artístico Pinocoa, produzindo gravações e álbuns que abrangem tango argentino, música clássica e música antiga para artistas de todo o mundo.
+    </>,
+    p3: <>
+      Enquanto continuava seu trabalho como produtor, estudou programação em C e tecnologia GPS com Kazuhide Kobayashi da Geosense Inc., e adquiriu habilidades em produção de vídeo com Koji Murakami da Murakami Archives.<br />
+      Essa base interdisciplinar estabeleceu sua prática criativa única, abrangendo som, imagem e tecnologia.
+    </>,
+    p4: <>
+      Hoje também restaura equipamentos vintage (Revox e outros) e projeta microfones, amplificadores e alto-falantes originais, aprofundando sua experiência em hardware.<br />
+      Desde 2025, retornou aos estudos no selo de Goshima, buscando o domínio da técnica de gravação DC Kaneda, inventada por Akihiko Kaneda.<br />
+      Também publica &ldquo;Curanz Sounds&rdquo;, um protocolo para explorar cientificamente a pureza do som e seu potencial terapêutico.
+    </>,
+    p5: <>
+      Em 2026, como fundador da Kuon R&D — um estúdio que explora a fronteira entre arte e ciência — integra o desenvolvimento de algoritmos proprietários aplicando tecnologia GPS com o desenvolvimento avançado de aplicações web.<br />
+      Apaixonado por formar a próxima geração de engenheiros e preservar o conhecimento técnico, busca uma nova fronteira onde engenharia acústica, tecnologia de ponta e expressão artística convergem no mais alto nível.
+    </>,
+    link1: 'Site Oficial & Blog',
+    link2: 'Instagram',
+    footer: '© 2026 Kuon R&D / Kotaro Asahina. Todos os direitos reservados.',
+  },
+  de: {
+    titles: 'Musiker / Aufnahmekünstler / Gründer von Kuon R&D',
+    nameJa: '朝比奈 幸太郎',
+    nameEn: 'Kotaro Asahina',
+    p1: <>
+      Studierte Ethnomusikologie an einer Musikhochschule und startete anschließend eine Karriere als Pianist.<br />
+      Während er in Japan auftrat, reiste er für Improvisationsforschung mit Lindha Kallerdahl nach Schweden. Sein Debütalbum wurde in Köln, Deutschland, mit Achim Tang aufgenommen und gleichzeitig in Japan und Deutschland veröffentlicht.<br />
+      Bei den Aufnahmen erhielt er eine grundlegende Ausbildung in Akustik von Stephan Desire.
+    </>,
+    p2: <>
+      Nach seiner Rückkehr nach Japan studierte er bei Akihiko Goshima, der führenden Autorität der Kaneda-DC-Aufnahmetechnik.<br />
+      Später gründete er das Künstlerkollektiv Pinocoa, das Aufnahmen und Alben für Künstler weltweit produzierte — von argentinischem Tango über Klassik bis zur Alten Musik.
+    </>,
+    p3: <>
+      Während er weiterhin als Produzent tätig war, studierte er C-Programmierung und GPS-Technologie bei Kazuhide Kobayashi von Geosense Inc. und erwarb Videoproduktionsfähigkeiten bei Koji Murakami von Murakami Archives.<br />
+      Diese interdisziplinäre Grundlage etablierte seine einzigartige kreative Praxis, die Klang, Bild und Technologie umfasst.
+    </>,
+    p4: <>
+      Heute restauriert er auch Vintage-Geräte (Revox u.a.) und entwickelt originale Mikrofone, Verstärker und Lautsprecher und vertieft so seine Expertise in Hardware.<br />
+      Seit 2025 studiert er erneut bei Goshimas Label und verfolgt die Meisterschaft der von Akihiko Kaneda erfundenen Kaneda-DC-Aufnahmetechnik.<br />
+      Er veröffentlicht zudem &bdquo;Curanz Sounds&ldquo;, ein Protokoll zur wissenschaftlichen Erforschung der Klangreinheit und ihres heilenden Potenzials.
+    </>,
+    p5: <>
+      2026 integriert er als Gründer von Kuon R&D — einem Studio an der Grenze zwischen Kunst und Wissenschaft — proprietäre Algorithmenentwicklung mit GPS-Technologie und fortgeschrittene Webanwendungsentwicklung.<br />
+      Mit Leidenschaft für die Ausbildung der nächsten Ingenieursgeneration und die Bewahrung technischen Wissens strebt er eine neue Grenze an, an der Akustiktechnik, Spitzentechnologie und künstlerischer Ausdruck auf höchstem Niveau zusammentreffen.
+    </>,
+    link1: 'Offizielle Website & Blog',
+    link2: 'Instagram',
+    footer: '© 2026 Kuon R&D / Kotaro Asahina. Alle Rechte vorbehalten.',
+  },
 };
 
-type Lang = 'ja' | 'en' | 'es';
-
-const langs: { key: Lang; label: string }[] = [
-  { key: 'ja', label: 'JP' },
-  { key: 'en', label: 'EN' },
-  { key: 'es', label: 'ES' },
-];
-
 export default function ProfilePage() {
-  const [lang, setLang] = useState<Lang>('ja');
+  const { lang } = useLang();
   const t = content[lang];
 
   const styles = {
@@ -218,45 +286,6 @@ export default function ProfilePage() {
 
   return (
     <div style={styles.container}>
-
-      {/* ── 言語切替トグル ── */}
-      <div style={{
-        display:        'flex',
-        justifyContent: 'center',
-        marginBottom:   '48px',
-        marginTop:      '0px',
-      }}>
-        <div style={{
-          display:      'inline-flex',
-          background:   '#F1F5F9',
-          borderRadius: '6px',
-          padding:      '3px',
-          gap:          '2px',
-        }}>
-          {langs.map(l => (
-            <button
-              key={l.key}
-              onClick={() => setLang(l.key)}
-              style={{
-                padding:       '6px 16px',
-                borderRadius:  '4px',
-                border:        'none',
-                background:    lang === l.key ? '#FFFFFF' : 'transparent',
-                color:         lang === l.key ? '#1A202C' : '#94A3B8',
-                fontSize:      '0.78rem',
-                fontWeight:    lang === l.key ? 600 : 400,
-                letterSpacing: '0.05em',
-                cursor:        'pointer',
-                transition:    'all 0.15s ease',
-                fontFamily:    '"Helvetica Neue", Arial, sans-serif',
-                boxShadow:     lang === l.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-              }}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* ── プロフィールヘッダー ── */}
       <div style={styles.profileHeaderSection}>

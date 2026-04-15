@@ -1,0 +1,11 @@
+name = "kuon-rnd-audio-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[r2_buckets]]
+binding = "AUDIO"
+bucket_name = "kuon-rnd-audio"
+
+[vars]
+ENVIRONMENT = "production"
