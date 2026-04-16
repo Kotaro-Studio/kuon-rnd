@@ -647,3 +647,26 @@ STEP 5: git push → Cloudflare Pages 自動デプロイ → 本番確認
 
 最終更新: 2026年4月15日
 次のアクション: アプリ系ページの独自言語トグル撤廃とサイト共通 `useLang()` への統一（§19 の絶対条件を遵守）
+
+---
+
+## 21. 次回セッション持ち越し事項
+
+### 🔑 KUON NORMALIZE のパスワード配布フロー（未実装）
+
+**背景**: `/normalize-lp` の「マイクロフォンを購入する」ボタンを Stripe Checkout 直結に変更した結果、**P-86S を購入した顧客へ自動で KUON NORMALIZE のパスワードを届ける仕組みが必要**になった。現在は手動配布の想定。
+
+**オーナーの懸念**: この配布フローをどう設計するか悩んでいる。明日（2026-04-16 以降）に改めて相談したい。
+
+**次回 Claude が議論すべき論点**:
+1. **パスワード生成方式**: 固定 1 パスワードか、顧客ごとに個別発行か
+2. **配布タイミング**: Stripe Webhook (`checkout.session.completed`) で自動メール送信、もしくは注文時の success_url で表示
+3. **実装場所**: Cloudflare Pages の API Route（`/api/webhook`）か、Cloudflare Workers 単体
+4. **メール送信**: Resend / SendGrid / Cloudflare Email Workers のどれを使うか
+5. **パスワード検証**: `/normalize` アプリ側でどう認証するか（localStorage キャッシュ？都度入力？）
+6. **既存顧客の扱い**: Kotaro Studio 経由で P-86S を既に買った人への対応
+
+**関連既存コード**:
+- `app/api/checkout/route.ts` — Stripe Checkout セッション作成（Restricted Key）
+- `app/normalize-lp/page.tsx` — BuyMicButton が `product: 'p-86s'` で checkout 呼び出し
+- Stripe Dashboard の Webhook は未設定
