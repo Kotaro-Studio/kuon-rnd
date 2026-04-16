@@ -628,7 +628,110 @@ STEP 5: git push → Cloudflare Pages 自動デプロイ → 本番確認
 
 ---
 
-## 20. 作業履歴
+## 20. （欠番 → §22 作業履歴 に統合）
+
+---
+
+## 21. 購入→パスワード配布 自動化システム（実装済み）
+
+### 全体フロー
+
+顧客が kuon-rnd.com/microphone で「購入する」を押してから、パスワードが届くまでの流れ:
+
+```
+顧客がブラウザで「購入する」ボタンを押す
+  │
+  ▼
+kuon-rnd.com /api/checkout（Next.js API Route）
+  │ → Stripe API に Checkout Session 作成をリクエスト
+  │ → success_url: /shop/thanks?product=p-86s（または x-86s）
+  ▼
+Stripe Checkout ページ（Stripe がホスト）
+  │ → 顧客がカード情報・メールアドレスを入力し決済完了
+  │
+  ├──────────────────────────────────────────────────────
+  │                    同時に 3 つ発火
+  ├──────────────────────────────────────────────────────
+  │
+  ▼ ① ブラウザリダイレクト（即時）
+  /shop/thanks?product=p-86s
+  → パスワード「kuon」を画面に表示
+  → KUON NORMALIZE へのリンク
+  → 商品名は ?product= パラメータで P-86S / X-86S を自動切替
+  │
+  ▼ ② Stripe Webhook → Resend メール送信（数秒〜数分）
+  Stripe が kuon-rnd.com/api/webhook に POST 送信
+  → 署名検証（HMAC-SHA256、whsec_ シークレット使用）
+  → 顧客メールアドレスと商品名を抽出
+  → Resend API で noreply@kotaroasahina.com からパスワードメール送信
+  → メール内容: 商品名・パスワード「kuon」・KUON NORMALIZE リンク
+  │
+  ▼ ③ Stripe → Zapier → HubSpot CRM（数分）
+  Zapier が Stripe の新規顧客を検出
+  → HubSpot にコンタクトとして自動登録（名前・メールアドレス）
+```
+
+### パスワード設計思想
+
+- 固定パスワード「kuon」を全購入者で共有
+- 意図: 「商売っけの少ない人だな」という好印象 + オーナー同士の仲間意識
+- パスワードは 2 重に届く: サンクスページ（即時）+ メール（バックアップ）
+
+### 関連ファイル
+
+| ファイル | 役割 |
+|---------|------|
+| `app/api/checkout/route.ts` | Stripe Checkout Session 作成。`success_url` に `?product=` を付与。`runtime = 'edge'` |
+| `app/shop/thanks/page.tsx` | 購入完了ページ。`?product=p-86s` or `x-86s` で商品名を切替。パスワード表示。3 言語対応 |
+| `app/api/webhook/route.ts` | Stripe Webhook 受信。署名検証 → 商品名判定 → Resend でメール送信。`runtime = 'edge'` |
+
+### 環境変数（Cloudflare Pages に登録済み）
+
+| 変数名 | 値の形式 | 用途 |
+|--------|---------|------|
+| `STRIPE_SECRET_KEY` | `rk_live_...` | Stripe Restricted Key（Checkout Session 作成用） |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Webhook 署名検証用シークレット |
+| `RESEND_API_KEY` | `re_...` | Resend メール送信用 API キー |
+
+登録方法: `npx wrangler pages secret put <変数名> --project-name kuon-rnd`
+
+### 外部サービス設定
+
+| サービス | 設定内容 | 状態 |
+|---------|---------|------|
+| Stripe Webhook | エンドポイント `https://kuon-rnd.com/api/webhook`、イベント `checkout.session.completed` | 設定済み・アクティブ |
+| Resend ドメイン | `kotaroasahina.com`（Tokyo リージョン）、DKIM/SPF/DMARC 検証済み | Verified |
+| DNS（エックスサーバー サーバーパネル） | `resend._domainkey` TXT / `send` MX / `send` TXT / `_dmarc` TXT | 設定済み |
+| Zapier | Stripe → HubSpot コンタクト自動登録 | 設定済み |
+| HubSpot | CRM コンタクト管理 | 設定済み |
+
+### Stripe 商品・価格 ID
+
+| 商品 | Price ID | 価格 |
+|------|----------|------|
+| P-86S | `price_1SuT6IGbZ5gwwaLkc7rjciqU` | ¥13,900（税込） |
+| X-86S | `price_1SuTKHGbZ5gwwaLkR6ew580Z` | ¥39,600（税込） |
+
+### Kotaro Studio との共存
+
+- Kotaro Studio（kotarohattori.com）は Stripe **Payment Links** で販売継続中
+- 空音開発（kuon-rnd.com）は Stripe **Checkout Session API** で販売
+- 両方とも同じ Stripe アカウント内で独立して動作
+- 片方を変更しても、もう片方には一切影響しない
+
+### DNS 設定の注意点（エックスサーバー）
+
+エックスサーバーには 2 つの DNS 管理画面がある:
+1. **サーバーパネル → DNSレコード設定**（こちらが正しい・実際に DNS に反映される）
+2. **Xserverドメイン → DNSレコード設定**（こちらに追加しても反映されない）
+
+DNS レコードは必ず**サーバーパネル**側で追加すること。
+ホスト名にはサブドメイン部分のみ入力（例: `resend._domainkey`）。
+`.kotaroasahina.com` はエックスサーバーが自動付与する。
+
+---
+
+## 22. 作業履歴
 
 ### 2026-04-15 セッション（大規模改修）
 
@@ -643,30 +746,19 @@ STEP 5: git push → Cloudflare Pages 自動デプロイ → 本番確認
 | /（Top） | `useLang()` に統合し 3 言語対応（ja/en/es）。Technology カードを `grid auto-fit minmax` で確実な折返し。全セクションを `clamp()` で完全レスポンシブ化。`wordBreak: keep-all` で日本語の不自然な改行防止。 |
 | ビルド対応 | `tsconfig.json` に `"kuon-rnd-audio-worker"` を exclude 追加（Next.js ビルド時に Worker の型を拾ってしまう問題を解消）。.gitignore に `node_modules/`（recursive）、`.claude/`、`.wrangler/`、`.dev.vars` を追加。 |
 
+### 2026-04-16 セッション（パスワード自動配布システム構築）
+
+| カテゴリ | 変更内容 |
+|---|---|
+| Resend 設定 | kotaroasahina.com ドメイン認証完了（Tokyo リージョン）。DNS レコード 4 件をエックスサーバー**サーバーパネル**に追加（当初 Xserverドメイン側に追加して失敗→サーバーパネルに移行で解決）。API キー発行済み。 |
+| Webhook | `app/api/webhook/route.ts` 新規作成。Stripe 署名検証（Edge 互換 HMAC-SHA256）、商品名自動判定（Price ID / amount_total）、Resend API でパスワードメール送信。 |
+| サンクスページ | `app/shop/thanks/page.tsx` 新規作成。`?product=p-86s` / `?product=x-86s` で商品名を切替表示。パスワード「kuon」+ KUON NORMALIZE リンク。3 言語対応。 |
+| Checkout API 更新 | `success_url` を `/shop/thanks?product={product}` に変更。 |
+| Stripe Webhook | ダッシュボードで `https://kuon-rnd.com/api/webhook` を登録、`checkout.session.completed` イベント。 |
+| Cloudflare 環境変数 | `RESEND_API_KEY`、`STRIPE_WEBHOOK_SECRET` を `wrangler pages secret put` で登録。 |
+| HubSpot + Zapier | Stripe → Zapier → HubSpot コンタクト自動登録を設定（オーナーが手動設定）。 |
+
 ---
 
-最終更新: 2026年4月15日
+最終更新: 2026年4月16日
 次のアクション: アプリ系ページの独自言語トグル撤廃とサイト共通 `useLang()` への統一（§19 の絶対条件を遵守）
-
----
-
-## 21. 次回セッション持ち越し事項
-
-### 🔑 KUON NORMALIZE のパスワード配布フロー（未実装）
-
-**背景**: `/normalize-lp` の「マイクロフォンを購入する」ボタンを Stripe Checkout 直結に変更した結果、**P-86S を購入した顧客へ自動で KUON NORMALIZE のパスワードを届ける仕組みが必要**になった。現在は手動配布の想定。
-
-**オーナーの懸念**: この配布フローをどう設計するか悩んでいる。明日（2026-04-16 以降）に改めて相談したい。
-
-**次回 Claude が議論すべき論点**:
-1. **パスワード生成方式**: 固定 1 パスワードか、顧客ごとに個別発行か
-2. **配布タイミング**: Stripe Webhook (`checkout.session.completed`) で自動メール送信、もしくは注文時の success_url で表示
-3. **実装場所**: Cloudflare Pages の API Route（`/api/webhook`）か、Cloudflare Workers 単体
-4. **メール送信**: Resend / SendGrid / Cloudflare Email Workers のどれを使うか
-5. **パスワード検証**: `/normalize` アプリ側でどう認証するか（localStorage キャッシュ？都度入力？）
-6. **既存顧客の扱い**: Kotaro Studio 経由で P-86S を既に買った人への対応
-
-**関連既存コード**:
-- `app/api/checkout/route.ts` — Stripe Checkout セッション作成（Restricted Key）
-- `app/normalize-lp/page.tsx` — BuyMicButton が `product: 'p-86s'` で checkout 呼び出し
-- Stripe Dashboard の Webhook は未設定
