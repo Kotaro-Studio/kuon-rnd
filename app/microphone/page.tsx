@@ -866,8 +866,37 @@ export default function MicrophonePage() {
   };
 
 
+  // JSON-LD structured data for Google rich results
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'P-86S ステレオマイクロフォン',
+    description: '音大生だった朝比奈幸太郎が自分のために作ったハンドメイドステレオマイク。プラグインパワー対応、1本でABステレオ録音。アコースティック楽器専門。',
+    image: 'https://kuon-rnd.com/mic01.jpeg',
+    brand: { '@type': 'Brand', name: '空音開発 Kuon R&D' },
+    manufacturer: { '@type': 'Organization', name: '空音開発 Kuon R&D', url: 'https://kuon-rnd.com' },
+    offers: {
+      '@type': 'Offer',
+      url: 'https://kuon-rnd.com/microphone',
+      priceCurrency: 'JPY',
+      price: '13900',
+      priceValidUntil: '2027-12-31',
+      availability: 'https://schema.org/InStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@type': 'Organization', name: '空音開発 Kuon R&D' },
+    },
+    category: 'マイクロフォン',
+    keywords: 'ステレオマイク, ハンドメイドマイク, アコースティック録音, プラグインパワー, AB録音',
+  };
+
   return (
     <div style={{ backgroundColor:'#fafafa', minHeight:'100vh', color:'var(--text-main)', overflowX:'hidden' }}>
+
+      {/* JSON-LD for Google rich results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* ══════════════════════════════════════════
           ① HERO
