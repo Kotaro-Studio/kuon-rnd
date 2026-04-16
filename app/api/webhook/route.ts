@@ -46,20 +46,37 @@ async function verifyStripeSignature(
 }
 
 // ─────────────────────────────────────────────
+// Product info for emails
+// ─────────────────────────────────────────────
+const PRODUCT_NAMES: Record<string, string> = {
+  'price_1SuT6IGbZ5gwwaLkc7rjciqU': 'P-86S ステレオマイクロフォン',
+  'price_1SuTKHGbZ5gwwaLkR6ew580Z': 'X-86S プロフェッショナルステレオマイクロフォン',
+};
+
+function detectProductName(session: { line_items?: { data?: { price?: { id?: string } }[] }; amount_total?: number }): string {
+  // Try to detect from line_items if available
+  const priceId = session.line_items?.data?.[0]?.price?.id;
+  if (priceId && PRODUCT_NAMES[priceId]) return PRODUCT_NAMES[priceId];
+  // Fallback: detect by amount (P-86S = 1390000 yen in cents, X-86S = 3960000)
+  if (session.amount_total === 3960000) return 'X-86S プロフェッショナルステレオマイクロフォン';
+  return 'P-86S ステレオマイクロフォン';
+}
+
+// ─────────────────────────────────────────────
 // Email template
 // ─────────────────────────────────────────────
-function buildEmail(customerEmail: string) {
+function buildEmail(customerEmail: string, productName: string) {
   return {
     from: '空音開発 Kuon R&D <noreply@kotaroasahina.com>',
     to: customerEmail,
-    subject: '【空音開発】P-86S ご購入ありがとうございます — KUON NORMALIZE パスワード',
+    subject: `【空音開発】${productName} ご購入ありがとうございます — KUON NORMALIZE パスワード`,
     html: `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <h1 style="font-size: 22px; color: #0c4a6e; margin-bottom: 8px;">
-          P-86S ステレオマイクロフォン<br>ご購入ありがとうございます
+          ${productName}<br>ご購入ありがとうございます
         </h1>
         <p style="color: #475569; font-size: 15px; line-height: 1.8;">
-          このたびは空音開発の P-86S をお選びいただき、誠にありがとうございます。<br>
+          このたびは空音開発の ${productName} をお選びいただき、誠にありがとうございます。<br>
           決済確認後、1〜3 営業日以内に発送いたします。
         </p>
 
@@ -69,7 +86,7 @@ function buildEmail(customerEmail: string) {
           購入者限定特典: KUON NORMALIZE
         </h2>
         <p style="color: #475569; font-size: 14px; line-height: 1.8;">
-          P-86S オーナー限定で、オーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。
+          ${productName} オーナー限定で、オーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。
         </p>
 
         <div style="background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%); border-radius: 12px; padding: 24px; text-align: center; margin: 20px 0;">
@@ -82,7 +99,7 @@ function buildEmail(customerEmail: string) {
         </div>
 
         <p style="color: #94a3b8; font-size: 13px; font-style: italic; text-align: center;">
-          このパスワードはすべての P-86S オーナーが共有しています。仲間の証です。
+          このパスワードはすべてのマイクロフォンオーナーが共有しています。仲間の証です。
         </p>
 
         <div style="text-align: center; margin: 24px 0;">
@@ -135,6 +152,8 @@ export async function POST(request: NextRequest) {
         customer_details?: { email?: string };
         customer_email?: string;
         metadata?: Record<string, string>;
+        line_items?: { data?: { price?: { id?: string } }[] };
+        amount_total?: number;
       };
     };
   };
@@ -152,9 +171,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
+  const productName = detectProductName(session);
+
   // Send password email via Resend
   try {
-    const emailData = buildEmail(email);
+    const emailData = buildEmail(email, productName);
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {

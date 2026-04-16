@@ -2,11 +2,71 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
 // ─────────────────────────────────────────────
-// Translations
+// Product definitions
+// ─────────────────────────────────────────────
+type ProductKey = 'p-86s' | 'x-86s';
+
+interface ProductInfo {
+  name: Record<Lang, string>;
+  subtitle: Record<Lang, string>;
+  giftDesc: Record<Lang, string>;
+  passwordNote: Record<Lang, string>;
+}
+
+const PRODUCTS: Record<ProductKey, ProductInfo> = {
+  'p-86s': {
+    name: {
+      ja: 'P-86S ステレオマイクロフォン',
+      en: 'P-86S Stereo Microphone',
+      es: 'P-86S Micrófono Estéreo',
+    },
+    subtitle: {
+      ja: 'P-86S ステレオマイクロフォンのご注文を承りました。',
+      en: 'Your order for the P-86S Stereo Microphone has been confirmed.',
+      es: 'Su pedido del P-86S Micrófono Estéreo ha sido confirmado.',
+    },
+    giftDesc: {
+      ja: 'P-86S をご購入いただいたお客様に、空音開発のオーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。',
+      en: 'As a P-86S owner, you get free access to our audio app "KUON NORMALIZE".',
+      es: 'Como propietario del P-86S, obtiene acceso gratuito a nuestra aplicación de audio "KUON NORMALIZE".',
+    },
+    passwordNote: {
+      ja: 'このパスワードはすべての P-86S オーナーが共有しています。仲間の証です。',
+      en: 'This password is shared among all P-86S owners. It\'s a badge of our community.',
+      es: 'Esta contraseña es compartida entre todos los propietarios de P-86S. Es una insignia de nuestra comunidad.',
+    },
+  },
+  'x-86s': {
+    name: {
+      ja: 'X-86S プロフェッショナルステレオマイクロフォン',
+      en: 'X-86S Professional Stereo Microphone',
+      es: 'X-86S Micrófono Estéreo Profesional',
+    },
+    subtitle: {
+      ja: 'X-86S プロフェッショナルステレオマイクロフォンのご注文を承りました。',
+      en: 'Your order for the X-86S Professional Stereo Microphone has been confirmed.',
+      es: 'Su pedido del X-86S Micrófono Estéreo Profesional ha sido confirmado.',
+    },
+    giftDesc: {
+      ja: 'X-86S をご購入いただいたお客様に、空音開発のオーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。',
+      en: 'As an X-86S owner, you get free access to our audio app "KUON NORMALIZE".',
+      es: 'Como propietario del X-86S, obtiene acceso gratuito a nuestra aplicación de audio "KUON NORMALIZE".',
+    },
+    passwordNote: {
+      ja: 'このパスワードはすべてのマイクロフォンオーナーが共有しています。仲間の証です。',
+      en: 'This password is shared among all microphone owners. It\'s a badge of our community.',
+      es: 'Esta contraseña es compartida entre todos los propietarios de micrófonos. Es una insignia de nuestra comunidad.',
+    },
+  },
+};
+
+// ─────────────────────────────────────────────
+// Shared translations
 // ─────────────────────────────────────────────
 type T3 = Record<Lang, string>;
 
@@ -15,11 +75,6 @@ const t = {
     ja: 'ご購入ありがとうございます',
     en: 'Thank you for your purchase',
     es: 'Gracias por su compra',
-  } as T3,
-  subtitle: {
-    ja: 'P-86S ステレオマイクロフォンのご注文を承りました。',
-    en: 'Your order for the P-86S Stereo Microphone has been confirmed.',
-    es: 'Su pedido del P-86S Micrófono Estéreo ha sido confirmado.',
   } as T3,
   shipping: {
     ja: '決済確認後、1〜3 営業日以内に発送いたします。発送完了後、メールにてお知らせします。',
@@ -31,20 +86,10 @@ const t = {
     en: 'Exclusive Bonus for Buyers',
     es: 'Bonificación exclusiva para compradores',
   } as T3,
-  giftDesc: {
-    ja: 'P-86S をご購入いただいたお客様に、空音開発のオーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。',
-    en: 'As a P-86S owner, you get free access to our audio app "KUON NORMALIZE".',
-    es: 'Como propietario del P-86S, obtiene acceso gratuito a nuestra aplicación de audio "KUON NORMALIZE".',
-  } as T3,
   passwordLabel: {
     ja: 'アプリのパスワード',
     en: 'App Password',
     es: 'Contraseña de la aplicación',
-  } as T3,
-  passwordNote: {
-    ja: 'このパスワードはすべての P-86S オーナーが共有しています。仲間の証です。',
-    en: 'This password is shared among all P-86S owners. It\'s a badge of our community.',
-    es: 'Esta contraseña es compartida entre todos los propietarios de P-86S. Es una insignia de nuestra comunidad.',
   } as T3,
   openApp: {
     ja: 'KUON NORMALIZE を開く',
@@ -156,6 +201,9 @@ const linkStyle: React.CSSProperties = {
 // ─────────────────────────────────────────────
 export default function ThanksPage() {
   const { lang } = useLang();
+  const searchParams = useSearchParams();
+  const productParam = searchParams.get('product') as ProductKey | null;
+  const product = productParam && PRODUCTS[productParam] ? PRODUCTS[productParam] : PRODUCTS['p-86s'];
 
   return (
     <div style={containerStyle}>
@@ -175,14 +223,14 @@ export default function ThanksPage() {
           {t.title[lang]}
         </h1>
 
-        {/* Subtitle */}
+        {/* Subtitle — product-specific */}
         <p style={{
           color: '#475569',
           fontSize: 'clamp(0.9rem, 1.5vw, 1rem)',
           lineHeight: 1.8,
           margin: '0 0 0.5rem',
         }}>
-          {t.subtitle[lang]}
+          {product.subtitle[lang]}
         </p>
 
         {/* Shipping Info */}
@@ -215,7 +263,7 @@ export default function ThanksPage() {
           lineHeight: 1.8,
           margin: '0 0 1.5rem',
         }}>
-          {t.giftDesc[lang]}
+          {product.giftDesc[lang]}
         </p>
 
         {/* Password Box */}
@@ -238,7 +286,7 @@ export default function ThanksPage() {
           margin: '0 0 0.5rem',
           fontStyle: 'italic',
         }}>
-          {t.passwordNote[lang]}
+          {product.passwordNote[lang]}
         </p>
 
         <p style={{
