@@ -56,6 +56,28 @@ const apps: AppEntry[] = [
     isNew: true,
   },
   {
+    id: 'dsd',
+    number: '08',
+    badge: 'DSD',
+    badgeType: 'free',
+    name: 'KUON DSD',
+    tagline: {
+      ja: 'DSD を、ブラウザで再生する。\n世界初の WebAssembly 駆動。',
+      en: 'Play DSD in your browser.\nWorld\'s first, powered by WebAssembly.',
+      es: 'Reproduce DSD en tu navegador.\nEl primero del mundo, con WebAssembly.',
+    },
+    desc: {
+      ja: 'DSD ファイル（DSF/DFF）をブラウザで再生＆高品質 WAV に変換。DSD64/128/256 対応、サンプルレート選択（44.1k〜192kHz）、24bit 出力。Rust WebAssembly 駆動。',
+      en: 'Play & convert DSD files (DSF/DFF) in your browser. DSD64/128/256, sample rate selection (44.1k–192kHz), 24-bit WAV output. Powered by Rust WebAssembly.',
+      es: 'Reproduce y convierte archivos DSD (DSF/DFF) en tu navegador. DSD64/128/256, selección de frecuencia (44.1k–192kHz), salida WAV 24-bit. Rust WebAssembly.',
+    },
+    href: '/dsd-lp',
+    accent: '#7C3AED',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
+    isNew: true,
+  },
+  {
     id: 'converter',
     number: '07',
     badge: 'MP3',
