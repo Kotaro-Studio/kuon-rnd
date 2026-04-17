@@ -1,0 +1,19 @@
+name = "kuon-rnd-player-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[r2_buckets]]
+binding = "PLAYER"
+bucket_name = "kuon-rnd-player"
+
+[[kv_namespaces]]
+binding = "META"
+id = "e3129d71873e421c874b529c15812c24"
+
+# Cron Trigger: 1時間ごとに期限切れファイルを自動削除
+[triggers]
+crons = ["0 * * * *"]
+
+[vars]
+ENVIRONMENT = "production"

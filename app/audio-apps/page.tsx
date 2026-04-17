@@ -34,6 +34,28 @@ type AppEntry = {
 
 const apps: AppEntry[] = [
   {
+    id: 'player',
+    number: '09',
+    badge: '24H',
+    badgeType: 'free',
+    name: 'KUON PLAYER',
+    tagline: {
+      ja: '音声を共有する。\n24時間で、消える。',
+      en: 'Share audio.\nGone in 24 hours.',
+      es: 'Comparte audio.\nDesaparece en 24 horas.',
+    },
+    desc: {
+      ja: 'MP3をアップロードし、パスワード付き共有リンクを生成。再生開始から24時間で自動削除。ストリーミング再生のみ・ダウンロード不可。安全な音声共有。',
+      en: 'Upload MP3, generate a password-protected share link. Auto-deleted 24 hours after first play. Streaming only — no downloads. Secure audio sharing.',
+      es: 'Sube MP3, genera un enlace protegido con contraseña. Se elimina automáticamente 24 horas después de la primera reproducción. Solo streaming — sin descargas.',
+    },
+    href: '/player-lp',
+    accent: '#059669',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
+    isNew: true,
+  },
+  {
     id: 'master-check',
     number: '06',
     badge: 'LUFS',
