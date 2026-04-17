@@ -1,0 +1,13 @@
+[
+  {
+    "id": "001",
+    "name": "佐藤 美咲",
+    "instrument": "ピアノ",
+    "title": "ショパン ノクターン Op.9 No.2",
+    "comment": "自宅のアップライトピアノで録りました。P-86S の自然な空気感に感動しています。",
+    "file": "recordings/sato-misaki-chopin-nocturne.mp3",
+    "mic": "P-86S",
+    "mastered": true,
+    "date": "2026-04-17"
+  }
+]

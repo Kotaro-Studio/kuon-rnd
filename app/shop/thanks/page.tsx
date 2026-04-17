@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLang } from '@/context/LangContext';
@@ -200,6 +200,14 @@ const linkStyle: React.CSSProperties = {
 // Component
 // ─────────────────────────────────────────────
 export default function ThanksPage() {
+  return (
+    <Suspense fallback={<div style={containerStyle}><div style={cardStyle}><p style={{ textAlign: 'center', color: '#94a3b8' }}>読み込み中…</p></div></div>}>
+      <ThanksContent />
+    </Suspense>
+  );
+}
+
+function ThanksContent() {
   const { lang } = useLang();
   const searchParams = useSearchParams();
   const productParam = searchParams.get('product') as ProductKey | null;

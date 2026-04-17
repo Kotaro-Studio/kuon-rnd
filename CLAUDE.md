@@ -928,6 +928,84 @@ UIデザインコンセプト:
 | R2 フォルダ | `kuon-rnd-audio` バケットに `submissions/` および `recordings/` フォルダ作成。 |
 | CLAUDE.md | §4 ディレクトリ構成更新、§14 実装ステータス更新、§21 関連ファイル・環境変数追加、§23 オーナーズ・ギャラリー投稿システム新規セクション追加。 |
 
+## 24. オーナーズ・ギャラリー掲載ページ（実装済み）
+
+### 仕組み
+
+- ページ: `kuon-rnd.com/gallery`
+- データソース: `data/recordings.json`（JSONファイル1つで管理）
+- 表示順: 新しい順（自動）
+- マスタリング済みバッジ: `mastered: true` のエントリに自動表示
+
+### ファイル構成
+
+| ファイル | 役割 |
+|---------|------|
+| `data/recordings.json` | 掲載する録音の一覧データ（これだけ編集する） |
+| `app/gallery/page.tsx` | ギャラリーページ（JSONを読み込みカード型で表示） |
+| `app/gallery/layout.tsx` | SEOメタデータ |
+
+### recordings.json のエントリ形式
+
+```json
+{
+  "id": "001",
+  "name": "投稿者のお名前",
+  "instrument": "楽器名",
+  "title": "曲名",
+  "comment": "投稿者のコメント",
+  "file": "recordings/ファイル名.mp3",
+  "mic": "P-86S または X-86S",
+  "mastered": true または false,
+  "date": "YYYY-MM-DD"
+}
+```
+
+### オーナーの掲載作業手順
+
+1. 通知メールで投稿内容を確認
+2. マスタリング許可がある場合は DAW で処理
+3. R2 ダッシュボード → `kuon-rnd-audio` → `recordings/` にファイルをアップロード
+4. `data/recordings.json` にエントリを追加
+5. `cd ~/kuon-rnd && git add -A && git commit -m "ギャラリー追加" && git push`
+
+### Claude にギャラリー掲載を依頼するためのプロンプト
+
+以下をコピペして、【】内を書き換えて伝えるだけで掲載作業が完了します:
+
+```
+CLAUDE.md を読み込んでください。
+ギャラリーに新しい録音を掲載してください。
+
+投稿者: 【佐藤 美咲】
+楽器: 【ピアノ】
+曲名: 【ショパン ノクターン Op.9 No.2】
+コメント: 【自宅のアップライトピアノで録りました】
+R2ファイル名: 【recordings/sato-misaki-chopin-nocturne.mp3】
+使用マイク: 【P-86S】
+マスタリング済み: 【はい】
+
+data/recordings.json にエントリを追加し、型チェックを通してください。
+```
+
+※ R2 へのファイルアップロードはオーナーが事前に行う（Claude はR2に直接アップロードできない）。
+※ Claude は recordings.json への追記 → 型チェック → git push 用コマンドの提示まで行う。
+
+---
+
+## 22. 作業履歴
+
+（以下は既存の作業履歴セクションの続き）
+
+### 2026-04-17 セッション 続き（ギャラリー掲載ページ構築）
+
+| カテゴリ | 変更内容 |
+|---|---|
+| ギャラリーページ | `app/gallery/page.tsx` 新規作成。`data/recordings.json` を読み込みカード型グリッドで表示。新しい順。マスタリング済みバッジ自動表示。3言語対応。投稿CTAリンク付き。 |
+| ギャラリーSEO | `app/gallery/layout.tsx` 新規作成（title, description, OGP, canonical）。 |
+| データファイル | `data/recordings.json` 新規作成。サンプルエントリ1件。 |
+| CLAUDE.md | §24 ギャラリー掲載ページ仕様・運用ガイド・Claudeへの依頼プロンプト追加。 |
+
 ---
 
 最終更新: 2026年4月17日
@@ -941,5 +1019,4 @@ UIデザインコンセプト:
    - `cd kuon-rnd-audio-worker && npx wrangler deploy`
 3. **git push** — 全変更を Cloudflare Pages に自動デプロイ
 4. **購入フロー E2E テスト** — テスト決済 → サンクスページ → メール受信 → 投稿フォーム動作確認
-5. **ギャラリー掲載ページの実装** — 投稿が集まり次第、掲載用ページ（`/gallery` 等）を構築
-6. **アプリ系ページの独自言語トグル撤廃** — サイト共通 `useLang()` への統一（§19 の絶対条件を遵守）
+5. **アプリ系ページの独自言語トグル撤廃** — サイト共通 `useLang()` への統一（§19 の絶対条件を遵守）
