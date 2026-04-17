@@ -51,6 +51,8 @@ interface TrackInfo {
   lengthBytes: number;
   durationSeconds: number;
   isrc: string;
+  pregapSeconds: number;   // Index 00 → Index 01 gap (pre-gap / pause before track)
+  gapSeconds: number;      // silence between previous track end and this track's Index 00
 }
 
 interface DdpData {
@@ -62,6 +64,7 @@ interface DdpData {
   audioFile: File | null;
   pqFileName: string;
   totalDuration: number;
+  leadInSeconds: number;   // disc lead-in time
   fileCount: number;
   fileNames: string[];
 }
@@ -120,7 +123,10 @@ const T = {
   lblPqFile: { ja: 'PQ 記述子', en: 'PQ Descriptor', es: 'Descriptor PQ' } as L3,
   lblTotalDuration: { ja: '総再生時間', en: 'Total Duration', es: 'Duración total' } as L3,
   lblTotalTracks: { ja: 'トラック数', en: 'Total Tracks', es: 'Total de pistas' } as L3,
+  lblLeadIn: { ja: 'リードイン', en: 'Lead-in', es: 'Lead-in' } as L3,
   colTrack: { ja: '#', en: '#', es: '#' } as L3,
+  colPregap: { ja: 'プリギャップ', en: 'Pre-gap', es: 'Pre-gap' } as L3,
+  colGap: { ja: '曲間', en: 'Gap', es: 'Pausa' } as L3,
   colDuration: { ja: '再生時間', en: 'Duration', es: 'Duración' } as L3,
   colIsrc: { ja: 'ISRC', en: 'ISRC', es: 'ISRC' } as L3,
   colActions: { ja: '操作', en: 'Actions', es: 'Acciones' } as L3,
@@ -248,15 +254,30 @@ function pqToBytes(pq: PqPacket): number {
   return sectors * BYTES_PER_SECTOR;
 }
 
-function buildTrackList(pqPackets: PqPacket[], mapPackets: MapPacket[], audioFileSize: number): TrackInfo[] {
-  // Filter to actual audio tracks (01-99), index 01 (track start)
-  const trackStarts = pqPackets.filter(p => {
-    const tn = parseInt(p.trackNumber, 10);
-    return p.valid && tn >= 1 && tn <= 99 && p.indexNumber === '01';
-  });
+function pqToSeconds(pq: PqPacket): number {
+  return pq.hours * 3600 + pq.minutes * 60 + pq.seconds + pq.frames / 75;
+}
 
-  // Sort by track number
-  trackStarts.sort((a, b) => parseInt(a.trackNumber, 10) - parseInt(b.trackNumber, 10));
+interface BuildResult {
+  tracks: TrackInfo[];
+  leadInSeconds: number;
+}
+
+function buildTrackList(pqPackets: PqPacket[], mapPackets: MapPacket[], audioFileSize: number): BuildResult {
+  // Collect Index 00 (pre-gap start) and Index 01 (track audio start) for each track
+  const index00Map = new Map<number, PqPacket>(); // trackNum → PQ with index 00
+  const index01Map = new Map<number, PqPacket>(); // trackNum → PQ with index 01
+
+  for (const p of pqPackets) {
+    if (!p.valid) continue;
+    const tn = parseInt(p.trackNumber, 10);
+    if (tn < 1 || tn > 99) continue;
+    if (p.indexNumber === '00') index00Map.set(tn, p);
+    if (p.indexNumber === '01') index01Map.set(tn, p);
+  }
+
+  // Sort track numbers
+  const trackNums = Array.from(index01Map.keys()).sort((a, b) => a - b);
 
   // Find dataStreamStart from DDPMS for offset correction
   const mainStream = mapPackets.find(mp =>
@@ -265,34 +286,81 @@ function buildTrackList(pqPackets: PqPacket[], mapPackets: MapPacket[], audioFil
   const dsStartBytes = mainStream ? mainStream.dataStreamStart * BYTES_PER_SECTOR : 0;
   const fileOffset = mainStream ? mainStream.startingFileOffset : 0;
 
+  // Lead-in: time from absolute 00:00:00.00 to the first track's earliest point
+  let leadInSeconds = 0;
+  if (trackNums.length > 0) {
+    const firstTn = trackNums[0];
+    const first00 = index00Map.get(firstTn);
+    const first01 = index01Map.get(firstTn)!;
+    const earliestPq = first00 || first01;
+    leadInSeconds = pqToSeconds(earliestPq);
+  }
+
   const tracks: TrackInfo[] = [];
 
-  for (let i = 0; i < trackStarts.length; i++) {
-    const pq = trackStarts[i];
-    const startBytes = pqToBytes(pq) - dsStartBytes + fileOffset;
-    const nextStartBytes = i < trackStarts.length - 1
-      ? pqToBytes(trackStarts[i + 1]) - dsStartBytes + fileOffset
+  for (let i = 0; i < trackNums.length; i++) {
+    const tn = trackNums[i];
+    const pq01 = index01Map.get(tn)!;
+    const pq00 = index00Map.get(tn);
+
+    // Byte offsets for audio slicing (Index 01 based)
+    const startBytes = pqToBytes(pq01) - dsStartBytes + fileOffset;
+    const nextStartBytes = i < trackNums.length - 1
+      ? pqToBytes(index01Map.get(trackNums[i + 1])!) - dsStartBytes + fileOffset
       : audioFileSize;
     const lengthBytes = Math.max(0, nextStartBytes - startBytes);
     const durationSeconds = lengthBytes / (SAMPLE_RATE * BYTES_PER_FRAME);
 
+    // Pre-gap: Index 00 → Index 01 (silence/countdown before track audio starts)
+    let pregapSeconds = 0;
+    if (pq00) {
+      pregapSeconds = Math.max(0, pqToSeconds(pq01) - pqToSeconds(pq00));
+    }
+
+    // Gap (inter-track silence): previous track's Index 01 end → this track's earliest point
+    // "Previous track end" = this track's Index 01 start (in the continuous timeline)
+    // "This track earliest" = Index 00 if present, else Index 01
+    let gapSeconds = 0;
+    if (i > 0) {
+      const prevTn = trackNums[i - 1];
+      const prevPq01 = index01Map.get(prevTn)!;
+      const prevNextStart = pqToSeconds(pq01); // previous track's audio ends where this track's audio begins
+      // Previous track's actual audio duration in absolute time
+      const prevStart = pqToSeconds(prevPq01);
+      const prevAudioEnd = prevStart + (pqToBytes(pq01) - pqToBytes(prevPq01)) / (SAMPLE_RATE * BYTES_PER_FRAME);
+      // Gap = from previous Index 01 end to this track's Index 00 (or Index 01 if no 00)
+      const thisEarliest = pq00 ? pqToSeconds(pq00) : pqToSeconds(pq01);
+      // Simpler: gap = thisEarliest - prevNextStart (in absolute PQ time)
+      // prevNextStart = the A-time of this track's Index 01
+      // But actually: the previous track's audio ends at this track's Index 01 (since we slice Index01 to Index01)
+      // So "silence between tracks" = this track's Index 00 time - previous track's Index 01 end time
+      // Previous track ends at: this Index 01 in absolute time? No — previous track audio ends where the next index01 starts
+      // Let me simplify: gap = time from previous track's Index 01 + previous track duration → this track's Index 00
+      const prevEndAbsolute = pqToSeconds(pq01); // this is where prev track's audio data ends
+      gapSeconds = Math.max(0, thisEarliest - prevEndAbsolute);
+      // If no Index 00 for this track, pregap is 0 and gap captures the full inter-track space
+      // If Index 00 exists, gap = prev_end → Index00, pregap = Index00 → Index01
+    }
+
     // Find ISRC from map packets for this track
     const mapEntry = mapPackets.find(mp =>
-      mp.valid && mp.trackNumber === pq.trackNumber && mp.isrc.trim().length > 0
+      mp.valid && mp.trackNumber === pq01.trackNumber && mp.isrc.trim().length > 0
     );
-    const isrc = mapEntry?.isrc || pq.isrc || '';
+    const isrc = mapEntry?.isrc || pq01.isrc || '';
 
     tracks.push({
-      number: parseInt(pq.trackNumber, 10),
-      title: `Track ${parseInt(pq.trackNumber, 10).toString().padStart(2, '0')}`,
+      number: tn,
+      title: `Track ${tn.toString().padStart(2, '0')}`,
       startBytes: Math.max(0, startBytes),
       lengthBytes,
       durationSeconds,
       isrc: isrc.trim(),
+      pregapSeconds,
+      gapSeconds,
     });
   }
 
-  return tracks;
+  return { tracks, leadInSeconds };
 }
 
 function buildWavBlob(pcmData: ArrayBuffer): Blob {
@@ -344,6 +412,14 @@ function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function formatGap(seconds: number): string {
+  if (seconds <= 0) return '—';
+  const s = Math.floor(seconds);
+  const f = Math.round((seconds - s) * 75); // remaining CD frames
+  if (s === 0 && f === 0) return '—';
+  return `${s}.${f.toString().padStart(2, '0')}s`;
 }
 
 function formatTotalDuration(seconds: number): string {
@@ -444,7 +520,7 @@ export default function DdpCheckerPage() {
       }
 
       // 5. Build track list
-      const tracks = buildTrackList(pqPackets, mapPackets, audioFile.size);
+      const { tracks, leadInSeconds } = buildTrackList(pqPackets, mapPackets, audioFile.size);
       const totalDuration = tracks.reduce((sum, tr) => sum + tr.durationSeconds, 0);
 
       setDdpData({
@@ -456,6 +532,7 @@ export default function DdpCheckerPage() {
         audioFile,
         pqFileName: pqFile ? (pqDsi?.dsi || 'PQDESCR') : '',
         totalDuration,
+        leadInSeconds,
         fileCount: allFileNames.length,
         fileNames: allFileNames.sort(),
       });
@@ -853,9 +930,13 @@ export default function DdpCheckerPage() {
               <span style={labelStyle}>{t(T.lblTotalTracks)}</span>
               <span style={valueStyle}>{ddpData.tracks.length}</span>
             </div>
-            <div style={{ ...infoRowStyle, borderBottom: 'none' }}>
+            <div style={infoRowStyle}>
               <span style={labelStyle}>{t(T.lblTotalDuration)}</span>
               <span style={valueStyle}>{formatTotalDuration(ddpData.totalDuration)}</span>
+            </div>
+            <div style={{ ...infoRowStyle, borderBottom: 'none' }}>
+              <span style={labelStyle}>{t(T.lblLeadIn)}</span>
+              <span style={valueStyle}>{formatGap(ddpData.leadInSeconds)}</span>
             </div>
           </div>
 
@@ -870,9 +951,9 @@ export default function DdpCheckerPage() {
               }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.08)' }}>
-                    {[T.colTrack, T.colDuration, T.colIsrc, T.colActions].map((col, i) => (
+                    {[T.colTrack, T.colPregap, T.colGap, T.colDuration, T.colIsrc, T.colActions].map((col, i) => (
                       <th key={i} style={{
-                        textAlign: i === 3 ? 'right' : 'left',
+                        textAlign: i === 5 ? 'right' : 'left',
                         padding: '10px 8px',
                         color: '#6b7280',
                         fontWeight: 600,
@@ -910,6 +991,22 @@ export default function DdpCheckerPage() {
                             )}
                             {track.number.toString().padStart(2, '0')}
                           </span>
+                        </td>
+                        <td style={{
+                          padding: '12px 8px',
+                          fontFamily: '"SF Mono", "Fira Code", monospace',
+                          fontSize: 12,
+                          color: track.pregapSeconds > 0 ? '#111827' : '#d1d5db',
+                        }}>
+                          {formatGap(track.pregapSeconds)}
+                        </td>
+                        <td style={{
+                          padding: '12px 8px',
+                          fontFamily: '"SF Mono", "Fira Code", monospace',
+                          fontSize: 12,
+                          color: track.gapSeconds > 0 ? '#111827' : '#d1d5db',
+                        }}>
+                          {track.number === 1 ? '—' : formatGap(track.gapSeconds)}
                         </td>
                         <td style={{ padding: '12px 8px', fontFamily: '"SF Mono", "Fira Code", monospace' }}>
                           {formatDuration(track.durationSeconds)}
