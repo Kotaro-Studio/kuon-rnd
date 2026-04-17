@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
     success_url: `${baseUrl}/shop/thanks?product=${body.product}`,
     cancel_url:  `${baseUrl}/microphone`,
     'payment_method_types[0]': 'card',
+    'metadata[product]': body.product ?? 'p-86s',
   });
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {

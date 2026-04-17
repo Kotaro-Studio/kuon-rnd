@@ -303,6 +303,97 @@ export default function ThanksPage() {
           {t.openApp[lang]}
         </Link>
 
+        {/* Gallery Invite */}
+        <div style={{
+          marginTop: '2rem',
+          padding: '1.5rem',
+          background: 'linear-gradient(135deg, rgba(2,132,199,0.05) 0%, rgba(14,165,233,0.08) 100%)',
+          borderRadius: '14px',
+          border: '1px solid rgba(2,132,199,0.1)',
+        }}>
+          <p style={{ fontSize:'0.82rem', color:'#0c4a6e', fontWeight:600, margin:'0 0 0.4rem', fontFamily:serif }}>
+            {{
+              ja: '🎙 オーナーズ・ギャラリーに参加しませんか？',
+              en: '🎙 Join the Owner\'s Gallery!',
+              es: '🎙 ¡Únase a la Galería de Propietarios!',
+            }[lang]}
+          </p>
+          <p style={{ fontSize:'0.78rem', color:'#475569', lineHeight:1.7, margin:'0 0 0.8rem' }}>
+            {{
+              ja: 'あなたの自慢の録音を空音開発のサイトで紹介しませんか？朝比奈幸太郎によるマスタリングも承ります。',
+              en: 'Share your best recording on the Kuon R&D website. Mastering by Kotaro Asahina is also available.',
+              es: 'Comparta su mejor grabación en el sitio de Kuon R&D. También disponible la masterización por Kotaro Asahina.',
+            }[lang]}
+          </p>
+          <div style={{
+            margin: '0.6rem 0 0.8rem',
+            padding: '0.7rem 1rem',
+            background: 'rgba(255,255,255,0.8)',
+            borderRadius: '10px',
+            border: '1px solid rgba(2,132,199,0.15)',
+            display: 'inline-block',
+          }}>
+            <span style={{ fontSize:'0.7rem', color:'#64748b', letterSpacing:'0.08em' }}>
+              {{
+                ja: '投稿パスワード:',
+                en: 'Submission password:',
+                es: 'Contraseña de envío:',
+              }[lang]}
+            </span>
+            <span style={{
+              fontFamily: '"SF Mono", "Fira Code", "Consolas", monospace',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              color: '#0c4a6e',
+              letterSpacing: '0.15em',
+              marginLeft: '0.5rem',
+            }}>
+              kuon041755
+            </span>
+          </div>
+          <p style={{ fontSize:'0.7rem', color:'#94a3b8', lineHeight:1.6, margin:'0 0 0.8rem' }}>
+            {{
+              ja: '※ このパスワードはご購入確認メールにも記載されています。',
+              en: '* This password is also included in your purchase confirmation email.',
+              es: '* Esta contraseña también está incluida en su correo de confirmación.',
+            }[lang]}
+          </p>
+          <Link href="/microphone#gallery-submit" style={{ ...linkStyle, fontWeight:500, fontSize:'0.82rem' }}>
+            {{
+              ja: '録音を投稿する →',
+              en: 'Submit a recording →',
+              es: 'Enviar una grabación →',
+            }[lang]}
+          </Link>
+        </div>
+
+        {/* SoftBank Warning */}
+        <div style={{
+          marginTop: '2rem',
+          padding: '1rem 1.2rem',
+          background: '#fffbeb',
+          border: '1px solid #fde68a',
+          borderRadius: '10px',
+          textAlign: 'left',
+        }}>
+          <p style={{ color:'#92400e', fontSize:'0.78rem', lineHeight:1.7, margin:0 }}>
+            {{
+              ja: <>
+                <strong>ソフトバンク（@softbank.ne.jp, @i.softbank.jp 等）のメールアドレスをご利用のお客様へ</strong><br/>
+                迷惑メールフィルタの設定により、当社からの確認メールが届かない場合がございます。メールが届いていない場合は、お手数ですが別のメールアドレス（Gmail 等）を添えて<Link href="/#contact" style={{ color:'#0284c7' }}>お問い合わせフォーム</Link>よりご連絡ください。パスワードを再送いたします。
+              </>,
+              en: <>
+                <strong>For customers using SoftBank email (@softbank.ne.jp, @i.softbank.jp, etc.)</strong><br/>
+                Our confirmation emails may not be delivered due to spam filter settings. If you have not received an email, please contact us via the <Link href="/#contact" style={{ color:'#0284c7' }}>contact form</Link> with an alternative email address (e.g. Gmail). We will resend your passwords.
+              </>,
+              es: <>
+                <strong>Para clientes con correo SoftBank (@softbank.ne.jp, @i.softbank.jp, etc.)</strong><br/>
+                Es posible que nuestros correos no lleguen debido a filtros de spam. Si no ha recibido un correo, contáctenos a través del <Link href="/#contact" style={{ color:'#0284c7' }}>formulario de contacto</Link> con una dirección alternativa (ej. Gmail). Reenviaremos sus contraseñas.
+              </>,
+            }[lang]}
+          </p>
+        </div>
+
         {/* Bottom Links */}
         <div style={{
           marginTop: '2.5rem',

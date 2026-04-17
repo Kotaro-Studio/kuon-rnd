@@ -1433,6 +1433,182 @@ export default function MicrophonePage() {
         </div>
       </section>
 
+      {/* ══════════════════════════════════════════
+          ⑪ RECORDING GALLERY — SUBMISSION FORM
+      ══════════════════════════════════════════ */}
+      <section id="gallery-submit" style={{ padding:'clamp(5rem,10vw,10rem) 5%', borderTop:'1px solid rgba(0,0,0,0.04)', background:'linear-gradient(180deg, rgba(2,132,199,0.02) 0%, transparent 100%)' }}>
+        <div className="reveal" style={{ maxWidth:'680px', margin:'0 auto' }}>
+          <p style={{ fontSize:'0.68rem', letterSpacing:'0.5em', textTransform:'uppercase', color:ACCENT, marginBottom:'1.5rem', fontFamily:sans, textAlign:'center' }}>
+            {t("オーナーズ・ギャラリー","Owner's Gallery","Galería de Propietarios")}
+          </p>
+          <h2 style={{ fontSize:'clamp(1.3rem,3vw,2.2rem)', fontWeight:'200', letterSpacing:'0.07em', lineHeight:'1.75', marginBottom:'1rem', fontFamily:serif, textAlign:'center', wordBreak:'keep-all' }}>
+            {t('あなたの録音を掲載しませんか？','Share Your Recording','Comparte Tu Grabación')}
+          </h2>
+          <p style={{ fontSize:'clamp(0.85rem,1.2vw,0.95rem)', lineHeight:'2', color:'#555', textAlign:'center', marginBottom:'clamp(2.5rem,5vw,4rem)', fontFamily:sans }}>
+            {t(
+              'P-86S / X-86S で録音した自慢の音源をお送りください。空音開発のサイトで「オーナーズ・ギャラリー」として掲載させていただきます。ご希望の方には、朝比奈幸太郎によるマスタリング処理も承ります。',
+              'Send us your best recording made with the P-86S / X-86S. We will feature it on our site as part of the Owner\'s Gallery. If you wish, mastering by Kotaro Asahina is also available.',
+              'Envíenos su mejor grabación con el P-86S / X-86S. La publicaremos en nuestra Galería de Propietarios. Si lo desea, el masterizado por Kotaro Asahina también está disponible.'
+            )}
+          </p>
+          <SubmissionForm t={t} lang={lang} />
+        </div>
+      </section>
+
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   SubmissionForm — Recording Gallery 投稿フォーム
+   ═══════════════════════════════════════════════ */
+
+function SubmissionForm({ t, lang }: { t: (...args: string[]) => string; lang: string }) {
+  const [status, setStatus] = useState<'idle'|'sending'|'done'|'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const labelStyle: CSSProperties = {
+    display:'block', fontSize:'0.78rem', letterSpacing:'0.08em',
+    color:'#444', marginBottom:'0.4rem', fontFamily: sans,
+  };
+  const inputStyle: CSSProperties = {
+    width:'100%', padding:'0.85rem 1rem', fontSize:'0.92rem',
+    border:'1px solid #ddd', borderRadius:'10px', fontFamily: sans,
+    outline:'none', transition:'border 0.2s',
+    backgroundColor:'rgba(255,255,255,0.9)',
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formRef.current) return;
+    setStatus('sending');
+    setErrorMsg('');
+
+    const fd = new FormData(formRef.current);
+    try {
+      const res = await fetch('/api/submit-recording', { method:'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok) {
+        setErrorMsg(json.error || 'Error');
+        setStatus('error');
+      } else {
+        setStatus('done');
+      }
+    } catch {
+      setErrorMsg(t('通信エラーが発生しました','A network error occurred','Error de red'));
+      setStatus('error');
+    }
+  };
+
+  if (status === 'done') {
+    return (
+      <div style={{ textAlign:'center', padding:'3rem 1rem', ...glass }}>
+        <p style={{ fontSize:'1.5rem', marginBottom:'1rem' }}>🎉</p>
+        <p style={{ fontSize:'1rem', fontFamily: sans, fontWeight:'500', marginBottom:'0.5rem' }}>
+          {t('ご投稿ありがとうございます！','Thank you for your submission!','¡Gracias por su envío!')}
+        </p>
+        <p style={{ fontSize:'0.85rem', color:'#666', fontFamily: sans }}>
+          {t('確認後、掲載させていただきます。','We will review and publish your recording.','Revisaremos y publicaremos su grabación.')}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form ref={formRef} onSubmit={handleSubmit} style={{ ...glass, padding:'clamp(2rem,4vw,3rem)' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.2rem', marginBottom:'1.2rem' }}>
+        <div>
+          <label style={labelStyle}>{t('お名前 *','Name *','Nombre *')}</label>
+          <input name="name" required style={inputStyle} placeholder={t('山田 太郎','Taro Yamada','Tu nombre')} />
+        </div>
+        <div>
+          <label style={labelStyle}>{t('メールアドレス *','Email *','Correo *')}</label>
+          <input name="email" type="email" required style={inputStyle} placeholder="you@example.com" />
+        </div>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.2rem', marginBottom:'1.2rem' }}>
+        <div>
+          <label style={labelStyle}>{t('楽器 *','Instrument *','Instrumento *')}</label>
+          <select name="instrument" required style={{ ...inputStyle, cursor:'pointer' }}>
+            <option value="">{t('選択してください','Select…','Seleccione…')}</option>
+            <option value="piano">{t('ピアノ','Piano','Piano')}</option>
+            <option value="violin">{t('バイオリン','Violin','Violín')}</option>
+            <option value="cello">{t('チェロ','Cello','Violonchelo')}</option>
+            <option value="flute">{t('フルート','Flute','Flauta')}</option>
+            <option value="guitar">{t('アコースティックギター','Acoustic Guitar','Guitarra Acústica')}</option>
+            <option value="vocal">{t('歌・ボーカル','Vocal','Vocal')}</option>
+            <option value="other">{t('その他','Other','Otro')}</option>
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>{t('曲名 *','Track Title *','Título *')}</label>
+          <input name="title" required style={inputStyle} placeholder={t('曲名を入力','Track title','Título de la pista')} />
+        </div>
+      </div>
+
+      <div style={{ marginBottom:'1.2rem' }}>
+        <label style={labelStyle}>{t('コメント（任意）','Comment (optional)','Comentario (opcional)')}</label>
+        <textarea name="comment" rows={3} style={{ ...inputStyle, resize:'vertical' }} placeholder={t('録音環境や曲の紹介など','About your recording setup, the piece, etc.','Sobre tu configuración de grabación, la pieza, etc.')} />
+      </div>
+
+      <div style={{ marginBottom:'1.2rem' }}>
+        <label style={labelStyle}>{t('音声ファイル（MP3・最大20MB） *','Audio File (MP3, max 20MB) *','Archivo de Audio (MP3, máx 20MB) *')}</label>
+        <input name="file" type="file" accept=".mp3,audio/mpeg" required style={{ ...inputStyle, padding:'0.6rem 1rem', fontSize:'0.85rem' }} />
+      </div>
+
+      <div style={{ marginBottom:'1.2rem' }}>
+        <label style={labelStyle}>{t('投稿パスワード *','Submission Password *','Contraseña de envío *')}</label>
+        <input name="password" type="password" required style={inputStyle} placeholder={t('ご購入時にお届けしたパスワード','Password provided at purchase','Contraseña proporcionada en la compra')} />
+        <p style={{ fontSize:'0.72rem', color:'#999', marginTop:'0.3rem', fontFamily:sans }}>
+          {t(
+            '※ 購入時のメールまたはサンクスページに記載されたパスワードをご入力ください。',
+            '* Enter the password from your purchase confirmation email or thank-you page.',
+            '* Ingrese la contraseña de su correo de confirmación o página de agradecimiento.'
+          )}
+        </p>
+      </div>
+
+      <div style={{ marginBottom:'1.5rem' }}>
+        <label style={{ display:'flex', alignItems:'center', gap:'0.6rem', cursor:'pointer', fontFamily:sans, fontSize:'0.85rem', color:'#444' }}>
+          <input name="mastering" type="checkbox" value="true" style={{ width:'18px', height:'18px', accentColor:ACCENT }} />
+          {t(
+            '必要に応じて朝比奈幸太郎によるマスタリング処理を許可する（無料）',
+            'Allow mastering by Kotaro Asahina if needed (free)',
+            'Permitir masterización por Kotaro Asahina si es necesario (gratis)'
+          )}
+        </label>
+      </div>
+
+      {status === 'error' && (
+        <p style={{ color:'#dc2626', fontSize:'0.85rem', marginBottom:'1rem', fontFamily:sans }}>
+          {errorMsg}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={status === 'sending'}
+        style={{
+          ...ctaPrimary('md'),
+          width:'100%',
+          opacity: status === 'sending' ? 0.6 : 1,
+        }}
+      >
+        {status === 'sending'
+          ? t('送信中…','Sending…','Enviando…')
+          : t('録音を投稿する','Submit Recording','Enviar Grabación')
+        }
+      </button>
+
+      <p style={{ fontSize:'0.72rem', color:'#999', marginTop:'1rem', textAlign:'center', fontFamily:sans, lineHeight:'1.7' }}>
+        {t(
+          '※ 投稿いただいた音源は空音開発のサイトで公開されます。掲載可否は運営が判断いたします。',
+          '* Submitted recordings will be featured on the Kuon R&D website. Publication is at our discretion.',
+          '* Las grabaciones enviadas se publicarán en el sitio de Kuon R&D. La publicación queda a nuestra discreción.'
+        )}
+      </p>
+    </form>
   );
 }

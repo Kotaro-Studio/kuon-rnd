@@ -4,14 +4,15 @@ import { cors } from 'hono/cors'
 
 export interface Env {
   AUDIO: R2Bucket
+  UPLOAD_SECRET?: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
 
 app.use('*', cors({
   origin: ['https://kuon-rnd.com', 'http://localhost:3000'],
-  allowMethods: ['GET', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Range'],
+  allowMethods: ['GET', 'PUT', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Range', 'Authorization'],
   credentials: false,
 }))
 
@@ -112,6 +113,42 @@ app.get('/api/audio/:fileKey{.+}', async (c) => {
   headers.set('Cache-Control', 'public, max-age=31536000, immutable')
 
   return new Response(object.body, { headers })
+})
+
+// ─────────────────────────────────────────────
+// アップロード（投稿音源 → submissions/ に保存）
+// 認証: Authorization: Bearer <UPLOAD_SECRET>
+// ─────────────────────────────────────────────
+app.put('/api/upload/:fileKey{.+}', async (c) => {
+  const secret = c.env.UPLOAD_SECRET
+  if (!secret) {
+    return c.json({ error: 'Upload not configured' }, 500)
+  }
+
+  const auth = c.req.header('Authorization')
+  if (!auth || auth !== `Bearer ${secret}`) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  const fileKey = c.req.param('fileKey')
+
+  // submissions/ プレフィックスを強制（安全のため）
+  if (!fileKey.startsWith('submissions/')) {
+    return c.json({ error: 'Uploads must go to submissions/' }, 400)
+  }
+
+  const body = await c.req.arrayBuffer()
+
+  // 20MB 制限
+  if (body.byteLength > 20 * 1024 * 1024) {
+    return c.json({ error: 'File too large (max 20MB)' }, 413)
+  }
+
+  await c.env.AUDIO.put(fileKey, body, {
+    httpMetadata: { contentType: 'audio/mpeg' },
+  })
+
+  return c.json({ ok: true, key: fileKey, size: body.byteLength })
 })
 
 export default app

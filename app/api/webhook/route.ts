@@ -48,17 +48,42 @@ async function verifyStripeSignature(
 // ─────────────────────────────────────────────
 // Product info for emails
 // ─────────────────────────────────────────────
-const PRODUCT_NAMES: Record<string, string> = {
+// 商品名マッピング
+const PRODUCT_KEY_NAMES: Record<string, string> = {
+  'p-86s': 'P-86S ステレオマイクロフォン',
+  'x-86s': 'X-86S プロフェッショナルステレオマイクロフォン',
+};
+
+const PRICE_ID_NAMES: Record<string, string> = {
   'price_1SuT6IGbZ5gwwaLkc7rjciqU': 'P-86S ステレオマイクロフォン',
   'price_1SuTKHGbZ5gwwaLkR6ew580Z': 'X-86S プロフェッショナルステレオマイクロフォン',
 };
 
-function detectProductName(session: { line_items?: { data?: { price?: { id?: string } }[] }; amount_total?: number }): string {
-  // Try to detect from line_items if available
+// JPY は小数点なし通貨: amount_total は 13900（P-86S）/ 39600（X-86S）
+const AMOUNT_NAMES: Record<number, string> = {
+  13900: 'P-86S ステレオマイクロフォン',
+  39600: 'X-86S プロフェッショナルステレオマイクロフォン',
+};
+
+function detectProductName(session: {
+  metadata?: Record<string, string>;
+  line_items?: { data?: { price?: { id?: string } }[] };
+  amount_total?: number;
+}): string {
+  // 1. metadata.product（最も確実 — checkout API で埋め込み済み）
+  const metaProduct = session.metadata?.product;
+  if (metaProduct && PRODUCT_KEY_NAMES[metaProduct]) return PRODUCT_KEY_NAMES[metaProduct];
+
+  // 2. line_items の Price ID（expand されている場合のみ）
   const priceId = session.line_items?.data?.[0]?.price?.id;
-  if (priceId && PRODUCT_NAMES[priceId]) return PRODUCT_NAMES[priceId];
-  // Fallback: detect by amount (P-86S = 1390000 yen in cents, X-86S = 3960000)
-  if (session.amount_total === 3960000) return 'X-86S プロフェッショナルステレオマイクロフォン';
+  if (priceId && PRICE_ID_NAMES[priceId]) return PRICE_ID_NAMES[priceId];
+
+  // 3. amount_total（JPY: 小数点なし）
+  if (session.amount_total && AMOUNT_NAMES[session.amount_total]) {
+    return AMOUNT_NAMES[session.amount_total];
+  }
+
+  // フォールバック
   return 'P-86S ステレオマイクロフォン';
 }
 
@@ -110,6 +135,42 @@ function buildEmail(customerEmail: string, productName: string) {
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+        <h2 style="font-size: 18px; color: #0c4a6e; margin-bottom: 8px;">
+          オーナーズ・ギャラリーへのご招待
+        </h2>
+        <p style="color: #475569; font-size: 14px; line-height: 1.8;">
+          ${productName} で録音した自慢の音源を、空音開発のサイトで紹介しませんか？<br>
+          ご希望の方には、朝比奈幸太郎によるマスタリング処理も無料で承ります。
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 16px 0;">
+          <div style="color: #64748b; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
+            録音投稿パスワード
+          </div>
+          <div style="color: #0c4a6e; font-size: 24px; font-weight: 700; letter-spacing: 4px; font-family: 'SF Mono', 'Consolas', monospace;">
+            kuon041755
+          </div>
+        </div>
+
+        <div style="text-align: center; margin: 16px 0;">
+          <a href="https://kuon-rnd.com/microphone#gallery-submit"
+             style="display: inline-block; background: transparent; color: #0284c7; padding: 12px 28px; border-radius: 50px; text-decoration: none; font-size: 14px; letter-spacing: 1px; border: 1px solid #0284c7;">
+            録音を投稿する
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+          <p style="color: #92400e; font-size: 13px; line-height: 1.7; margin: 0;">
+            <strong>ソフトバンク（@softbank.ne.jp, @i.softbank.jp 等）のメールアドレスをご利用のお客様へ</strong><br>
+            迷惑メールフィルタの設定により、当社からのメールが届かない場合がございます。
+            メールが届いていない場合は、お手数ですが別のメールアドレス（Gmail 等）を添えて
+            <a href="https://kuon-rnd.com/#contact" style="color: #0284c7;">お問い合わせフォーム</a>
+            よりご連絡ください。パスワードを再送いたします。
+          </p>
+        </div>
 
         <p style="color: #94a3b8; font-size: 12px; line-height: 1.7; text-align: center;">
           空音開発 / Kuon R&D<br>

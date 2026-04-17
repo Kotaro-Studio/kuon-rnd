@@ -117,7 +117,9 @@ NG: 既存本番ページ → オーナー確認なしに変更しない
 │   ├── gps-heatmap/
 │   ├── gps-plot/
 │   ├── itadaki-lp/page.tsx
-│   ├── microphone/            ← P-86S メイン販売LP（リデザイン対象）
+│   ├── microphone/
+│   │   ├── page.tsx            ← P-86S メイン販売LP（リデザイン済み・ギャラリー投稿フォーム付き）
+│   │   └── layout.tsx          ← SEOメタデータ（OGP・Twitter Card・keywords）
 │   ├── noise-reduction/page.tsx
 │   ├── normalize/page.tsx
 │   ├── normalize-lp/page.tsx
@@ -127,13 +129,22 @@ NG: 既存本番ページ → オーナー確認なしに変更しない
 │   ├── radar/
 │   ├── revox/
 │   ├── rtk-base/
+│   ├── shop/
+│   │   └── thanks/
+│   │       ├── page.tsx        ← 購入完了ページ（パスワード表示・ギャラリー案内）
+│   │       └── layout.tsx      ← noindex 設定
 │   ├── web/
 │   ├── webapp/
 │   ├── api/
+│   │   ├── checkout/route.ts   ← Stripe Checkout Session 作成（runtime='edge'）
+│   │   ├── webhook/route.ts    ← Stripe Webhook 受信・メール送信（runtime='edge'）
+│   │   ├── submit-recording/route.ts ← 録音投稿受付・R2アップロード（runtime='edge'）
 │   │   └── audio/
-│   │       └── [...fileKey]/route.ts  ← 音声配信プロキシ（実装予定）
+│   │       └── [...fileKey]/route.ts  ← 音声配信プロキシ（未実装）
 │   ├── globals.css
-│   ├── layout.tsx             ← メインサイトレイアウト（絶対に触らない）
+│   ├── header.tsx              ← サイト共通ヘッダー
+│   ├── layout.tsx              ← メインサイトレイアウト（絶対に触らない）
+│   ├── providers.tsx           ← ClientProviders（LangContext 等）
 │   └── page.module.css
 ├── components/
 │   ├── Header.tsx
@@ -144,9 +155,9 @@ NG: 既存本番ページ → オーナー確認なしに変更しない
 │   ├── mic01.jpeg
 │   ├── mic02.jpeg
 │   └── mic03.jpeg
-├── kuon-rnd-audio-worker/     ← Cloudflare Workers（音声配信・デプロイ済み）
+├── kuon-rnd-audio-worker/     ← Cloudflare Workers（音声配信＋アップロード受付）
 │   ├── src/
-│   │   └── index.ts
+│   │   └── index.ts            ← GET /api/audio/:fileKey + PUT /api/upload/:fileKey
 │   ├── wrangler.toml
 │   └── package.json
 ├── CLAUDE.md
@@ -444,13 +455,15 @@ kotaroasahina.com（WordPress・ブログ継続）
 | オーディオアプリ | /audio-apps | 完成 |
 | ノーマライザー | /normalize | 完成 |
 | デクリッパー | /declipper | 完成 |
-| マイク LP | /microphone | リデザイン対象（最優先） |
+| マイク LP | /microphone | リデザイン完了・オーナーズギャラリー投稿フォーム設置済み |
 | X-86S 商品詳細 | /shop/x-86s | 未実装 |
-| 購入完了 | /shop/thanks | 未実装 |
-| Stripe API | /api/checkout | 未実装（Payment Links で代替） |
-| 音声配信 API | /api/audio/[...fileKey] | 未実装 |
-| Workers | kuon-rnd-audio-worker | デプロイ済み |
-| R2 バケット | kuon-rnd-audio | 作成済み・ファイル未投入 |
+| 購入完了 | /shop/thanks | 実装済み・パスワード表示・ギャラリー案内リンク付き |
+| Stripe Checkout API | /api/checkout | 実装済み・`runtime = 'edge'` |
+| Stripe Webhook | /api/webhook | 実装済み・パスワードメール＋ギャラリー案内＋SoftBank警告 |
+| 録音投稿 API | /api/submit-recording | 実装済み・パスワード認証付き・`runtime = 'edge'` |
+| 音声配信 API | /api/audio/[...fileKey] | 未実装（Worker直接アクセスで代替中） |
+| Workers | kuon-rnd-audio-worker | デプロイ済み・音声配信＋アップロード受付 |
+| R2 バケット | kuon-rnd-audio | 作成済み・試聴サンプル投入済み・submissions/ フォルダ作成済み |
 ---
 
 ## 15. 重要な失敗記録と再発防止策
@@ -665,6 +678,8 @@ Stripe Checkout ページ（Stripe がホスト）
   → 顧客メールアドレスと商品名を抽出
   → Resend API で noreply@kotaroasahina.com からパスワードメール送信
   → メール内容: 商品名・パスワード「kuon」・KUON NORMALIZE リンク
+  → オーナーズ・ギャラリー案内（投稿パスワード「kuon041755」）
+  → ソフトバンクメールアドレスへの注意喚起
   │
   ▼ ③ Stripe → Zapier → HubSpot CRM（数分）
   Zapier が Stripe の新規顧客を検出
@@ -682,8 +697,10 @@ Stripe Checkout ページ（Stripe がホスト）
 | ファイル | 役割 |
 |---------|------|
 | `app/api/checkout/route.ts` | Stripe Checkout Session 作成。`success_url` に `?product=` を付与。`runtime = 'edge'` |
-| `app/shop/thanks/page.tsx` | 購入完了ページ。`?product=p-86s` or `x-86s` で商品名を切替。パスワード表示。3 言語対応 |
-| `app/api/webhook/route.ts` | Stripe Webhook 受信。署名検証 → 商品名判定 → Resend でメール送信。`runtime = 'edge'` |
+| `app/shop/thanks/page.tsx` | 購入完了ページ。`?product=p-86s` or `x-86s` で商品名を切替。パスワード表示。ギャラリー投稿案内リンク。3 言語対応 |
+| `app/shop/thanks/layout.tsx` | SEO: `robots: { index: false, follow: false }`（検索エンジンに非公開） |
+| `app/api/webhook/route.ts` | Stripe Webhook 受信。署名検証 → 商品名判定 → Resend でメール送信（パスワード＋ギャラリー案内＋SoftBank注意）。`runtime = 'edge'` |
+| `app/api/submit-recording/route.ts` | 録音投稿受付。パスワード検証 → Worker経由R2アップロード → Resendでオーナー通知。`runtime = 'edge'` |
 
 ### 環境変数（Cloudflare Pages に登録済み）
 
@@ -692,8 +709,11 @@ Stripe Checkout ページ（Stripe がホスト）
 | `STRIPE_SECRET_KEY` | `rk_live_...` | Stripe Restricted Key（Checkout Session 作成用） |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Webhook 署名検証用シークレット |
 | `RESEND_API_KEY` | `re_...` | Resend メール送信用 API キー |
+| `UPLOAD_SECRET` | hex 文字列 | 録音投稿の R2 アップロード認証トークン（Pages と Worker の両方に同一値を登録） |
 
-登録方法: `npx wrangler pages secret put <変数名> --project-name kuon-rnd`
+登録方法:
+- Pages: `npx wrangler pages secret put <変数名> --project-name kuon-rnd`
+- Worker: `cd kuon-rnd-audio-worker && npx wrangler secret put <変数名>`
 
 ### 外部サービス設定
 
@@ -731,6 +751,143 @@ DNS レコードは必ず**サーバーパネル**側で追加すること。
 
 ---
 
+## 23. オーナーズ・ギャラリー投稿システム（実装済み）
+
+### 概要
+
+P-86S / X-86S の購入者が自分の録音を投稿し、空音開発のサイトで紹介する仕組み。
+購入者のみが投稿できるようパスワード保護されている。
+
+### 目的
+
+- 購入者の承認欲求を満たす（自分の録音がプロのサイトに掲載される）
+- P-86S / X-86S の実際の録音クオリティを見込み客に訴求（社会的証明）
+- 朝比奈幸太郎のマスタリング処理という付加価値で購入後の満足度を向上
+- コミュニティ形成によるブランドロイヤリティ強化
+
+### 全体フロー
+
+```
+購入者が /microphone#gallery-submit の投稿フォームにアクセス
+  │
+  │ ※ サンクスページ or 購入確認メールからリンク
+  │
+  ▼
+投稿フォーム入力（名前、メール、楽器、曲名、コメント、MP3ファイル）
+  │
+  │ 投稿パスワード「kuon041755」を入力（購入者のみが知っている）
+  │ マスタリング許可チェック（任意）
+  │
+  ▼
+/api/submit-recording（Next.js API Route, Edge Runtime）
+  │ ① パスワード検証（kuon041755）
+  │ ② バリデーション（MP3のみ、20MB以下、必須項目チェック）
+  │ ③ ファイル名生成: submissions/YYYYMMDD-名前-曲名.mp3
+  │
+  ├──────────────────────────────────────────────────────
+  │                    2 つの処理を実行
+  ├──────────────────────────────────────────────────────
+  │
+  ▼ ① Worker 経由で R2 にアップロード
+  PUT https://kuon-rnd-audio-worker.369-1d5.workers.dev/api/upload/submissions/...
+  → Authorization: Bearer <UPLOAD_SECRET>
+  → Worker が submissions/ プレフィックスを検証
+  → R2 バケット（kuon-rnd-audio）に保存
+  │
+  ▼ ② Resend でオーナーに通知メール送信
+  → 宛先: 369@kotaroasahina.com
+  → 投稿者情報（名前・メール・楽器・曲名・コメント・マスタリング希望・サイズ）
+  → 試聴リンク付き
+```
+
+### パスワード設計
+
+| パスワード | 用途 | 知っている人 |
+|-----------|------|------------|
+| `kuon` | KUON NORMALIZE アプリ利用 | 全購入者 |
+| `kuon041755` | オーナーズ・ギャラリー投稿 | 全購入者（メール＋サンクスページで案内） |
+
+- 投稿パスワードは購入確認メール内に記載
+- サンクスページにもギャラリーへのリンクを表示
+- パスワードが一致しないと API が 403 を返す
+
+### 関連ファイル
+
+| ファイル | 役割 |
+|---------|------|
+| `app/microphone/page.tsx` | 投稿フォーム（`SubmissionForm` コンポーネント、`#gallery-submit` アンカー） |
+| `app/api/submit-recording/route.ts` | 投稿受付 API（パスワード検証 → Worker PUT → Resend 通知） |
+| `kuon-rnd-audio-worker/src/index.ts` | PUT `/api/upload/:fileKey` エンドポイント（Bearer 認証、submissions/ 強制） |
+| `app/api/webhook/route.ts` | 購入確認メールにギャラリー案内＋投稿パスワードを含む |
+| `app/shop/thanks/page.tsx` | サンクスページにギャラリー投稿リンクを表示 |
+
+### R2 バケット構成（更新）
+
+```
+kuon-rnd-audio/
+├── p-86s/               ← マイク試聴サンプル
+│   ├── piano.mp3
+│   ├── violin.mp3
+│   └── ...
+├── x-86s/               ← X-86S 試聴サンプル（後日追加）
+├── hikaku/              ← 比較試聴用音源
+├── submissions/          ← 投稿された録音（API経由で自動保存）
+│   └── 20260417-山田太郎-ショパンノクターン.mp3
+└── recordings/           ← オーナー承認済み・掲載用に移動した音源
+    └── （朝比奈がマスタリング後に配置）
+```
+
+### Worker エンドポイント一覧（kuon-rnd-audio-worker）
+
+| メソッド | パス | 認証 | 用途 |
+|---------|------|------|------|
+| GET | `/api/audio/:fileKey` | なし | 音声ファイル配信（ストリーミング・Range対応） |
+| PUT | `/api/upload/:fileKey` | Bearer `UPLOAD_SECRET` | 録音投稿アップロード（submissions/ のみ） |
+
+### 環境変数
+
+| 変数名 | 登録先 | 用途 |
+|--------|--------|------|
+| `UPLOAD_SECRET` | Cloudflare Pages + Worker の両方 | Worker アップロード認証 |
+| `RESEND_API_KEY` | Cloudflare Pages | 通知メール送信 |
+
+### 投稿後のオーナー作業（手動）
+
+1. 369@kotaroasahina.com に通知メールが届く
+2. 試聴リンクで音源を確認
+3. マスタリング希望の場合 → DAW でマスタリング処理
+4. R2 ダッシュボードで `recordings/` に掲載用ファイルをアップロード
+5. ギャラリーページに掲載（将来的にページ実装予定）
+
+### ギャラリー掲載ページ（将来実装）
+
+現時点では投稿受付の仕組みのみ完成。掲載用のギャラリーページは投稿が集まり次第実装予定。
+UIデザインコンセプト:
+- カード型レイアウト（投稿者名・楽器・曲名・コメント・再生プレーヤー）
+- 朝比奈幸太郎マスタリング済みバッジ表示
+- グリッドレイアウト（レスポンシブ、auto-fill minmax(280px, 1fr)）
+
+### 購入確認メールの内容（Webhook 経由で送信）
+
+メールには以下のセクションが含まれる（上から順に）:
+1. 商品名＋お礼メッセージ
+2. 発送案内（1〜3営業日）
+3. KUON NORMALIZE パスワード「kuon」（青グラデーションボックス）
+4. 「KUON NORMALIZE を開く」ボタン
+5. オーナーズ・ギャラリー案内＋投稿パスワード「kuon041755」
+6. 「録音を投稿する」ボタン
+7. ソフトバンクメール注意書き（黄色警告ボックス）
+8. フッター（kuon-rnd.com リンク・問い合わせメール）
+
+### ソフトバンクメール問題への対処
+
+ソフトバンク系メールアドレス（@softbank.ne.jp, @i.softbank.jp 等）では迷惑メールフィルタにより
+当社からのメールが届かない場合がある。メール内に以下の注意書きを記載:
+- 別のメールアドレス（Gmail 等）を添えて `kuon-rnd.com/#contact` のお問い合わせフォームから連絡するよう案内
+- パスワードを再送する旨を明記
+
+---
+
 ## 22. 作業履歴
 
 ### 2026-04-15 セッション（大規模改修）
@@ -758,7 +915,31 @@ DNS レコードは必ず**サーバーパネル**側で追加すること。
 | Cloudflare 環境変数 | `RESEND_API_KEY`、`STRIPE_WEBHOOK_SECRET` を `wrangler pages secret put` で登録。 |
 | HubSpot + Zapier | Stripe → Zapier → HubSpot コンタクト自動登録を設定（オーナーが手動設定）。 |
 
+### 2026-04-17 セッション（オーナーズ・ギャラリー投稿システム構築）
+
+| カテゴリ | 変更内容 |
+|---|---|
+| Worker 更新 | `kuon-rnd-audio-worker/src/index.ts` に PUT `/api/upload/:fileKey` エンドポイント追加。Bearer トークン認証、`submissions/` プレフィックス強制、20MB 制限。CORS に PUT・Authorization を追加。 |
+| 録音投稿 API | `app/api/submit-recording/route.ts` 新規作成。FormData 受信 → パスワード検証（`kuon041755`） → Worker PUT で R2 アップロード → Resend でオーナー通知メール。`runtime = 'edge'`。 |
+| /microphone 更新 | ページ末尾に「オーナーズ・ギャラリー」セクション追加（`#gallery-submit`）。`SubmissionForm` コンポーネント: 名前・メール・楽器選択・曲名・コメント・MP3アップロード・投稿パスワード・マスタリング許可チェック。 |
+| /shop/thanks 更新 | ギャラリー投稿への案内カード追加（`/microphone#gallery-submit` へのリンク）。 |
+| Webhook メール更新 | `app/api/webhook/route.ts` の購入確認メールにオーナーズ・ギャラリー案内（投稿パスワード `kuon041755`）、ソフトバンクメール注意書き（`/#contact` フォームへの誘導）を追加。 |
+| SEO | `app/microphone/layout.tsx` 新規作成（title, description, keywords, OGP, Twitter Card）。`app/layout.tsx` に metadataBase・title template・OGP・Twitter Card 追加。`/microphone` に JSON-LD Product structured data 追加。 |
+| R2 フォルダ | `kuon-rnd-audio` バケットに `submissions/` および `recordings/` フォルダ作成。 |
+| CLAUDE.md | §4 ディレクトリ構成更新、§14 実装ステータス更新、§21 関連ファイル・環境変数追加、§23 オーナーズ・ギャラリー投稿システム新規セクション追加。 |
+
 ---
 
-最終更新: 2026年4月16日
-次のアクション: アプリ系ページの独自言語トグル撤廃とサイト共通 `useLang()` への統一（§19 の絶対条件を遵守）
+最終更新: 2026年4月17日
+
+### 未完了タスク（次回セッション向け）
+
+1. **UPLOAD_SECRET の登録** — Worker と Cloudflare Pages の両方に同一値を登録
+   - Worker: `cd kuon-rnd-audio-worker && npx wrangler secret put UPLOAD_SECRET`
+   - Pages: `npx wrangler pages secret put UPLOAD_SECRET --project-name kuon-rnd`
+2. **Worker の再デプロイ** — アップロードエンドポイント追加分を本番反映
+   - `cd kuon-rnd-audio-worker && npx wrangler deploy`
+3. **git push** — 全変更を Cloudflare Pages に自動デプロイ
+4. **購入フロー E2E テスト** — テスト決済 → サンクスページ → メール受信 → 投稿フォーム動作確認
+5. **ギャラリー掲載ページの実装** — 投稿が集まり次第、掲載用ページ（`/gallery` 等）を構築
+6. **アプリ系ページの独自言語トグル撤廃** — サイト共通 `useLang()` への統一（§19 の絶対条件を遵守）

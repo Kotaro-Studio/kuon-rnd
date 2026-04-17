@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サンクスページ プレビュー — X-86S 購入時</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(170deg, #f8fafc 0%, #e8f4f8 40%, #f0f9ff 100%);
+    display: flex; flex-direction: column; align-items: center;
+    padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+  .card {
+    max-width: 640px; width: 100%; background: #fff;
+    border-radius: 20px; box-shadow: 0 4px 40px rgba(0,0,0,0.06);
+    padding: clamp(2rem, 5vw, 3.5rem); text-align: center;
+  }
+  .check-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.5rem; font-size: 2rem; color: #fff;
+  }
+  h1 { font-family: "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif; font-size: clamp(1.4rem,3vw,1.9rem); font-weight: 600; color: #0c4a6e; margin-bottom: 0.8rem; line-height: 1.4; }
+  .subtitle { color: #475569; font-size: clamp(0.9rem,1.5vw,1rem); line-height: 1.8; margin-bottom: 0.5rem; }
+  .shipping { color: #64748b; font-size: 0.85rem; line-height: 1.7; margin-bottom: 2rem; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 2rem; }
+  h2 { font-family: "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif; font-size: clamp(1.1rem,2vw,1.3rem); font-weight: 600; color: #0c4a6e; margin-bottom: 0.8rem; }
+  .gift-desc { color: #475569; font-size: clamp(0.85rem,1.3vw,0.95rem); line-height: 1.8; margin-bottom: 1.5rem; }
+  .pw-box { margin: 1.5rem auto; padding: 1.5rem 2rem; background: linear-gradient(135deg, #0c4a6e, #0369a1); border-radius: 16px; color: #fff; max-width: 360px; }
+  .pw-label { font-size: 0.8rem; opacity: 0.8; letter-spacing: 0.15em; text-transform: uppercase; }
+  .pw-value { font-family: 'SF Mono','Fira Code','Consolas',monospace; font-size: clamp(2rem,5vw,2.8rem); font-weight: 700; letter-spacing: 0.3em; margin: 0.5rem 0; }
+  .pw-note { color: #94a3b8; font-size: 0.8rem; line-height: 1.6; margin-bottom: 0.5rem; font-style: italic; }
+  .email-note { color: #94a3b8; font-size: 0.78rem; line-height: 1.6; margin-bottom: 1.5rem; }
+  .btn-primary { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: #fff; background: #0284c7; font-size: clamp(0.9rem,1.5vw,1rem); letter-spacing: 0.1em; padding: 1rem 2.5rem; border-radius: 50px; box-shadow: 0 8px 28px rgba(2,132,199,0.3); margin-top: 1.5rem; }
+  .gallery-invite { margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(2,132,199,0.05), rgba(14,165,233,0.08)); border-radius: 14px; border: 1px solid rgba(2,132,199,0.1); text-align: left; }
+  .gallery-invite h3 { font-size: 0.82rem; color: #0c4a6e; font-weight: 600; margin-bottom: 0.4rem; font-family: "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif; }
+  .gallery-invite p { font-size: 0.78rem; color: #475569; line-height: 1.7; margin-bottom: 0.8rem; }
+  .gallery-pw-box { margin: 0.6rem 0 0.8rem; padding: 0.7rem 1rem; background: rgba(255,255,255,0.8); border-radius: 10px; border: 1px solid rgba(2,132,199,0.15); display: inline-block; }
+  .gallery-pw-label { font-size: 0.7rem; color: #64748b; letter-spacing: 0.08em; }
+  .gallery-pw-value { font-family: 'SF Mono','Fira Code','Consolas',monospace; font-size: 0.9rem; font-weight: 700; color: #0c4a6e; letter-spacing: 0.15em; margin-left: 0.5rem; }
+  .gallery-pw-note { font-size: 0.7rem; color: #94a3b8; line-height: 1.6; margin: 0 0 0.8rem; }
+  .gallery-invite a { color: #0284c7; text-decoration: none; font-weight: 500; font-size: 0.82rem; }
+
+  .softbank-warning { margin-top: 2rem; padding: 1rem 1.2rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; text-align: left; }
+  .softbank-warning p { color: #92400e; font-size: 0.78rem; line-height: 1.7; margin: 0; }
+  .softbank-warning a { color: #0284c7; }
+
+  .bottom-links { margin-top: 2.5rem; display: flex; flex-direction: column; gap: 0.8rem; align-items: center; }
+  .bottom-links a { color: #0284c7; text-decoration: none; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="check-icon">✓</div>
+  <h1>ご購入ありがとうございます</h1>
+  <p class="subtitle">X-86S プロフェッショナルステレオマイクロフォンのご注文を承りました。</p>
+  <p class="shipping">決済確認後、1〜3 営業日以内に発送いたします。発送完了後、メールにてお知らせします。</p>
+  <hr>
+  <h2>購入者限定特典</h2>
+  <p class="gift-desc">X-86S をご購入いただいたお客様に、空音開発のオーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。</p>
+  <div class="pw-box">
+    <div class="pw-label">アプリのパスワード</div>
+    <div class="pw-value">kuon</div>
+  </div>
+  <p class="pw-note">このパスワードはすべてのマイクロフォンオーナーが共有しています。仲間の証です。</p>
+  <p class="email-note">このパスワードはご登録のメールアドレスにもお送りしています。</p>
+  <a href="#" class="btn-primary">KUON NORMALIZE を開く</a>
+
+  <div class="gallery-invite">
+    <h3>🎙 オーナーズ・ギャラリーに参加しませんか？</h3>
+    <p>あなたの自慢の録音を空音開発のサイトで紹介しませんか？朝比奈幸太郎によるマスタリングも承ります。</p>
+    <div class="gallery-pw-box">
+      <span class="gallery-pw-label">投稿パスワード:</span>
+      <span class="gallery-pw-value">kuon041755</span>
+    </div>
+    <p class="gallery-pw-note">※ このパスワードはご購入確認メールにも記載されています。</p>
+    <a href="#">録音を投稿する →</a>
+  </div>
+
+  <div class="softbank-warning">
+    <p>
+      <strong>ソフトバンク（@softbank.ne.jp, @i.softbank.jp 等）のメールアドレスをご利用のお客様へ</strong><br>
+      迷惑メールフィルタの設定により、当社からの確認メールが届かない場合がございます。メールが届いていない場合は、お手数ですが別のメールアドレス（Gmail 等）を添えて<a href="#">お問い合わせフォーム</a>よりご連絡ください。パスワードを再送いたします。
+    </p>
+  </div>
+
+  <div class="bottom-links">
+    <a href="#">マイクロフォンページへ戻る</a>
+    <a href="#">空音開発 トップページへ</a>
+  </div>
+</div>
+
+</body>
+</html>

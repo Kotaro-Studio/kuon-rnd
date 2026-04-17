@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>購入確認メール プレビュー — P-86S</title>
+<style>
+  body {
+    margin: 0; padding: 40px 20px;
+    background: #f1f5f9;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+  .email-frame {
+    max-width: 640px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .email-header {
+    background: #f8fafc;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+    color: #64748b;
+  }
+  .email-header strong { color: #0c4a6e; }
+  .email-body { padding: 0; }
+</style>
+</head>
+<body>
+
+<!-- Simulated email client frame -->
+<div class="email-frame">
+  <div class="email-header">
+    <strong>From:</strong> 空音開発 Kuon R&D &lt;noreply@kotaroasahina.com&gt;<br>
+    <strong>To:</strong> customer@example.com<br>
+    <strong>Subject:</strong> 【空音開発】P-86S ステレオマイクロフォン ご購入ありがとうございます — KUON NORMALIZE パスワード
+  </div>
+
+  <div class="email-body">
+    <!-- ↓ ここから実際のメール HTML（webhook/route.ts の buildEmail 出力） ↓ -->
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+      <h1 style="font-size: 22px; color: #0c4a6e; margin: 0 0 8px;">
+        P-86S ステレオマイクロフォン<br>ご購入ありがとうございます
+      </h1>
+      <p style="color: #475569; font-size: 15px; line-height: 1.8; margin: 0;">
+        このたびは空音開発の P-86S ステレオマイクロフォン をお選びいただき、誠にありがとうございます。<br>
+        決済確認後、1〜3 営業日以内に発送いたします。
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+      <h2 style="font-size: 18px; color: #0c4a6e; margin: 0 0 8px;">
+        購入者限定特典: KUON NORMALIZE
+      </h2>
+      <p style="color: #475569; font-size: 14px; line-height: 1.8; margin: 0;">
+        P-86S ステレオマイクロフォン オーナー限定で、オーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。
+      </p>
+
+      <div style="background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%); border-radius: 12px; padding: 24px; text-align: center; margin: 20px 0;">
+        <div style="color: rgba(255,255,255,0.8); font-size: 12px; letter-spacing: 2px; text-transform: uppercase;">
+          アプリのパスワード
+        </div>
+        <div style="color: #fff; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'SF Mono', 'Consolas', monospace; margin: 8px 0;">
+          kuon
+        </div>
+      </div>
+
+      <p style="color: #94a3b8; font-size: 13px; font-style: italic; text-align: center; margin: 0;">
+        このパスワードはすべてのマイクロフォンオーナーが共有しています。仲間の証です。
+      </p>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="https://kuon-rnd.com/normalize"
+           style="display: inline-block; background: #0284c7; color: #fff; padding: 14px 36px; border-radius: 50px; text-decoration: none; font-size: 15px; letter-spacing: 1px;">
+          KUON NORMALIZE を開く
+        </a>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+      <h2 style="font-size: 18px; color: #0c4a6e; margin: 0 0 8px;">
+        オーナーズ・ギャラリーへのご招待
+      </h2>
+      <p style="color: #475569; font-size: 14px; line-height: 1.8; margin: 0;">
+        P-86S ステレオマイクロフォン で録音した自慢の音源を、空音開発のサイトで紹介しませんか？<br>
+        ご希望の方には、朝比奈幸太郎によるマスタリング処理も無料で承ります。
+      </p>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 16px 0;">
+        <div style="color: #64748b; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
+          録音投稿パスワード
+        </div>
+        <div style="color: #0c4a6e; font-size: 24px; font-weight: 700; letter-spacing: 4px; font-family: 'SF Mono', 'Consolas', monospace;">
+          kuon041755
+        </div>
+      </div>
+
+      <div style="text-align: center; margin: 16px 0;">
+        <a href="https://kuon-rnd.com/microphone#gallery-submit"
+           style="display: inline-block; background: transparent; color: #0284c7; padding: 12px 28px; border-radius: 50px; text-decoration: none; font-size: 14px; letter-spacing: 1px; border: 1px solid #0284c7;">
+          録音を投稿する
+        </a>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+        <p style="color: #92400e; font-size: 13px; line-height: 1.7; margin: 0;">
+          <strong>ソフトバンク（@softbank.ne.jp, @i.softbank.jp 等）のメールアドレスをご利用のお客様へ</strong><br>
+          迷惑メールフィルタの設定により、当社からのメールが届かない場合がございます。
+          メールが届いていない場合は、お手数ですが別のメールアドレス（Gmail 等）を添えて
+          <a href="https://kuon-rnd.com/#contact" style="color: #0284c7;">お問い合わせフォーム</a>
+          よりご連絡ください。パスワードを再送いたします。
+        </p>
+      </div>
+
+      <p style="color: #94a3b8; font-size: 12px; line-height: 1.7; text-align: center; margin: 0;">
+        空音開発 / Kuon R&D<br>
+        <a href="https://kuon-rnd.com" style="color: #0284c7;">kuon-rnd.com</a><br>
+        ご不明な点がございましたら 369@kotaroasahina.com までお気軽にどうぞ。
+      </p>
+    </div>
+    <!-- ↑ メール HTML ここまで ↑ -->
+  </div>
+</div>
+
+</body>
+</html>
