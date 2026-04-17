@@ -1604,9 +1604,9 @@ function SubmissionForm({ t, lang }: { t: (...args: string[]) => string; lang: s
 
       <p style={{ fontSize:'0.72rem', color:'#999', marginTop:'1rem', textAlign:'center', fontFamily:sans, lineHeight:'1.7' }}>
         {t(
-          '※ 投稿いただいた音源は空音開発のサイトで公開されます。掲載可否は運営が判断いたします。',
-          '* Submitted recordings will be featured on the Kuon R&D website. Publication is at our discretion.',
-          '* Las grabaciones enviadas se publicarán en el sitio de Kuon R&D. La publicación queda a nuestra discreción.'
+          '※ 投稿いただいた音源は空音開発のサイトで公開されます。著作権やその他諸事情により掲載できない場合もございますのでご了承ください。',
+          '* Submitted recordings will be featured on the Kuon R&D website. Please note that some recordings may not be published due to copyright or other circumstances.',
+          '* Las grabaciones enviadas se publicarán en el sitio de Kuon R&D. Tenga en cuenta que algunas grabaciones pueden no publicarse por derechos de autor u otras circunstancias.'
         )}
       </p>
     </form>
