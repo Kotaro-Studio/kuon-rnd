@@ -1,32 +1,66 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
 type L3 = Record<Lang, string>;
 
-const apps: Array<{
+// ─────────────────────────────────────────────
+// Design tokens
+// ─────────────────────────────────────────────
+const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
+const sans  = '"Helvetica Neue", Arial, sans-serif';
+const mono  = '"SF Mono", "Fira Code", "Consolas", monospace';
+
+// ─────────────────────────────────────────────
+// App data
+// ─────────────────────────────────────────────
+type AppEntry = {
   id: string;
+  number: string;
   badge: string;
   badgeType: 'paid' | 'exclusive' | 'free';
   name: string;
-  nameJa: string;
   tagline: L3;
   desc: L3;
   href: string;
-  accentColor: string;
-  accentLight: string;
-  icon: string;
-  status: string;
+  accent: string;
   price: L3;
-}> = [
+  cta: L3;
+  isNew?: boolean;
+};
+
+const apps: AppEntry[] = [
+  {
+    id: 'ddp-checker',
+    number: '05',
+    badge: 'DDP',
+    badgeType: 'free',
+    name: 'DDP CHECKER',
+    tagline: {
+      ja: 'DDPファイルの中身を、\nブラウザだけで確認する。',
+      en: 'Verify DDP file contents\nright in your browser.',
+      es: 'Verifica el contenido DDP\ndirectamente en tu navegador.',
+    },
+    desc: {
+      ja: 'CDマスタリング用DDPファイルセットの構造検証・トラックリスト表示・各トラック試聴・WAVダウンロード。完全ローカル処理。',
+      en: 'Verify CD mastering DDP filesets — track list, audio preview, WAV download. 100% local processing, no install.',
+      es: 'Verifica conjuntos DDP para masterización de CD — lista de pistas, vista previa, descarga WAV. 100% local.',
+    },
+    href: '/ddp-checker-lp',
+    accent: '#0284c7',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
+    isNew: true,
+  },
   {
     id: 'itadaki',
+    number: '01',
     badge: 'DECLIP',
     badgeType: 'paid',
     name: 'KUON ITADAKI',
-    nameJa: '',
     tagline: {
       ja: 'アンプの限界で失われたピークを、\n数学的に甦らせる。',
       en: 'Mathematically restore the peaks\ndestroyed by analog clipping.',
@@ -38,18 +72,16 @@ const apps: Array<{
       es: 'Motor de restauración basado en interpolación Hermite cúbica, diseñado para la distorsión analógica asimétrica.',
     },
     href: '/itadaki-lp',
-    accentColor: '#0099BB',
-    accentLight: '#E6F6FA',
-    icon: '◈',
-    status: 'AVAILABLE',
+    accent: '#0099BB',
     price: { ja: '¥1,980', en: '$14.99', es: '$14.99' },
+    cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
   },
   {
     id: 'normalize',
+    number: '02',
     badge: 'NORMALIZE',
     badgeType: 'exclusive',
     name: 'KUON NORMALIZE',
-    nameJa: '',
     tagline: {
       ja: 'マイクを買った、その日から。\nブラウザが、スタジオになる。',
       en: 'The day you get the mic,\nyour browser becomes a studio.',
@@ -61,528 +93,479 @@ const apps: Array<{
       es: 'Normalización de picos, optimización de loudness, EQ signature y reverb de sala. Exclusivo para compradores del micrófono.',
     },
     href: '/normalize-lp',
-    accentColor: '#059669',
-    accentLight: '#ECFDF5',
-    icon: '◉',
-    status: 'AVAILABLE',
-    price: { ja: 'マイク同梱', en: 'Mic Bundle', es: 'Incluido con mic' },
+    accent: '#059669',
+    price: { ja: 'マイク同梱', en: 'Mic Bundle', es: 'Incluido' },
+    cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
   },
   {
     id: 'noise-reduction',
-    badge: 'NOISE REDUCTION',
+    number: '03',
+    badge: 'DENOISE',
     badgeType: 'free',
     name: 'KUON DENOISE',
-    nameJa: '',
     tagline: {
       ja: 'エアコン、機材ハム、環境音。\n定常ノイズをスペクトルから消す。',
       en: 'AC hum, gear noise, ambience.\nErase steady noise from the spectrum.',
       es: 'Zumbido, ruido del equipo, ambiente.\nBorra el ruido constante del espectro.',
     },
     desc: {
-      ja: 'スペクトル減算法によるブラウザ完結型ノイズリダクション。周波数スペクトルを可視化しながら除去強度をリアルタイムに調整できます。',
+      ja: 'スペクトル減算法によるブラウザ完結型ノイズリダクション。周波数スペクトルを可視化しながら除去強度をリアルタイムに調整。',
       en: 'Browser-native noise reduction via spectral subtraction. Visualize the frequency spectrum and adjust removal strength in real time.',
       es: 'Reducción de ruido nativa del navegador mediante sustracción espectral. Visualiza el espectro y ajusta la intensidad en tiempo real.',
     },
     href: '/noise-reduction',
-    accentColor: '#7C3AED',
-    accentLight: '#F5F3FF',
-    icon: '◎',
-    status: 'AVAILABLE',
-    price: { ja: '完全無料', en: 'Free', es: 'Gratis' },
+    accent: '#7C3AED',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: 'アプリを開く', en: 'Open App', es: 'Abrir app' },
   },
   {
     id: 'dual-mono',
-    badge: 'DUAL MONO',
+    number: '04',
+    badge: 'STEREO',
     badgeType: 'free',
     name: 'KUON DUAL',
-    nameJa: '',
     tagline: {
       ja: 'モノラルに、広がりを与える。\nデュアルモノ、または擬似ステレオへ。',
       en: 'Give mono a sense of space.\nConvert to dual mono or pseudo stereo.',
       es: 'Dale amplitud al mono.\nConvierte a dual mono o pseudo estéreo.',
     },
     desc: {
-      ja: 'モノラル音声をデュアルモノまたはHaas効果＋MS処理による擬似ステレオに変換。ステレオ幅をスライダーでコントロールできます。',
+      ja: 'モノラル音声をデュアルモノまたはHaas効果＋MS処理による擬似ステレオに変換。ステレオ幅をスライダーでコントロール。',
       en: 'Convert mono to dual mono or pseudo stereo using Haas effect and M/S processing. Control stereo width with a slider.',
-      es: 'Convierte audio mono a dual mono o pseudo estéreo mediante el efecto Haas y procesamiento M/S. Controla la amplitud con un slider.',
+      es: 'Convierte audio mono a dual mono o pseudo estéreo mediante el efecto Haas y procesamiento M/S.',
     },
     href: '/dual-mono',
-    accentColor: '#D97706',
-    accentLight: '#FFFBEB',
-    icon: '◑',
-    status: 'AVAILABLE',
-    price: { ja: '完全無料', en: 'Free', es: 'Gratis' },
+    accent: '#D97706',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: 'アプリを開く', en: 'Open App', es: 'Abrir app' },
   },
 ];
 
-/* ─── ANIMATED BADGE ─── */
-function AnimatedBadge({ type, lang }: { type: 'paid' | 'exclusive' | 'free'; lang: Lang }) {
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 1800);
-    return () => clearInterval(id);
-  }, []);
-
-  const pulse = (tick % 2 === 0);
-
-  if (type === 'free') {
-    return (
-      <span style={{
-        display:       'inline-flex',
-        alignItems:    'center',
-        gap:           '5px',
-        fontSize:      '0.72rem',
-        fontWeight:    800,
-        letterSpacing: '1.5px',
-        color:         '#059669',
-        background:    `linear-gradient(135deg, #D1FAE5, #A7F3D0)`,
-        padding:       '5px 13px',
-        borderRadius:  '100px',
-        boxShadow:     pulse
-          ? '0 0 0 3px rgba(5,150,105,0.18), 0 2px 8px rgba(5,150,105,0.25)'
-          : '0 0 0 0px rgba(5,150,105,0)',
-        transition:    'box-shadow 0.6s ease',
-        whiteSpace:    'nowrap' as const,
-      }}>
-        <span style={{
-          width:        '6px',
-          height:       '6px',
-          borderRadius: '50%',
-          background:   '#059669',
-          display:      'inline-block',
-          transform:    pulse ? 'scale(1.4)' : 'scale(1)',
-          transition:   'transform 0.6s ease',
-        }} />
-        {({ ja: '完全無料', en: 'FREE', es: 'GRATIS' } as L3)[lang]}
-      </span>
-    );
-  }
-
-  if (type === 'exclusive') {
-    return (
-      <span style={{
-        display:       'inline-flex',
-        alignItems:    'center',
-        gap:           '5px',
-        fontSize:      '0.72rem',
-        fontWeight:    800,
-        letterSpacing: '1.5px',
-        color:         '#F6E05E',
-        background:    '#1A202C',
-        padding:       '5px 13px',
-        borderRadius:  '100px',
-        boxShadow:     pulse
-          ? '0 0 0 3px rgba(246,224,94,0.2), 0 2px 8px rgba(0,0,0,0.3)'
-          : '0 0 0 0px rgba(246,224,94,0)',
-        transition:    'box-shadow 0.6s ease',
-        whiteSpace:    'nowrap' as const,
-      }}>
-        <span style={{
-          width:        '6px',
-          height:       '6px',
-          borderRadius: '50%',
-          background:   '#F6E05E',
-          display:      'inline-block',
-          transform:    pulse ? 'scale(1.4)' : 'scale(1)',
-          transition:   'transform 0.6s ease',
-        }} />
-        {({ ja: '限定公開', en: 'EXCLUSIVE', es: 'EXCLUSIVO' } as L3)[lang]}
-      </span>
-    );
-  }
-
-  // paid
-  return (
-    <span style={{
-      display:       'inline-flex',
-      alignItems:    'center',
-      gap:           '5px',
-      fontSize:      '0.72rem',
-      fontWeight:    800,
-      letterSpacing: '1.5px',
-      color:         '#92400E',
-      background:    `linear-gradient(135deg, #FEF3C7, #FDE68A)`,
-      padding:       '5px 13px',
-      borderRadius:  '100px',
-      boxShadow:     pulse
-        ? '0 0 0 3px rgba(217,119,6,0.18), 0 2px 8px rgba(217,119,6,0.2)'
-        : '0 0 0 0px rgba(217,119,6,0)',
-      transition:    'box-shadow 0.6s ease',
-      whiteSpace:    'nowrap' as const,
-    }}>
-      <span style={{
-        width:        '6px',
-        height:       '6px',
-        borderRadius: '50%',
-        background:   '#D97706',
-        display:      'inline-block',
-        transform:    pulse ? 'scale(1.4)' : 'scale(1)',
-        transition:   'transform 0.6s ease',
-      }} />
-      {({ ja: '有料', en: 'PAID', es: 'PREMIUM' } as L3)[lang]}
-    </span>
-  );
-}
-
-/* ─── PRICE TAG ─── */
-function PriceTag({ type, price, lang }: { type: 'paid' | 'exclusive' | 'free'; price: L3; lang: Lang }) {
-  if (type === 'free') {
-    return (
-      <span style={{
-        fontSize:      '1.05rem',
-        fontWeight:    800,
-        color:         '#059669',
-        letterSpacing: '-0.3px',
-      }}>
-        {price[lang]}
-      </span>
-    );
-  }
-  if (type === 'exclusive') {
-    return (
-      <span style={{
-        fontSize:      '1.05rem',
-        fontWeight:    800,
-        color:         '#059669',
-        letterSpacing: '-0.3px',
-      }}>
-        {price[lang]}
-      </span>
-    );
-  }
-  return (
-    <span style={{
-      fontSize:      '1.05rem',
-      fontWeight:    800,
-      color:         '#0099BB',
-      letterSpacing: '-0.3px',
-    }}>
-      {price[lang]}
-    </span>
-  );
-}
-
-/* ─── MAIN ─── */
-export default function AudioAppsPage() {
-  // サイト共通の useLang() に統合（§19 アプリ絶対保護ルール遵守：表示レイヤーのみ変更）
-  const { lang } = useLang();
-
-  const C = {
-    bg:          '#FFFFFF',
-    bgSoft:      '#F7F9FC',
-    border:      '#E2E8F0',
-    ink:         '#1A202C',
-    inkMid:      '#4A5568',
-    inkMuted:    '#718096',
-    accent:      '#0099BB',
-    accentLight: '#E6F6FA',
-    white:       '#FFFFFF',
+// ─────────────────────────────────────────────
+// Badge style resolver
+// ─────────────────────────────────────────────
+function badgeMeta(type: 'paid' | 'exclusive' | 'free', lang: Lang) {
+  if (type === 'free') return {
+    label: ({ ja: '無料', en: 'FREE', es: 'GRATIS' } as L3)[lang],
+    bg: 'rgba(5,150,105,0.1)', color: '#059669', dot: '#059669',
   };
+  if (type === 'exclusive') return {
+    label: ({ ja: '限定', en: 'EXCLUSIVE', es: 'EXCLUSIVO' } as L3)[lang],
+    bg: '#1a1a2e', color: '#fbbf24', dot: '#fbbf24',
+  };
+  return {
+    label: ({ ja: '有料', en: 'PAID', es: 'PREMIUM' } as L3)[lang],
+    bg: 'rgba(245,158,11,0.1)', color: '#b45309', dot: '#f59e0b',
+  };
+}
+
+// ─────────────────────────────────────────────
+// Scroll reveal
+// ─────────────────────────────────────────────
+function useReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { el.classList.add('visible'); io.disconnect(); } },
+      { threshold: 0.08 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return ref;
+}
+
+// ─────────────────────────────────────────────
+// Single app row — full-width horizontal layout
+// ─────────────────────────────────────────────
+function AppRow({ app, index, lang }: { app: AppEntry; index: number; lang: Lang }) {
+  const ref = useReveal();
+  const bm = badgeMeta(app.badgeType, lang);
+
+  return (
+    <div
+      ref={ref}
+      className="reveal"
+      style={{ transitionDelay: `${index * 0.06}s`, position: 'relative' }}
+    >
+      {/* ── NEW RELEASE accent line ── */}
+      {app.isNew && (
+        <div style={{
+          position: 'absolute',
+          top: -1,
+          left: 0,
+          right: 0,
+          height: 3,
+          borderRadius: '24px 24px 0 0',
+          background: `linear-gradient(90deg, ${app.accent}, #7C3AED, ${app.accent})`,
+          zIndex: 2,
+        }} />
+      )}
+      {app.isNew && (
+        <div style={{
+          position: 'absolute',
+          top: 14,
+          right: 20,
+          zIndex: 3,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 10,
+          fontWeight: 800,
+          letterSpacing: '0.16em',
+          color: '#fff',
+          background: `linear-gradient(135deg, ${app.accent}, #7C3AED)`,
+          padding: '5px 14px',
+          borderRadius: 50,
+          boxShadow: `0 4px 16px ${app.accent}40`,
+        }}>
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: '#fff',
+            display: 'inline-block',
+          }} />
+          NEW RELEASE
+        </div>
+      )}
+      <Link href={app.href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'stretch',
+            borderRadius: 24,
+            overflow: 'hidden',
+            background: app.isNew
+              ? 'rgba(255,255,255,0.7)'
+              : 'rgba(255,255,255,0.55)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: app.isNew
+              ? `1px solid ${app.accent}30`
+              : '1px solid rgba(255,255,255,0.8)',
+            boxShadow: app.isNew
+              ? `0 8px 32px ${app.accent}12, 0 0 0 1px ${app.accent}10`
+              : '0 4px 24px rgba(0,0,0,0.03)',
+            transition: 'all 0.45s cubic-bezier(0.175,0.885,0.32,1.275)',
+            cursor: 'pointer',
+            minHeight: 280,
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = `0 24px 48px ${app.accent}18, 0 0 0 1px ${app.accent}20`;
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = '';
+            e.currentTarget.style.boxShadow = app.isNew
+              ? `0 8px 32px ${app.accent}12, 0 0 0 1px ${app.accent}10`
+              : '0 4px 24px rgba(0,0,0,0.03)';
+          }}
+        >
+          {/* ── Accent side panel ── */}
+          <div style={{
+            width: 'clamp(100px, 18vw, 200px)',
+            minWidth: 100,
+            background: `linear-gradient(160deg, ${app.accent}12, ${app.accent}06)`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '32px 16px',
+            position: 'relative',
+            flexShrink: 0,
+          }}>
+            {/* Large number */}
+            <span style={{
+              fontFamily: mono,
+              fontSize: 'clamp(48px, 8vw, 72px)',
+              fontWeight: 800,
+              color: `${app.accent}15`,
+              lineHeight: 1,
+              letterSpacing: '-0.04em',
+              userSelect: 'none',
+            }}>
+              {app.number}
+            </span>
+            {/* Category badge */}
+            <span style={{
+              marginTop: 12,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              color: app.accent,
+              background: `${app.accent}12`,
+              padding: '4px 14px',
+              borderRadius: 50,
+              border: `1px solid ${app.accent}20`,
+            }}>
+              {app.badge}
+            </span>
+          </div>
+
+          {/* ── Content ── */}
+          <div style={{
+            flex: 1,
+            padding: 'clamp(24px, 4vw, 40px)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}>
+            {/* Top: name + status badge */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              marginBottom: 14,
+              flexWrap: 'wrap',
+            }}>
+              <h2 style={{
+                fontFamily: sans,
+                fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
+                fontWeight: 700,
+                letterSpacing: '-0.01em',
+                color: '#111827',
+                margin: 0,
+              }}>
+                {app.name}
+              </h2>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                color: bm.color,
+                background: bm.bg,
+                padding: '4px 12px',
+                borderRadius: 50,
+              }}>
+                <span style={{
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: bm.dot, display: 'inline-block',
+                }} />
+                {bm.label}
+              </span>
+            </div>
+
+            {/* Tagline — serif italic feeling */}
+            <p style={{
+              fontFamily: serif,
+              fontSize: 'clamp(15px, 2.2vw, 18px)',
+              fontWeight: 500,
+              color: '#1f2937',
+              lineHeight: 1.7,
+              whiteSpace: 'pre-line',
+              marginBottom: 12,
+            }}>
+              {app.tagline[lang]}
+            </p>
+
+            {/* Description */}
+            <p style={{
+              fontSize: 'clamp(12px, 1.8vw, 14px)',
+              color: '#6b7280',
+              lineHeight: 1.8,
+              marginBottom: 20,
+              maxWidth: 520,
+            }}>
+              {app.desc[lang]}
+            </p>
+
+            {/* Bottom: price + CTA */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              flexWrap: 'wrap',
+            }}>
+              <span style={{
+                fontFamily: mono,
+                fontSize: 'clamp(14px, 2vw, 16px)',
+                fontWeight: 700,
+                color: app.accent,
+              }}>
+                {app.price[lang]}
+              </span>
+              <span style={{
+                fontSize: 13,
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                color: app.accent,
+                padding: '8px 24px',
+                borderRadius: 50,
+                border: `1px solid ${app.accent}30`,
+                background: `${app.accent}08`,
+                transition: 'all 0.25s ease',
+              }}>
+                {app.cta[lang]} →
+              </span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Main page
+// ─────────────────────────────────────────────
+export default function AudioAppsPage() {
+  const { lang } = useLang();
 
   return (
     <div style={{
-      backgroundColor: C.bg,
-      color:           C.ink,
-      fontFamily:      '"Space Grotesk","Noto Sans JP","Helvetica Neue",Arial,sans-serif',
-      minHeight:       '100vh',
-      overflowX:       'hidden',
+      maxWidth: 1000,
+      margin: '0 auto',
+      padding: 'clamp(24px, 5vw, 60px) clamp(16px, 4vw, 40px)',
     }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        ::selection { background: rgba(0,153,187,0.15); }
 
-        .app-card {
-          text-decoration: none;
-          display:         flex;
-          flex-direction:  column;
-          background:      #FFFFFF;
-          border:          1px solid #E2E8F0;
-          border-radius:   20px;
-          padding:         32px;
-          box-shadow:      0 2px 12px rgba(0,0,0,0.04);
-          transition:      all 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
-          color:           inherit;
-        }
-        .app-card:hover {
-          transform:   translateY(-6px);
-          box-shadow:  0 24px 56px rgba(0,0,0,0.10) !important;
-          border-color: rgba(0,0,0,0.14) !important;
-        }
-        .app-card:hover .card-arrow {
-          transform: translateX(5px);
-          opacity:   1 !important;
-        }
-        .app-card:hover .card-icon {
-          transform: scale(1.07);
-        }
-        .card-icon {
-          transition: transform 0.3s ease;
-        }
-        .lang-btn:hover {
-          background:   ${C.accentLight} !important;
-          border-color: ${C.accent} !important;
-          color:        ${C.accent} !important;
-        }
-
-        @media (max-width: 640px) {
-          .apps-grid { grid-template-columns: 1fr !important; }
-        }
-
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-
-      {/* ━━ HEADER ━━ */}
-      <div style={{
-        maxWidth:  '880px',
-        margin:    '0 auto',
-        padding:   '100px 32px 72px',
+      {/* ═══════════════════════════════════ */}
+      {/* HERO                                */}
+      {/* ═══════════════════════════════════ */}
+      <section style={{
         textAlign: 'center',
-        animation: 'fadeInUp 0.6s ease both',
+        paddingTop: 'clamp(32px, 8vw, 80px)',
+        paddingBottom: 'clamp(48px, 10vw, 100px)',
+        position: 'relative',
       }}>
-        {/* 言語切替はサイト共通ヘッダーに統合済み（§19） */}
-
-        <div style={{
-          fontSize:      '0.68rem',
-          color:         C.accent,
-          letterSpacing: '4px',
-          fontWeight:    700,
-          marginBottom:  '20px',
-          textTransform: 'uppercase' as const,
-        }}>
-          AUDIO ENGINEERING TOOLS
+        <div className="hero-enter-1" style={{ position: 'relative' }}>
+          {/* Stats row */}
+          <div style={{
+            display: 'inline-flex',
+            gap: 32,
+            marginBottom: 32,
+            padding: '12px 28px',
+            borderRadius: 50,
+            background: 'rgba(255,255,255,0.6)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.8)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: mono, fontSize: 28, fontWeight: 800, color: '#0284c7' }}>
+                {apps.length}
+              </div>
+              <div style={{ fontSize: 10, color: '#9ca3af', letterSpacing: '0.12em', fontWeight: 600 }}>
+                TOOLS
+              </div>
+            </div>
+            <div style={{ width: 1, background: 'rgba(0,0,0,0.06)' }} />
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: mono, fontSize: 28, fontWeight: 800, color: '#059669' }}>
+                {apps.filter(a => a.badgeType === 'free').length}
+              </div>
+              <div style={{ fontSize: 10, color: '#9ca3af', letterSpacing: '0.12em', fontWeight: 600 }}>
+                FREE
+              </div>
+            </div>
+            <div style={{ width: 1, background: 'rgba(0,0,0,0.06)' }} />
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: mono, fontSize: 28, fontWeight: 800, color: '#111827' }}>
+                0
+              </div>
+              <div style={{ fontSize: 10, color: '#9ca3af', letterSpacing: '0.12em', fontWeight: 600 }}>
+                {({ ja: 'インストール', en: 'INSTALL', es: 'INSTALACIÓN' } as L3)[lang]}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <h1 style={{
-          fontSize:      'clamp(2rem,5vw,3.2rem)',
-          fontWeight:    700,
-          letterSpacing: '-1.5px',
-          lineHeight:    1.15,
-          color:         C.ink,
-          marginBottom:  '24px',
-          whiteSpace:    'pre-line',
+        <h1 className="hero-enter-2" style={{
+          fontFamily: serif,
+          fontSize: 'clamp(30px, 6vw, 56px)',
+          fontWeight: 700,
+          lineHeight: 1.25,
+          letterSpacing: '0.03em',
+          whiteSpace: 'pre-line',
+          marginBottom: 20,
+          background: 'linear-gradient(135deg, #111827 20%, #0284c7 60%, #7C3AED)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          position: 'relative',
         }}>
           {({
-            ja: '音と向き合うための道具',
-            en: 'Tools for those who\ntake sound seriously.',
-            es: 'Herramientas para quienes\ntoman el sonido en serio.',
+            ja: '音と向き合う\nすべての人のために。',
+            en: 'For everyone\nwho takes sound seriously.',
+            es: 'Para todos los que\ntoman el sonido en serio.',
           } as L3)[lang]}
         </h1>
 
-        <p style={{
-          fontSize:   '1rem',
-          color:      C.inkMuted,
-          lineHeight: 1.85,
-          maxWidth:   '480px',
-          margin:     '0 auto',
+        <p className="hero-enter-3" style={{
+          fontFamily: sans,
+          fontSize: 'clamp(14px, 2.2vw, 17px)',
+          color: '#6b7280',
+          lineHeight: 1.8,
+          maxWidth: 520,
+          margin: '0 auto',
+          whiteSpace: 'pre-line',
+          position: 'relative',
         }}>
           {({
-            ja: 'アプリはすべて、ブラウザだけでインストール不要',
-            en: 'Every Kuon R&D audio tool runs entirely in your browser. Nothing to install.',
-            es: 'Todas las apps de Kuon R&D funcionan en tu navegador. Nada que instalar.',
+            ja: 'すべてのアプリはブラウザだけで完結。\nインストールもアカウントも不要。\n開いた瞬間から、あなたのスタジオになる。',
+            en: 'Every tool runs entirely in your browser.\nNo install. No account.\nYour studio, the moment you open it.',
+            es: 'Todas las herramientas funcionan en tu navegador.\nSin instalación. Sin cuenta.\nTu estudio, desde el momento en que lo abres.',
           } as L3)[lang]}
         </p>
-      </div>
+      </section>
 
-      {/* ━━ GRID ━━ */}
-      <div style={{ maxWidth: '880px', margin: '0 auto', padding: '0 32px 140px' }}>
-        <div
-          className="apps-grid"
-          style={{
-            display:             'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap:                 '20px',
-            marginBottom:        '20px',
-          }}
-        >
-          {apps.map((app, i) => (
-            <a
-              key={app.id}
-              href={app.href}
-              className="app-card"
-              style={{ animationDelay: `${i * 0.08}s`, animation: 'fadeInUp 0.6s ease both' }}
-            >
-              {/* top row: icon + badges */}
-              <div style={{
-                display:        'flex',
-                justifyContent: 'space-between',
-                alignItems:     'flex-start',
-                marginBottom:   '22px',
-              }}>
-                <div
-                  className="card-icon"
-                  style={{
-                    width:          '54px',
-                    height:         '54px',
-                    borderRadius:   '14px',
-                    background:     app.accentLight,
-                    border:         `1px solid ${app.accentColor}22`,
-                    display:        'flex',
-                    alignItems:     'center',
-                    justifyContent: 'center',
-                    fontSize:       '1.4rem',
-                    color:          app.accentColor,
-                  }}
-                >
-                  {app.icon}
-                </div>
+      {/* ═══════════════════════════════════ */}
+      {/* APP LIST                            */}
+      {/* ═══════════════════════════════════ */}
+      <section style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'clamp(16px, 3vw, 24px)',
+        marginBottom: 'clamp(48px, 10vw, 80px)',
+      }}>
+        {apps.map((app, i) => (
+          <AppRow key={app.id} app={app} index={i} lang={lang} />
+        ))}
+      </section>
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                  {/* category */}
-                  <span style={{
-                    fontSize:      '0.6rem',
-                    fontWeight:    700,
-                    letterSpacing: '2px',
-                    color:         app.accentColor,
-                    background:    app.accentLight,
-                    padding:       '3px 10px',
-                    borderRadius:  '100px',
-                  }}>
-                    {app.badge}
-                  </span>
-                  {/* animated status badge */}
-                  <AnimatedBadge type={app.badgeType} lang={lang} />
-                </div>
-              </div>
-
-              {/* name */}
-              <div style={{
-                fontSize:      'clamp(1.15rem,2.2vw,1.5rem)',
-                fontWeight:    700,
-                letterSpacing: '-0.5px',
-                color:         C.ink,
-                lineHeight:    1,
-                marginBottom:  '14px',
-              }}>
-                {app.name}
-              </div>
-
-              {/* tagline */}
-              <p style={{
-                fontSize:    '0.9rem',
-                fontWeight:  500,
-                color:       C.inkMid,
-                lineHeight:  1.65,
-                marginBottom:'10px',
-                whiteSpace:  'pre-line',
-                flexGrow:    1,
-              }}>
-                {app.tagline[lang]}
-              </p>
-
-              {/* desc */}
-              <p style={{
-                fontSize:    '0.78rem',
-                color:       C.inkMuted,
-                lineHeight:  1.8,
-                marginBottom:'22px',
-              }}>
-                {app.desc[lang]}
-              </p>
-
-              {/* bottom: price + arrow */}
-              <div style={{
-                display:        'flex',
-                justifyContent: 'space-between',
-                alignItems:     'center',
-                borderTop:      `1px solid ${C.border}`,
-                paddingTop:     '16px',
-                marginTop:      'auto',
-              }}>
-                <PriceTag type={app.badgeType} price={app.price} lang={lang} />
-                <span
-                  className="card-arrow"
-                  style={{
-                    fontSize:   '1.1rem',
-                    color:      app.accentColor,
-                    opacity:    0.3,
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  →
-                </span>
-              </div>
-            </a>
-          ))}
-        </div>
-
-        {/* ━━ COMING SOON ━━ */}
-        <div style={{
-          background:   C.bgSoft,
-          border:       `1px dashed ${C.border}`,
-          borderRadius: '20px',
-          padding:      '32px',
-          display:      'flex',
-          alignItems:   'center',
-          gap:          '20px',
-          opacity:      0.55,
+      {/* ═══════════════════════════════════ */}
+      {/* COMING SOON                         */}
+      {/* ═══════════════════════════════════ */}
+      <section style={{
+        textAlign: 'center',
+        paddingBottom: 'clamp(40px, 8vw, 80px)',
+      }}>
+        <div className="reveal" style={{
+          display: 'inline-block',
+          padding: '28px 48px',
+          borderRadius: 20,
+          border: '1px dashed rgba(0,0,0,0.1)',
+          background: 'rgba(255,255,255,0.3)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
         }}>
           <div style={{
-            width:          '54px',
-            height:         '54px',
-            borderRadius:   '14px',
-            background:     C.white,
-            border:         `1px solid ${C.border}`,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            fontSize:       '1.4rem',
-            color:          C.inkMuted,
-            flexShrink:     0,
+            fontFamily: mono,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.2em',
+            color: '#9ca3af',
+            marginBottom: 8,
           }}>
-            +
+            COMING SOON
           </div>
-          <div>
-            <div style={{
-              fontSize:      '0.6rem',
-              fontWeight:    700,
-              letterSpacing: '3px',
-              color:         C.inkMuted,
-              marginBottom:  '6px',
-            }}>
-              COMING SOON
-            </div>
-            <div style={{
-              fontSize:    '1rem',
-              fontWeight:  600,
-              color:       C.inkMuted,
-              marginBottom:'4px',
-            }}>
-              {({ ja: '次のツールを開発中', en: 'Next tool in development', es: 'Próxima herramienta en desarrollo' } as L3)[lang]}
-            </div>
-            <div style={{ fontSize: '0.82rem', color: C.inkMuted, lineHeight: 1.7 }}>
-              {({
-                ja: '空音開発は新しい音響ツールを継続的にリリースします',
-                en: 'Kuon R&D continuously releases new audio engineering tools.',
-                es: 'Kuon R&D lanza continuamente nuevas herramientas de audio.',
-              } as L3)[lang]}
-            </div>
-          </div>
+          <p style={{
+            fontFamily: serif,
+            fontSize: 'clamp(14px, 2.2vw, 17px)',
+            color: '#6b7280',
+          }}>
+            {({
+              ja: '次のツールを開発中——',
+              en: 'Next tool in development —',
+              es: 'Próxima herramienta en desarrollo —',
+            } as L3)[lang]}
+          </p>
         </div>
-      </div>
-
-      {/* ━━ FOOTER ━━ */}
-      <footer style={{
-        borderTop:      `1px solid ${C.border}`,
-        padding:        '28px 40px',
-        display:        'flex',
-        justifyContent: 'space-between',
-        alignItems:     'center',
-        fontSize:       '0.8rem',
-        color:          C.inkMuted,
-        background:     C.white,
-        flexWrap:       'wrap' as const,
-        gap:            '8px',
-      }}>
-        <div style={{ fontWeight: 600, color: C.ink }}>
-          空音開発 <span style={{ color: C.accent, fontWeight: 400 }}>Kuon R&D</span>
-        </div>
-        <div>© 2026 Kuon R&D. All rights reserved.</div>
-      </footer>
+      </section>
     </div>
   );
 }

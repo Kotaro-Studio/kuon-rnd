@@ -1570,7 +1570,7 @@ function SubmissionForm({ t, lang }: { t: (...args: string[]) => string; lang: s
         </p>
       </div>
 
-      <div style={{ marginBottom:'1.5rem' }}>
+      <div style={{ marginBottom:'1.2rem' }}>
         <label style={{ display:'flex', alignItems:'center', gap:'0.6rem', cursor:'pointer', fontFamily:sans, fontSize:'0.85rem', color:'#444' }}>
           <input name="mastering" type="checkbox" value="true" style={{ width:'18px', height:'18px', accentColor:ACCENT }} />
           {t(
