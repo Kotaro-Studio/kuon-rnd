@@ -133,6 +133,12 @@ const T = {
   btnPlay: { ja: '再生', en: 'Play', es: 'Reproducir' } as L3,
   btnStop: { ja: '停止', en: 'Stop', es: 'Detener' } as L3,
   btnDownload: { ja: 'WAV', en: 'WAV', es: 'WAV' } as L3,
+  btnGapListen: { ja: '曲間を聴く', en: 'Gap Listen', es: 'Escuchar pausa' } as L3,
+  btnGapListenTip: {
+    ja: '前の曲の終わり15秒 → 曲間 → この曲の冒頭を連続再生',
+    en: 'Plays last 15s of previous track → gap → start of this track',
+    es: 'Reproduce los últimos 15s de la pista anterior → pausa → inicio de esta pista',
+  } as L3,
   btnReset: { ja: '別のDDPを確認', en: 'Check Another DDP', es: 'Verificar otro DDP' } as L3,
   errNoDdpid: {
     ja: 'DDPIDファイルが見つかりません。DDPフォルダ全体を選択してください。',
@@ -442,6 +448,8 @@ export default function DdpCheckerPage() {
   const [ddpData, setDdpData] = useState<DdpData | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [playingTrack, setPlayingTrack] = useState<number | null>(null);
+  const [playingMode, setPlayingMode] = useState<'track' | 'gap' | null>(null);
+  const [gapTrack, setGapTrack] = useState<number | null>(null); // which track's gap is being previewed
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -461,6 +469,8 @@ export default function DdpCheckerPage() {
     setErrorMsg('');
     setDdpData(null);
     setPlayingTrack(null);
+    setPlayingMode(null);
+    setGapTrack(null);
     sourceRef.current?.stop();
 
     try {
@@ -545,53 +555,128 @@ export default function DdpCheckerPage() {
     }
   }, [lang]);
 
-  // ─── Playback ───
+  // ─── Playback helpers ───
+  const ensureAudioCtx = useCallback(async () => {
+    if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+      audioCtxRef.current = new AudioContext({ sampleRate: SAMPLE_RATE });
+    }
+    const ctx = audioCtxRef.current;
+    if (ctx.state === 'suspended') await ctx.resume();
+    return ctx;
+  }, []);
+
+  const pcmToAudioBuffer = (ctx: AudioContext, rawPcm: ArrayBuffer): AudioBuffer => {
+    const sampleCount = Math.floor(rawPcm.byteLength / BYTES_PER_FRAME);
+    const audioBuffer = ctx.createBuffer(NUM_CHANNELS, sampleCount, SAMPLE_RATE);
+    const dataView = new DataView(rawPcm);
+    const left = audioBuffer.getChannelData(0);
+    const right = audioBuffer.getChannelData(1);
+    for (let i = 0; i < sampleCount; i++) {
+      const byteOff = i * BYTES_PER_FRAME;
+      left[i] = dataView.getInt16(byteOff, true) / 32768;
+      right[i] = dataView.getInt16(byteOff + 2, true) / 32768;
+    }
+    return audioBuffer;
+  };
+
+  // ─── Normal track playback ───
   const playTrack = useCallback(async (track: TrackInfo) => {
     if (!ddpData?.audioFile) return;
 
-    // Stop current
     sourceRef.current?.stop();
     setPlayingTrack(track.number);
+    setPlayingMode('track');
+    setGapTrack(null);
 
     try {
-      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-        audioCtxRef.current = new AudioContext({ sampleRate: SAMPLE_RATE });
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') await ctx.resume();
-
-      // Read the PCM slice
+      const ctx = await ensureAudioCtx();
       const rawSlice = await ddpData.audioFile.slice(track.startBytes, track.startBytes + track.lengthBytes).arrayBuffer();
-
-      // Convert raw LE 16-bit interleaved PCM to AudioBuffer
-      const sampleCount = Math.floor(rawSlice.byteLength / BYTES_PER_FRAME);
-      const audioBuffer = ctx.createBuffer(NUM_CHANNELS, sampleCount, SAMPLE_RATE);
-      const dataView = new DataView(rawSlice);
-
-      const left = audioBuffer.getChannelData(0);
-      const right = audioBuffer.getChannelData(1);
-      for (let i = 0; i < sampleCount; i++) {
-        const byteOff = i * BYTES_PER_FRAME;
-        left[i] = dataView.getInt16(byteOff, true) / 32768;
-        right[i] = dataView.getInt16(byteOff + 2, true) / 32768;
-      }
+      const audioBuffer = pcmToAudioBuffer(ctx, rawSlice);
 
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
-      source.onended = () => setPlayingTrack(null);
+      source.onended = () => { setPlayingTrack(null); setPlayingMode(null); };
       source.start();
       sourceRef.current = source;
     } catch (err) {
       console.error('Playback error:', err);
       setPlayingTrack(null);
+      setPlayingMode(null);
     }
-  }, [ddpData]);
+  }, [ddpData, ensureAudioCtx]);
+
+  // ─── Gap transition playback ───
+  // Plays: previous track's last ~15 seconds → gap → current track's first ~5 seconds
+  const playGapTransition = useCallback(async (trackIndex: number) => {
+    if (!ddpData?.audioFile || trackIndex < 1) return;
+
+    const prevTrack = ddpData.tracks[trackIndex - 1];
+    const thisTrack = ddpData.tracks[trackIndex];
+    if (!prevTrack || !thisTrack) return;
+
+    sourceRef.current?.stop();
+    setPlayingTrack(thisTrack.number);
+    setPlayingMode('gap');
+    setGapTrack(thisTrack.number);
+
+    try {
+      const ctx = await ensureAudioCtx();
+
+      // Calculate byte ranges
+      const TAIL_SECONDS = 15;
+      const HEAD_SECONDS = 5;
+
+      // Previous track: last 15 seconds (or full track if shorter)
+      const prevTailBytes = Math.min(
+        Math.floor(TAIL_SECONDS * SAMPLE_RATE * BYTES_PER_FRAME),
+        prevTrack.lengthBytes
+      );
+      const prevStartByte = prevTrack.startBytes + prevTrack.lengthBytes - prevTailBytes;
+
+      // This track: first 5 seconds (or full track if shorter)
+      const thisHeadBytes = Math.min(
+        Math.floor(HEAD_SECONDS * SAMPLE_RATE * BYTES_PER_FRAME),
+        thisTrack.lengthBytes
+      );
+
+      // The "gap" is everything between prev track end and this track start in raw file
+      const prevEndByte = prevTrack.startBytes + prevTrack.lengthBytes;
+      const gapBytes = Math.max(0, thisTrack.startBytes - prevEndByte);
+
+      // Total region: prevTail + gap + thisHead
+      // Read as continuous region from the raw file for perfect continuity
+      const totalStartByte = prevStartByte;
+      const totalEndByte = thisTrack.startBytes + thisHeadBytes;
+      const totalLength = totalEndByte - totalStartByte;
+
+      const rawSlice = await ddpData.audioFile.slice(totalStartByte, totalEndByte).arrayBuffer();
+      const audioBuffer = pcmToAudioBuffer(ctx, rawSlice);
+
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(ctx.destination);
+      source.onended = () => {
+        setPlayingTrack(null);
+        setPlayingMode(null);
+        setGapTrack(null);
+      };
+      source.start();
+      sourceRef.current = source;
+    } catch (err) {
+      console.error('Gap playback error:', err);
+      setPlayingTrack(null);
+      setPlayingMode(null);
+      setGapTrack(null);
+    }
+  }, [ddpData, ensureAudioCtx]);
 
   const stopPlayback = useCallback(() => {
     sourceRef.current?.stop();
     sourceRef.current = null;
     setPlayingTrack(null);
+    setPlayingMode(null);
+    setGapTrack(null);
   }, []);
 
   // ─── WAV Download ───
@@ -616,6 +701,8 @@ export default function DdpCheckerPage() {
     setDdpData(null);
     setErrorMsg('');
     setPlayingTrack(null);
+    setPlayingMode(null);
+    setGapTrack(null);
   }, []);
 
   // ─── Drop handlers ───
@@ -968,12 +1055,15 @@ export default function DdpCheckerPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ddpData.tracks.map((track) => {
+                  {ddpData.tracks.map((track, trackIdx) => {
                     const isPlaying = playingTrack === track.number;
+                    const isGapMode = isPlaying && playingMode === 'gap';
+                    const isTrackMode = isPlaying && playingMode === 'track';
+                    const canGapListen = trackIdx > 0; // 2曲目以降のみ
                     return (
                       <tr key={track.number} style={{
                         borderBottom: '1px solid rgba(0,0,0,0.04)',
-                        background: isPlaying ? 'rgba(2,132,199,0.04)' : 'transparent',
+                        background: isPlaying ? (isGapMode ? 'rgba(124,58,237,0.04)' : 'rgba(2,132,199,0.04)') : 'transparent',
                         transition: 'background 0.2s',
                       }}>
                         <td style={{ padding: '12px 8px', fontWeight: 600 }}>
@@ -983,7 +1073,7 @@ export default function DdpCheckerPage() {
                             gap: 8,
                           }}>
                             {isPlaying && (
-                              <span style={{ display: 'inline-flex', gap: 2, height: 16, alignItems: 'flex-end', color: '#0284c7' }}>
+                              <span style={{ display: 'inline-flex', gap: 2, height: 16, alignItems: 'flex-end', color: isGapMode ? '#7C3AED' : '#0284c7' }}>
                                 {[0, 1, 2, 3].map(i => (
                                   <span key={i} className="waveform-bar" style={{ height: 12 }} />
                                 ))}
@@ -1020,16 +1110,31 @@ export default function DdpCheckerPage() {
                           {track.isrc || t(T.noIsrc)}
                         </td>
                         <td style={{ padding: '12px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          {/* Gap Listen button (track 2+) */}
+                          {canGapListen && (
+                            <button
+                              title={t(T.btnGapListenTip)}
+                              style={{
+                                ...btnSmall,
+                                color: isGapMode ? '#fff' : '#7C3AED',
+                                background: isGapMode ? '#7C3AED' : 'rgba(124,58,237,0.08)',
+                                marginRight: 6,
+                              }}
+                              onClick={() => isGapMode ? stopPlayback() : playGapTransition(trackIdx)}
+                            >
+                              {isGapMode ? '■ ' + t(T.btnStop) : '⏮ ' + t(T.btnGapListen)}
+                            </button>
+                          )}
                           <button
                             style={{
                               ...btnSmall,
-                              color: isPlaying ? '#fff' : '#0284c7',
-                              background: isPlaying ? '#0284c7' : 'rgba(2,132,199,0.08)',
+                              color: isTrackMode ? '#fff' : '#0284c7',
+                              background: isTrackMode ? '#0284c7' : 'rgba(2,132,199,0.08)',
                               marginRight: 6,
                             }}
-                            onClick={() => isPlaying ? stopPlayback() : playTrack(track)}
+                            onClick={() => isTrackMode ? stopPlayback() : playTrack(track)}
                           >
-                            {isPlaying ? '■ ' + t(T.btnStop) : '▶ ' + t(T.btnPlay)}
+                            {isTrackMode ? '■ ' + t(T.btnStop) : '▶ ' + t(T.btnPlay)}
                           </button>
                           <button
                             style={{

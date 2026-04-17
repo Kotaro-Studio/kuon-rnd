@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title:
-    '無料DDPチェッカー — DDPファイルの確認・試聴・WAVダウンロード | Free DDP Checker',
+    '無料DDPチェッカー＆曲間試聴 — DDPファイル確認・曲間プレビュー・WAVダウンロード | Free DDP Checker with Gap Listen',
   description:
-    'CDマスタリング用DDPファイルセットをブラウザだけで確認できる無料ツール。トラックリスト表示、各トラックの試聴再生、WAVダウンロードに対応。インストール不要、サーバー送信なし、完全ローカル処理。DDP v1.01 / v2.00対応。Free online DDP file checker — verify track list, preview audio, and download WAV. No install, no upload, 100% browser-based.',
+    'CDマスタリング用DDPファイルセットをブラウザだけで確認。トラックリスト・試聴・WAVダウンロード＋曲間試聴（Gap Listen）：前の曲の終わり15秒→曲間→次の曲の冒頭を連続再生。リードイン・プリギャップ・曲間表示。インストール不要・サーバー送信なし。Free DDP checker with exclusive Gap Listen — hear the last 15s of the previous track through the gap into the next. No install, no upload.',
   keywords: [
     // Japanese SEO keywords
     'DDP チェッカー',
@@ -21,6 +21,11 @@ export const metadata: Metadata = {
     'DDP WAV 変換',
     'DDPファイル 中身 確認',
     'DDPID DDPMS 解析',
+    'DDP 曲間 確認',
+    'DDP 曲間 試聴',
+    'DDP リードイン',
+    'DDP プリギャップ',
+    'CD 曲間 チェック',
     // English SEO keywords
     'DDP checker',
     'DDP file checker',
@@ -37,6 +42,11 @@ export const metadata: Metadata = {
     'DDP file format',
     'verify DDP',
     'DDP browser tool',
+    'DDP gap listen',
+    'DDP track gap preview',
+    'DDP crossfade preview',
+    'DDP lead-in check',
+    'DDP pre-gap display',
     // Spanish SEO keywords
     'verificador DDP',
     'DDP checker gratis',
@@ -44,6 +54,8 @@ export const metadata: Metadata = {
     'reproductor DDP gratuito',
     'verificar DDP online',
     'masterización CD DDP',
+    'DDP pausa entre pistas',
+    'DDP escuchar transición',
   ],
   alternates: {
     canonical: 'https://kuon-rnd.com/ddp-checker-lp',
@@ -54,9 +66,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Free DDP Checker — DDPファイルの確認・試聴・WAVダウンロード',
+    title: 'Free DDP Checker & Gap Listen — DDPファイル確認・曲間試聴・WAVダウンロード',
     description:
-      'DDPファイルセットの中身をブラウザだけで確認。トラックリスト・試聴・WAVダウンロード。無料・インストール不要・完全ローカル処理。Verify DDP filesets in your browser — free, no install, 100% local.',
+      'DDPファイルセットをブラウザで確認。トラックリスト・試聴・WAVダウンロード＋曲間試聴（Gap Listen）で曲の繋がりを体感。無料・インストール不要。Check DDP with exclusive Gap Listen feature — free, no install.',
     url: 'https://kuon-rnd.com/ddp-checker-lp',
     siteName: '空音開発 Kuon R&D',
     type: 'website',
@@ -65,9 +77,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Free DDP Checker — No Install, No Upload, 100% Browser-Based',
+    title: 'Free DDP Checker with Gap Listen — No Install, No Upload, 100% Browser-Based',
     description:
-      'Check DDP filesets in your browser. Track list, preview, WAV download. Free tool by Kuon R&D for musicians and producers.',
+      'Check DDP filesets + hear track transitions with Gap Listen. Track list, preview, WAV download, lead-in & pre-gap display. Free by Kuon R&D.',
   },
   robots: {
     index: true,

@@ -107,6 +107,20 @@ const T = {
   featuresLabel: { ja: 'FEATURES', en: 'FEATURES', es: 'CARACTERÍSTICAS' } as L3,
   features: [
     {
+      icon: '⏮',
+      title: {
+        ja: '曲間試聴 — Gap Listen',
+        en: 'Gap Listen — Crossfade Preview',
+        es: 'Escuchar Pausa — Gap Listen',
+      } as L3,
+      desc: {
+        ja: '前の曲の終わり15秒 → 曲間の無音 → 次の曲の冒頭を連続再生。CDの曲間のニュアンスをプレス前にブラウザで体感できる、他のDDPツールにはない独自機能。',
+        en: 'Plays the last 15 seconds of the previous track → silence gap → start of the next track. Experience the nuance of CD track transitions before pressing — a feature no other DDP tool offers.',
+        es: 'Reproduce los últimos 15 segundos de la pista anterior → silencio → inicio de la siguiente. Experimenta la transición entre pistas de CD antes del prensado — una función que ninguna otra herramienta DDP ofrece.',
+      } as L3,
+      exclusive: true,
+    },
+    {
       icon: '📋',
       title: {
         ja: 'トラックリスト表示',
@@ -263,6 +277,18 @@ const T = {
     },
     {
       feature: { ja: 'トラック試聴', en: 'Track preview', es: 'Vista previa' } as L3,
+      kuon: { ja: '○', en: '✓', es: '✓' } as L3,
+      hofa: { ja: '○', en: '✓', es: '✓' } as L3,
+      sonoris: { ja: '○', en: '✓', es: '✓' } as L3,
+    },
+    {
+      feature: { ja: '曲間試聴（Gap Listen）', en: 'Gap Listen (crossfade)', es: 'Escuchar pausa (Gap Listen)' } as L3,
+      kuon: { ja: '○', en: '✓', es: '✓' } as L3,
+      hofa: { ja: '—', en: '—', es: '—' } as L3,
+      sonoris: { ja: '—', en: '—', es: '—' } as L3,
+    },
+    {
+      feature: { ja: 'リードイン・プリギャップ表示', en: 'Lead-in / Pre-gap display', es: 'Lead-in / Pre-gap' } as L3,
       kuon: { ja: '○', en: '✓', es: '✓' } as L3,
       hofa: { ja: '○', en: '✓', es: '✓' } as L3,
       sonoris: { ja: '○', en: '✓', es: '✓' } as L3,
@@ -578,7 +604,7 @@ export default function DdpCheckerLpPage() {
       name: '空音開発 Kuon R&D',
       url: 'https://kuon-rnd.com',
     },
-    featureList: 'DDP verification, Track list display, Audio preview, WAV download, 100% local processing',
+    featureList: 'DDP verification, Track list display, Audio preview, Gap Listen (crossfade preview), WAV download, Lead-in & pre-gap display, 100% local processing',
   };
 
   const faqJsonLd = {
@@ -742,6 +768,18 @@ export default function DdpCheckerLpPage() {
                 <span style={{ fontFamily: mono, flex: 1, marginLeft: 12 }}>{tr.dur}</span>
                 <span style={{ fontFamily: mono, fontSize: 11, color: '#9ca3af', flex: 1 }}>{tr.isrc}</span>
                 <span style={{ display: 'flex', gap: 6 }}>
+                  {tr.n !== '01' && (
+                    <span style={{
+                      padding: '3px 10px',
+                      borderRadius: 50,
+                      fontSize: 11,
+                      background: tr.n === '02' ? '#7C3AED' : 'rgba(124,58,237,0.08)',
+                      color: tr.n === '02' ? '#fff' : '#7C3AED',
+                      fontWeight: 500,
+                    }}>
+                      {tr.n === '02' ? '■ Stop' : '⏮ Gap'}
+                    </span>
+                  )}
                   <span style={{
                     padding: '3px 10px',
                     borderRadius: 50,
@@ -781,12 +819,52 @@ export default function DdpCheckerLpPage() {
           </h2>
         </RevealSection>
 
+        {/* Exclusive feature: Gap Listen (full width highlight) */}
+        {T.features.filter(f => 'exclusive' in f && f.exclusive).map((f, i) => (
+          <RevealSection key={`exc-${i}`} style={{ marginBottom: 20 }}>
+            <div style={{
+              ...glass,
+              padding: 'clamp(28px, 5vw, 44px)',
+              borderLeft: `4px solid #7C3AED`,
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.04), rgba(255,255,255,0.7))',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 36, flexShrink: 0 }}>{f.icon}</span>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+                    <h3 style={{
+                      fontFamily: serif,
+                      fontSize: 'clamp(17px, 2.8vw, 22px)',
+                      fontWeight: 700,
+                      color: '#111827',
+                      margin: 0,
+                    }}>
+                      {t(f.title)}
+                    </h3>
+                    <span style={{
+                      fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
+                      padding: '3px 10px', borderRadius: 50,
+                      color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #5B21B6)',
+                    }}>
+                      {lang === 'ja' ? '他ツールにない機能' : lang === 'es' ? 'EXCLUSIVO' : 'EXCLUSIVE'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 'clamp(13px, 2vw, 15px)', color: '#374151', lineHeight: 1.8, margin: 0 }}>
+                    {t(f.desc)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </RevealSection>
+        ))}
+
+        {/* Other features grid */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
           gap: 20,
         }}>
-          {T.features.map((f, i) => (
+          {T.features.filter(f => !('exclusive' in f && f.exclusive)).map((f, i) => (
             <RevealSection key={i} className={`reveal-delay-${(i % 3) + 1}`}>
               <div style={{
                 ...glass,

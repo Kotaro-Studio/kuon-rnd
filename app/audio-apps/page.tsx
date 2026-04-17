@@ -34,6 +34,28 @@ type AppEntry = {
 
 const apps: AppEntry[] = [
   {
+    id: 'master-check',
+    number: '06',
+    badge: 'LUFS',
+    badgeType: 'free',
+    name: 'KUON MASTER CHECK',
+    tagline: {
+      ja: '配信前の最終チェックを、\nブラウザだけで完結させる。',
+      en: 'Complete your pre-release\nquality check in the browser.',
+      es: 'Completa tu verificación\nfinal directamente en el navegador.',
+    },
+    desc: {
+      ja: 'LUFS・True Peak・クリッピング・ステレオ相関を一括チェック。各配信基準との比較＋ワンクリックでラウドネス自動調整＆WAVダウンロード。リミッター付き。',
+      en: 'Check LUFS, True Peak, clipping, stereo correlation at once. Compare with platform targets + one-click auto-adjust with limiter & WAV download.',
+      es: 'Verifica LUFS, True Peak, clipping, correlación estéreo. Compara con plataformas + ajuste automático con limitador y descarga WAV en un clic.',
+    },
+    href: '/master-check-lp',
+    accent: '#0284c7',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
+    isNew: true,
+  },
+  {
     id: 'ddp-checker',
     number: '05',
     badge: 'DDP',
@@ -53,7 +75,6 @@ const apps: AppEntry[] = [
     accent: '#0284c7',
     price: { ja: '無料', en: 'Free', es: 'Gratis' },
     cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
-    isNew: true,
   },
   {
     id: 'itadaki',
