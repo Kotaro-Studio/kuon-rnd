@@ -56,6 +56,28 @@ const apps: AppEntry[] = [
     isNew: true,
   },
   {
+    id: 'converter',
+    number: '07',
+    badge: 'MP3',
+    badgeType: 'free',
+    name: 'KUON CONVERTER',
+    tagline: {
+      ja: 'WAV を高品質 MP3 に。\nブラウザだけで、一瞬で変換。',
+      en: 'WAV to high-quality MP3.\nInstant conversion in your browser.',
+      es: 'WAV a MP3 de alta calidad.\nConversión instantánea en tu navegador.',
+    },
+    desc: {
+      ja: 'WAV ファイルを 320kbps / 160kbps の高品質 MP3 に変換。サーバー送信なし・インストール不要。マスタリング後の配信用 MP3 作成に。',
+      en: 'Convert WAV to 320kbps / 160kbps high-quality MP3. No server upload, no install. Perfect for distribution-ready MP3 after mastering.',
+      es: 'Convierte WAV a MP3 de 320kbps / 160kbps. Sin subir al servidor, sin instalación. Perfecto para MP3 de distribución.',
+    },
+    href: '/converter',
+    accent: '#0284c7',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: 'アプリを開く', en: 'Open App', es: 'Abrir app' },
+    isNew: true,
+  },
+  {
     id: 'ddp-checker',
     number: '05',
     badge: 'DDP',
