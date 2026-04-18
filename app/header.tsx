@@ -223,37 +223,40 @@ export function Header() {
           </nav>
         )}
 
-        {/* Mobile hamburger button */}
+        {/* Mobile: lang switcher + hamburger */}
         {isMobile && (
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle menu"
-            aria-expanded={mobileOpen}
-            style={{
-              width: 42, height: 42, borderRadius: '999px',
-              background: 'rgba(255,255,255,0.8)',
-              border: '1px solid rgba(0,0,0,0.08)',
-              cursor: 'pointer', padding: 0,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.2s ease, transform 0.2s ease',
-              zIndex: 220,
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round">
-              <line
-                x1="4" y1={mobileOpen ? '12' : '7'} x2="20" y2={mobileOpen ? '12' : '7'}
-                style={{ transform: mobileOpen ? 'rotate(45deg)' : 'rotate(0)', transformOrigin: 'center', transition: 'transform 0.3s cubic-bezier(0.2,0.8,0.4,1)' }}
-              />
-              <line
-                x1="4" y1="12" x2="20" y2="12"
-                style={{ opacity: mobileOpen ? 0 : 1, transition: 'opacity 0.15s ease' }}
-              />
-              <line
-                x1="4" y1={mobileOpen ? '12' : '17'} x2="20" y2={mobileOpen ? '12' : '17'}
-                style={{ transform: mobileOpen ? 'rotate(-45deg)' : 'rotate(0)', transformOrigin: 'center', transition: 'transform 0.3s cubic-bezier(0.2,0.8,0.4,1)' }}
-              />
-            </svg>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <LangSwitcher />
+            <button
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
+              style={{
+                width: 42, height: 42, borderRadius: '999px',
+                background: 'rgba(255,255,255,0.8)',
+                border: '1px solid rgba(0,0,0,0.08)',
+                cursor: 'pointer', padding: 0,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.2s ease, transform 0.2s ease',
+                zIndex: 220,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round">
+                <line
+                  x1="4" y1={mobileOpen ? '12' : '7'} x2="20" y2={mobileOpen ? '12' : '7'}
+                  style={{ transform: mobileOpen ? 'rotate(45deg)' : 'rotate(0)', transformOrigin: 'center', transition: 'transform 0.3s cubic-bezier(0.2,0.8,0.4,1)' }}
+                />
+                <line
+                  x1="4" y1="12" x2="20" y2="12"
+                  style={{ opacity: mobileOpen ? 0 : 1, transition: 'opacity 0.15s ease' }}
+                />
+                <line
+                  x1="4" y1={mobileOpen ? '12' : '17'} x2="20" y2={mobileOpen ? '12' : '17'}
+                  style={{ transform: mobileOpen ? 'rotate(-45deg)' : 'rotate(0)', transformOrigin: 'center', transition: 'transform 0.3s cubic-bezier(0.2,0.8,0.4,1)' }}
+                />
+              </svg>
+            </button>
+          </div>
         )}
       </header>
 
