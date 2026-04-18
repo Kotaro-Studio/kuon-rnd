@@ -1,0 +1,40 @@
+[
+  {
+    "id": "001",
+    "name": "朝比奈 幸太郎",
+    "location": "広尾町 フンベの滝",
+    "locationEn": "Funnbe Falls, Hiroo, Hokkaido",
+    "locationEs": "Cascada Funnbe, Hiroo, Hokkaido",
+    "lat": 42.2847,
+    "lng": 143.3156,
+    "description": "北海道広尾町の断崖から太平洋に注ぐフンベの滝。波と滝の音が混ざり合う、北海道でしか聴けない音風景。",
+    "descriptionEn": "Funnbe Falls cascading into the Pacific from the cliffs of Hiroo, Hokkaido. A soundscape where waves and waterfall merge — unique to Hokkaido.",
+    "descriptionEs": "Las cascadas Funnbe cayendo al Pacífico desde los acantilados de Hiroo, Hokkaido. Un paisaje sonoro donde las olas y la cascada se fusionan.",
+    "file": "soundmap/hiroo-funnbe-falls.mp3",
+    "mic": "P-86S",
+    "country": "JP",
+    "tags": ["waterfall", "ocean", "nature"],
+    "date": "2026-03-15",
+    "url": "",
+    "approved": true
+  },
+  {
+    "id": "002",
+    "name": "朝比奈 幸太郎",
+    "location": "トリニティービーチ",
+    "locationEn": "Trinity Beach, Queensland",
+    "locationEs": "Playa Trinity, Queensland",
+    "lat": -16.7890,
+    "lng": 145.6970,
+    "description": "オーストラリア・クイーンズランド州のトリニティービーチ。穏やかな珊瑚海の波音と、熱帯雨林からの鳥の声が交差する。",
+    "descriptionEn": "Trinity Beach, Queensland, Australia. Gentle Coral Sea waves meet the calls of tropical rainforest birds.",
+    "descriptionEs": "Playa Trinity, Queensland, Australia. Las suaves olas del Mar del Coral se encuentran con los cantos de aves de la selva tropical.",
+    "file": "soundmap/trinity-beach-queensland.mp3",
+    "mic": "P-86S",
+    "country": "AU",
+    "tags": ["beach", "ocean", "birds", "tropical"],
+    "date": "2025-11-20",
+    "url": "",
+    "approved": true
+  }
+]

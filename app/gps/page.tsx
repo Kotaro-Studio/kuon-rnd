@@ -64,6 +64,14 @@ const kuonRndTechnology = {
 // 4. オープンツール
 const openTools = [
   {
+    title: "Sounds of the Earth",
+    subtitle: "地球の音マップ — GPS × Audio",
+    desc: "世界中のフィールド録音スポットをインタラクティブな地図で探索・試聴。滝、海、鳥、森 — 地球が奏でる音楽に耳を傾けよう。あなたの録音も投稿できます。",
+    url: "/soundmap-lp",
+    cta: "地球の音を聴く",
+    isNew: true
+  },
+  {
     title: "RTK Base Station",
     subtitle: "善意の基地局データ",
     desc: "センチメートル級の高精度な位置情報をオープンに提供。NTRIP方式による補正データ配信のテスト仕様と接続情報を公開しています。",
@@ -287,9 +295,16 @@ export default function GpsPage() {
               e.currentTarget.style.boxShadow = 'none';
             }}
             >
-              <span style={{ color: 'var(--accent, #bda678)', fontSize: '0.75rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>
-                {tool.subtitle}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--accent, #bda678)', fontSize: '0.75rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                  {tool.subtitle}
+                </span>
+                {'isNew' in tool && tool.isNew && (
+                  <span style={{ background: 'linear-gradient(135deg, #10B981, #059669)', color: '#fff', fontSize: '0.6rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.1em' }}>
+                    NEW
+                  </span>
+                )}
+              </div>
               <h5 style={{ fontSize: '1.6rem', color: '#111', margin: '0 0 1.5rem 0', fontWeight: '400', letterSpacing: '0.05em' }}>
                 {tool.title}
               </h5>
