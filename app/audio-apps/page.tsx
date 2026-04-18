@@ -34,6 +34,28 @@ type AppEntry = {
 
 const apps: AppEntry[] = [
   {
+    id: 'analyzer',
+    number: '10',
+    badge: 'FFT',
+    badgeType: 'free',
+    name: 'KUON ANALYZER',
+    tagline: {
+      ja: 'あなたのミックス、\nプロと何が違う？',
+      en: 'What makes your mix\ndifferent from the pros?',
+      es: '¿Qué diferencia tu mezcla\nde la de los profesionales?',
+    },
+    desc: {
+      ja: 'リアルタイムスペクトラムアナライザー × LUFSラウドネスメーター。リファレンス楽曲を重ねて周波数バランスを比較。マイク入力対応。MASTER CHECK連携。',
+      en: 'Real-time spectrum analyzer × LUFS loudness meter. Overlay reference tracks to compare frequency balance. Mic input support. MASTER CHECK integration.',
+      es: 'Analizador de espectro × medidor LUFS en tiempo real. Superpón referencias para comparar frecuencias. Entrada de micrófono. Integración con MASTER CHECK.',
+    },
+    href: '/analyzer-lp',
+    accent: '#4F46E5',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
+    isNew: true,
+  },
+  {
     id: 'player',
     number: '09',
     badge: '24H',
