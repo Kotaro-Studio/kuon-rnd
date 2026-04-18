@@ -34,6 +34,28 @@ type AppEntry = {
 
 const apps: AppEntry[] = [
   {
+    id: 'resampler',
+    number: '11',
+    badge: 'SINC',
+    badgeType: 'free',
+    name: 'KUON RESAMPLER',
+    tagline: {
+      ja: 'サンプルレート変換に、\nプロの品質を。',
+      en: 'Professional quality\nfor sample rate conversion.',
+      es: 'Calidad profesional\npara conversión de frecuencia.',
+    },
+    desc: {
+      ja: '高品質サンプルレートコンバーター。Sinc補間×Kaiser窓による理論的に最適なリサンプリング。44.1kHz↔48kHz↔96kHz↔192kHz。3段階の品質プリセット。32-bit float WAV出力。',
+      en: 'High-quality sample rate converter. Theoretically optimal resampling with sinc interpolation × Kaiser window. 44.1kHz↔48kHz↔96kHz↔192kHz. 3 quality presets. 32-bit float WAV output.',
+      es: 'Convertidor de frecuencia de alta calidad. Remuestreo teóricamente óptimo con sinc × ventana Kaiser. 44.1kHz↔48kHz↔96kHz↔192kHz. 3 presets de calidad. Salida WAV 32-bit float.',
+    },
+    href: '/resampler-lp',
+    accent: '#0891B2',
+    price: { ja: '無料', en: 'Free', es: 'Gratis' },
+    cta: { ja: '詳細を見る', en: 'Learn More', es: 'Ver más' },
+    isNew: true,
+  },
+  {
     id: 'analyzer',
     number: '10',
     badge: 'FFT',
