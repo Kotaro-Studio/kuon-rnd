@@ -83,11 +83,11 @@ const COMPARE: CompareTrack[] = [
     recorder:'Zoom F6', isHero:false },
   { id:'B', file:'hikaku/P-86S_DR05.mp3',
     revealName: { ja:'P-86S by 空音開発', en:'P-86S by Kuon R&D', es:'P-86S de Kuon R&D' },
-    revealPrice: { ja:'¥13,900（税込）', en:'¥13,900', es:'¥13,900' },
+    revealPrice: { ja:'¥13,900（税込）', en:'$99 USD', es:'€92 EUR' },
     recorder:'Zoom DR-05', isHero:true },
   { id:'C', file:'hikaku/X-86S_F6 M.mp3',
     revealName: { ja:'X-86S by 空音開発', en:'X-86S by Kuon R&D', es:'X-86S de Kuon R&D' },
-    revealPrice: { ja:'¥39,600（税込）', en:'¥39,600', es:'¥39,600' },
+    revealPrice: { ja:'¥39,600（税込）', en:'$279 USD', es:'€259 EUR' },
     recorder:'Zoom F6', isHero:false },
 ];
 
@@ -248,14 +248,19 @@ function Waveform({ active }:{ active:boolean }) {
 }
 
 // ─────────────────────────────────────────────
-// BuyButton – calls Stripe Checkout API
+// BuyButton – 言語で自動切替
+//   ja → /api/checkout（国内・JPY・既存ロジックそのまま）
+//   en/es → /api/checkout-international（海外カタログ・USD/EUR/GBP）
 // ─────────────────────────────────────────────
-function BuyButton({ product, style, children }:{ product:'p-86s'|'x-86s'; style:CSSProperties; children:React.ReactNode }) {
+function BuyButton({ product, lang, style, children }:{ product:'p-86s'|'x-86s'; lang:string; style:CSSProperties; children:React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const handleClick = async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ product }) });
+      const isIntl = lang !== 'ja';
+      const endpoint = isIntl ? '/api/checkout-international' : '/api/checkout';
+      const payload = isIntl ? { product, lang } : { product };
+      const r = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
       const d = await r.json() as { url?:string; error?:string };
       if (d.url) window.location.href = d.url;
       else { console.error('Checkout error:', d.error); setLoading(false); }
@@ -679,7 +684,9 @@ function SamplePlayer({ src, label, desc, mic, recorder }:{
     es: 'Comprar Ahora',
   } as Record<Lang,string>)[lang];
 
-  const price   = mic === 'P-86S' ? '¥13,900' : '¥39,600';
+  const priceP86S: Record<Lang,string> = { ja:'¥13,900', en:'$99', es:'€92' };
+  const priceX86S: Record<Lang,string> = { ja:'¥39,600', en:'$279', es:'€259' };
+  const price   = mic === 'P-86S' ? priceP86S[lang] : priceX86S[lang];
   const product = mic === 'P-86S' ? 'p-86s' : 'x-86s';
 
   // Prominent, unmistakable "Buy" visual
@@ -744,7 +751,7 @@ function SamplePlayer({ src, label, desc, mic, recorder }:{
             >
               {/* Inner: opacity + subtle scale for entrance — no translate, so it never fights the parallax */}
               <div style={{ animation:'buyCtaIn 0.42s cubic-bezier(0.2,0.8,0.4,1) both' }}>
-                <BuyButton product={product} style={floatingBuyStyle}>
+                <BuyButton product={product} lang={lang} style={floatingBuyStyle}>
                   {CartIcon}
                   <span>{buyText}&nbsp;<strong style={{ fontWeight: 900, letterSpacing:'0.02em' }}>{price}</strong></span>
                 </BuyButton>
@@ -757,7 +764,7 @@ function SamplePlayer({ src, label, desc, mic, recorder }:{
       {/* Floating buy CTA — mobile / narrow viewports (inline, full-width, still clearly a buy button) */}
       {playing && isNarrow && (
         <div style={{ marginBottom:'0.85rem', animation:'buyCtaIn 0.42s cubic-bezier(0.2,0.8,0.4,1) both' }}>
-          <BuyButton product={product} style={{ ...floatingBuyStyle, width:'100%' }}>
+          <BuyButton product={product} lang={lang} style={{ ...floatingBuyStyle, width:'100%' }}>
             {CartIcon}
             <span>{buyText}&nbsp;<strong style={{ fontWeight: 900, letterSpacing:'0.02em' }}>{price}</strong></span>
           </BuyButton>
@@ -941,8 +948,8 @@ export default function MicrophonePage() {
             <a href="#compare" style={ctaOutline()}>
               {t('100万円の機材はどれ？↓','Which is the $10K mic? ↓','¿Cuál es el de $10K? ↓')}
             </a>
-            <BuyButton product="p-86s" style={ctaPrimary()}>
-              {t('購入する — ¥13,900','Buy Now — ¥13,900','Comprar — ¥13,900')}
+            <BuyButton product="p-86s" lang={lang} style={ctaPrimary()}>
+              {t('購入する — ¥13,900','Buy Now — $99','Comprar — €92')}
             </BuyButton>
           </div>
         </div>
@@ -1157,11 +1164,11 @@ export default function MicrophonePage() {
 
               {/* Mini CTAs */}
               <div style={{ display:'flex', gap:'0.75rem', justifyContent:'center', flexWrap:'wrap', marginTop:'1.5rem' }}>
-                <BuyButton product="p-86s" style={{ ...ctaPrimary('sm'), fontSize:'0.8rem' }}>
-                  {t('P-86S を購入する — ¥13,900','Buy P-86S — ¥13,900','Comprar P-86S — ¥13,900')}
+                <BuyButton product="p-86s" lang={lang} style={{ ...ctaPrimary('sm'), fontSize:'0.8rem' }}>
+                  {t('P-86S を購入する — ¥13,900','Buy P-86S — $99','Comprar P-86S — €92')}
                 </BuyButton>
-                <BuyButton product="x-86s" style={{ ...ctaOutline('sm'), fontSize:'0.8rem' }}>
-                  {t('X-86S を購入する — ¥39,600','Buy X-86S — ¥39,600','Comprar X-86S — ¥39,600')}
+                <BuyButton product="x-86s" lang={lang} style={{ ...ctaOutline('sm'), fontSize:'0.8rem' }}>
+                  {t('X-86S を購入する — ¥39,600','Buy X-86S — $279','Comprar X-86S — €259')}
                 </BuyButton>
               </div>
             </div>
@@ -1207,11 +1214,11 @@ export default function MicrophonePage() {
 
               {/* Mini CTAs */}
               <div style={{ display:'flex', gap:'0.75rem', justifyContent:'center', flexWrap:'wrap', marginTop:'1.5rem' }}>
-                <BuyButton product="p-86s" style={{ ...ctaPrimary('sm'), fontSize:'0.8rem' }}>
-                  {t('P-86S を購入する — ¥13,900','Buy P-86S — ¥13,900','Comprar P-86S — ¥13,900')}
+                <BuyButton product="p-86s" lang={lang} style={{ ...ctaPrimary('sm'), fontSize:'0.8rem' }}>
+                  {t('P-86S を購入する — ¥13,900','Buy P-86S — $99','Comprar P-86S — €92')}
                 </BuyButton>
-                <BuyButton product="x-86s" style={{ ...ctaOutline('sm'), fontSize:'0.8rem' }}>
-                  {t('X-86S を購入する — ¥39,600','Buy X-86S — ¥39,600','Comprar X-86S — ¥39,600')}
+                <BuyButton product="x-86s" lang={lang} style={{ ...ctaOutline('sm'), fontSize:'0.8rem' }}>
+                  {t('X-86S を購入する — ¥39,600','Buy X-86S — $279','Comprar X-86S — €259')}
                 </BuyButton>
               </div>
             </div>
@@ -1317,8 +1324,8 @@ export default function MicrophonePage() {
               </div>
               <h4 style={{ fontSize:'1.4rem', fontWeight:'300', letterSpacing:'0.1em', fontFamily:sans, marginBottom:'0.35rem' }}>P-86S</h4>
               <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontFamily:sans, marginBottom:'1.5rem' }}>Stereo Microphone</p>
-              <div style={{ fontSize:'clamp(2.2rem,4vw,3rem)', fontWeight:'100', fontFamily:sans, marginBottom:'0.4rem' }}>¥13,900</div>
-              <div style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontFamily:sans, marginBottom:'2rem' }}>{t('税込','tax incl.','IVA incl.')}</div>
+              <div style={{ fontSize:'clamp(2.2rem,4vw,3rem)', fontWeight:'100', fontFamily:sans, marginBottom:'0.4rem' }}>{t('¥13,900','$99','€92')}</div>
+              <div style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontFamily:sans, marginBottom:'2rem' }}>{t('税込','USD + shipping','EUR + envío')}</div>
               {[
                 t('プラグインパワー対応（スマホ直結可）','Plug-in Power (direct to smartphone)','Alimentación por enchufe (directo al móvil)'),
                 t('1本でABステレオ録音','Single unit AB stereo recording','Grabación estéreo AB con una unidad'),
@@ -1330,7 +1337,7 @@ export default function MicrophonePage() {
                   <span style={{ fontSize:'0.84rem', color:'var(--text-muted)', fontFamily:serif, lineHeight:'1.6' }}>{f}</span>
                 </div>
               ))}
-              <BuyButton product="p-86s" style={{ ...ctaPrimary(), width:'100%', marginTop:'1.5rem', justifyContent:'center', textAlign:'center' }}>
+              <BuyButton product="p-86s" lang={lang} style={{ ...ctaPrimary(), width:'100%', marginTop:'1.5rem', justifyContent:'center', textAlign:'center' }}>
                 {t('P-86S を購入する','Buy P-86S','Comprar P-86S')}
               </BuyButton>
             </div>
@@ -1339,8 +1346,8 @@ export default function MicrophonePage() {
             <div className="reveal reveal-delay-2" style={{ ...glass, padding:'clamp(2rem,4vw,3rem)' }}>
               <h4 style={{ fontSize:'1.4rem', fontWeight:'300', letterSpacing:'0.1em', fontFamily:sans, marginBottom:'0.35rem' }}>X-86S</h4>
               <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontFamily:sans, marginBottom:'1.5rem' }}>Professional Stereo Microphone</p>
-              <div style={{ fontSize:'clamp(2.2rem,4vw,3rem)', fontWeight:'100', fontFamily:sans, marginBottom:'0.4rem' }}>¥39,600</div>
-              <div style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontFamily:sans, marginBottom:'2rem' }}>{t('税込','tax incl.','IVA incl.')}</div>
+              <div style={{ fontSize:'clamp(2.2rem,4vw,3rem)', fontWeight:'100', fontFamily:sans, marginBottom:'0.4rem' }}>{t('¥39,600','$279','€259')}</div>
+              <div style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontFamily:sans, marginBottom:'2rem' }}>{t('税込','USD + shipping','EUR + envío')}</div>
               {[
                 t('ミニXLR端子（バランス出力）','Mini XLR (balanced output)','Mini XLR (salida balanceada)'),
                 t('48Vファンタム電源対応','48V phantom power','Alimentación phantom 48V'),
@@ -1352,7 +1359,7 @@ export default function MicrophonePage() {
                   <span style={{ fontSize:'0.84rem', color:'var(--text-muted)', fontFamily:serif, lineHeight:'1.6' }}>{f}</span>
                 </div>
               ))}
-              <BuyButton product="x-86s" style={{ ...ctaOutline(), width:'100%', marginTop:'1.5rem', justifyContent:'center', textAlign:'center', display:'inline-flex' }}>
+              <BuyButton product="x-86s" lang={lang} style={{ ...ctaOutline(), width:'100%', marginTop:'1.5rem', justifyContent:'center', textAlign:'center', display:'inline-flex' }}>
                 {t('X-86S を購入する','Buy X-86S','Comprar X-86S')}
               </BuyButton>
             </div>
@@ -1416,19 +1423,19 @@ export default function MicrophonePage() {
             {t("音楽家のために、\n音楽家が作ったマイク。","A microphone made\nby a musician, for musicians.","Un micrófono hecho\npor un músico, para músicos.")}
           </h2>
           <div style={{ display:'flex', alignItems:'baseline', justifyContent:'center', gap:'0.5rem', marginBottom:'clamp(2.5rem,5vw,4rem)' }}>
-            <span style={{ fontSize:'clamp(2.5rem,6vw,5rem)', fontWeight:'100', fontFamily:sans }}>¥13,900</span>
-            <span style={{ fontSize:'0.9rem', color:'var(--text-muted)', fontFamily:sans }}>{t('税込','incl. tax','IVA')}</span>
+            <span style={{ fontSize:'clamp(2.5rem,6vw,5rem)', fontWeight:'100', fontFamily:sans }}>{t('¥13,900','$99','€92')}</span>
+            <span style={{ fontSize:'0.9rem', color:'var(--text-muted)', fontFamily:sans }}>{t('税込','USD + shipping','EUR + envío')}</span>
           </div>
           <div style={{ display:'flex', gap:'1rem', flexWrap:'wrap', justifyContent:'center' }}>
-            <BuyButton product="p-86s" style={ctaPrimary('lg')}>
+            <BuyButton product="p-86s" lang={lang} style={ctaPrimary('lg')}>
               {t('P-86S を購入する','Buy the P-86S','Comprar el P-86S')}
             </BuyButton>
-            <BuyButton product="x-86s" style={{ ...ctaOutline(), ...ctaOutline('md'), padding:'clamp(1.2rem,2.5vw,1.6rem) clamp(2rem,4vw,4rem)' }}>
-              {t('X-86S (¥39,600) →','X-86S (¥39,600) →','X-86S (¥39,600) →')}
+            <BuyButton product="x-86s" lang={lang} style={{ ...ctaOutline(), ...ctaOutline('md'), padding:'clamp(1.2rem,2.5vw,1.6rem) clamp(2rem,4vw,4rem)' }}>
+              {t('X-86S (¥39,600) →','X-86S ($279) →','X-86S (€259) →')}
             </BuyButton>
           </div>
           <p style={{ fontSize:'0.72rem', color:'#ccc', marginTop:'1.5rem', fontFamily:sans }}>
-            {t('決済確認後 1〜3 営業日以内に発送 · 初期不良は3日以内にご連絡ください','Ships within 1–3 business days · Contact within 3 days for any defects','Envío en 1-3 días · Contacte en 3 días por defectos')}
+            {t('決済確認後 1〜3 営業日以内に発送 · 初期不良は3日以内にご連絡ください','Ships worldwide via Japan Post · Contact within 3 days for any defects','Envío mundial vía Japan Post · Contacte en 3 días por defectos')}
           </p>
         </div>
       </section>
