@@ -5,8 +5,6 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -105,21 +103,31 @@ export default function EventDetailPage() {
     })();
   }, [id]);
 
-  // Mini map
+  // Mini map (dynamic import to avoid SSR window error)
   useEffect(() => {
     if (!mapRef.current || !event) return;
-    const map = L.map(mapRef.current, { center: [event.lat, event.lng], zoom: 15, zoomControl: false, dragging: false, scrollWheelZoom: false });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OSM', maxZoom: 18,
-    }).addTo(map);
+    let mapInstance: { remove: () => void } | null = null;
 
-    const icon = L.divIcon({
-      html: `<div style="background:${ACCENT};width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-      className: '', iconSize: [16, 16], iconAnchor: [8, 8],
-    });
-    L.marker([event.lat, event.lng], { icon }).addTo(map);
+    (async () => {
+      const L = await import('leaflet');
+      await import('leaflet/dist/leaflet.css');
+      const Lf = L.default || L;
+      if (!mapRef.current) return;
 
-    return () => { map.remove(); };
+      const map = Lf.map(mapRef.current, { center: [event.lat, event.lng], zoom: 15, zoomControl: false, dragging: false, scrollWheelZoom: false });
+      mapInstance = map;
+      Lf.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OSM', maxZoom: 18,
+      }).addTo(map);
+
+      const icon = Lf.divIcon({
+        html: `<div style="background:${ACCENT};width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+        className: '', iconSize: [16, 16] as [number, number], iconAnchor: [8, 8] as [number, number],
+      });
+      Lf.marker([event.lat, event.lng], { icon }).addTo(map);
+    })();
+
+    return () => { if (mapInstance) mapInstance.remove(); };
   }, [event]);
 
   const handleInterested = async () => {

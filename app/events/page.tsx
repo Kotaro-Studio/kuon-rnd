@@ -4,8 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import type L_Type from 'leaflet';
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -123,8 +122,9 @@ function downloadICal(ev: EventData) {
 export default function EventsPage() {
   const { lang } = useLang();
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.LayerGroup | null>(null);
+  const mapInstanceRef = useRef<L_Type.Map | null>(null);
+  const markersRef = useRef<L_Type.LayerGroup | null>(null);
+  const leafletRef = useRef<typeof L_Type | null>(null);
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -158,41 +158,51 @@ export default function EventsPage() {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  // Initialize map
+  // Initialize map (dynamic import to avoid SSR window error)
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    const map = L.map(mapRef.current, {
-      center: [35.68, 139.76], // Tokyo
-      zoom: 5,
-      zoomControl: true,
-      attributionControl: true,
-    });
+    (async () => {
+      const L = await import('leaflet');
+      await import('leaflet/dist/leaflet.css');
+      leafletRef.current = L.default || L;
+      const Lf = leafletRef.current;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18,
-    }).addTo(map);
+      const map = Lf.map(mapRef.current!, {
+        center: [35.68, 139.76], // Tokyo
+        zoom: 5,
+        zoomControl: true,
+        attributionControl: true,
+      });
 
-    markersRef.current = L.layerGroup().addTo(map);
-    mapInstanceRef.current = map;
+      Lf.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18,
+      }).addTo(map);
+
+      markersRef.current = Lf.layerGroup().addTo(map);
+      mapInstanceRef.current = map;
+    })();
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
     };
   }, []);
 
   // Update markers when events change
   useEffect(() => {
-    if (!markersRef.current || !mapInstanceRef.current) return;
+    const Lf = leafletRef.current;
+    if (!Lf || !markersRef.current || !mapInstanceRef.current) return;
     markersRef.current.clearLayers();
 
     events.forEach((ev) => {
       const typeInfo = EVENT_TYPES.find(t => t.id === ev.eventType);
       const emoji = typeInfo?.emoji || '📌';
 
-      const icon = L.divIcon({
+      const icon = Lf.divIcon({
         html: `<div style="
           background: #fff;
           border: 2px solid ${ACCENT};
@@ -207,11 +217,11 @@ export default function EventsPage() {
           cursor: pointer;
         ">${emoji}</div>`,
         className: '',
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
+        iconSize: [36, 36] as [number, number],
+        iconAnchor: [18, 18] as [number, number],
       });
 
-      const marker = L.marker([ev.lat, ev.lng], { icon });
+      const marker = Lf.marker([ev.lat, ev.lng], { icon });
       const genreLabel = GENRES.find(g => g.id === ev.genre);
 
       marker.bindPopup(`
@@ -245,7 +255,7 @@ export default function EventsPage() {
 
     // Fit bounds if events exist
     if (events.length > 0 && mapInstanceRef.current) {
-      const bounds = L.latLngBounds(events.map(e => [e.lat, e.lng] as [number, number]));
+      const bounds = Lf.latLngBounds(events.map(e => [e.lat, e.lng] as [number, number]));
       mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
     }
   }, [events, lang]);
