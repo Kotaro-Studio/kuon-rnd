@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // ─────────────────────────────────────────────
 // Types
@@ -500,6 +501,7 @@ export default function ConverterPage() {
 
   // ─── Render ────────────────────────────────
   return (
+    <AuthGate appName="converter">
     <div style={pageStyle}>
       {/* Hero */}
       <div style={heroStyle}>
@@ -733,5 +735,6 @@ export default function ConverterPage() {
         </p>
       </div>
     </div>
+    </AuthGate>
   );
 }

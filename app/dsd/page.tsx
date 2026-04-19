@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // ─────────────────────────────────────────────
 // Types
@@ -700,6 +701,7 @@ export default function DsdPage() {
   const hasAudioBuffer = audioBufferRef.current !== null;
 
   return (
+    <AuthGate appName="dsd">
     <div style={pageStyle}>
       {/* Hero */}
       <div style={heroStyle}>
@@ -1014,5 +1016,6 @@ export default function DsdPage() {
         </p>
       </div>
     </div>
+    </AuthGate>
   );
 }

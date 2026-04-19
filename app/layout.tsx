@@ -2,23 +2,29 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClientProviders } from "./providers";
 import { Header } from "./header";
+import { Footer } from "./footer";
 
 export const metadata: Metadata = {
   title: {
-    default: '空音開発 Kuon R&D — ハンドメイドマイク・オーディオアプリ開発',
+    default: '空音開発 Kuon R&D — 音楽家のためのプラットフォーム',
     template: '%s | 空音開発 Kuon R&D',
   },
   description:
-    '空音開発（Kuon R&D）は、ハンドメイドステレオマイクロフォンの設計・製造と、音声処理Webアプリの開発を行う研究開発スタジオです。GPS/RTK技術の研究も。',
+    '録音、成長記録、スカウト。空音開発は、ハンドメイドマイク・15以上のオーディオツール・音楽家コミュニティをひとつにした、音楽家のためのプラットフォームです。',
+  keywords: [
+    '空音開発', 'Kuon R&D', '音楽家', 'プラットフォーム', 'マイク', 'ハンドメイドマイク',
+    'オーディオアプリ', '音源分離', '和声分析', 'レッスン書き起こし', '音大生',
+    'P-86S', 'X-86S', 'ステレオマイク', '録音', 'musician platform',
+  ],
   icons: { icon: '/icon.png' },
   metadataBase: new URL('https://kuon-rnd.com'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: '空音開発 Kuon R&D — ハンドメイドマイク・オーディオアプリ開発',
+    title: '空音開発 Kuon R&D — 音楽家のためのプラットフォーム',
     description:
-      'ハンドメイドステレオマイクロフォンの設計・製造と、音声処理Webアプリの開発を行う研究開発スタジオ。',
+      '録音、成長記録、スカウト。ハンドメイドマイク・15以上のオーディオツール・音楽家コミュニティをひとつにした、音楽家のためのプラットフォーム。',
     url: 'https://kuon-rnd.com',
     siteName: '空音開発 Kuon R&D',
     type: 'website',
@@ -28,14 +34,14 @@ export const metadata: Metadata = {
         url: '/mic01.jpeg',
         width: 1200,
         height: 630,
-        alt: '空音開発 Kuon R&D',
+        alt: '空音開発 Kuon R&D — 音楽家のためのプラットフォーム',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '空音開発 Kuon R&D',
-    description: 'ハンドメイドステレオマイクとオーディオアプリの研究開発スタジオ',
+    title: '空音開発 Kuon R&D — 音楽家のためのプラットフォーム',
+    description: '録音、成長記録、スカウト。ハンドメイドマイク・オーディオツール・音楽家コミュニティをひとつに。',
     images: ['/mic01.jpeg'],
   },
   robots: {
@@ -57,9 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main style={{ flex: 1 }}>{children}</main>
 
           {/* ── Footer ─────────────────────────────── */}
-          <footer style={{ padding: '3rem 5%', textAlign: 'center', opacity: 0.5, fontSize: '0.78rem' }}>
-            &copy; 2026 Kuon R&amp;D / Kotaro Asahina. All rights reserved.
-          </footer>
+          <Footer />
 
         </ClientProviders>
       </body>

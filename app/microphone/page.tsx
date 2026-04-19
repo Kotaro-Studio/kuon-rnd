@@ -19,7 +19,7 @@ const sans   = '"Helvetica Neue", Arial, sans-serif';
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type T5 = Record<Lang, string>;
+type T5 = Partial<Record<Lang, string>> & { en: string };
 
 // ─────────────────────────────────────────────
 // Style helpers
@@ -684,9 +684,9 @@ function SamplePlayer({ src, label, desc, mic, recorder }:{
     es: 'Comprar Ahora',
   } as Record<Lang,string>)[lang];
 
-  const priceP86S: Record<Lang,string> = { ja:'¥13,900', en:'$99', es:'€92' };
-  const priceX86S: Record<Lang,string> = { ja:'¥39,600', en:'$279', es:'€259' };
-  const price   = mic === 'P-86S' ? priceP86S[lang] : priceX86S[lang];
+  const priceP86S: (Partial<Record<Lang,string>> & { en: string }) = { ja:'¥13,900', en:'$99', ko:'$99', pt:'$99', es:'€92' };
+  const priceX86S: (Partial<Record<Lang,string>> & { en: string }) = { ja:'¥39,600', en:'$279', ko:'$279', pt:'$279', es:'€259' };
+  const price   = mic === 'P-86S' ? (priceP86S[lang] ?? priceP86S.en) : (priceX86S[lang] ?? priceX86S.en);
   const product = mic === 'P-86S' ? 'p-86s' : 'x-86s';
 
   // Prominent, unmistakable "Buy" visual
@@ -1137,7 +1137,7 @@ export default function MicrophonePage() {
                             <div style={{ height:'1px', flex:1, background:'rgba(0,0,0,0.06)' }} />
                           </div>
                         )}
-                        <SamplePlayer src={auUrl(`p-86s/${s.file}`)} label={s.label[lang]} desc={s.desc[lang]} mic={s.mic} recorder={s.recorder} />
+                        <SamplePlayer src={auUrl(`p-86s/${s.file}`)} label={s.label[lang] ?? s.label.en} desc={s.desc[lang] ?? s.desc.en} mic={s.mic} recorder={s.recorder} />
                         {idx < p86music.length-1 && <div style={{ height:'0.75rem' }} />}
                       </React.Fragment>
                     );
@@ -1156,7 +1156,7 @@ export default function MicrophonePage() {
                 </div>
                 {SAMPLES.filter(s=>s.category==='music' && s.mic==='X-86S').map((s,idx,arr)=>(
                   <React.Fragment key={s.id}>
-                    <SamplePlayer src={auUrl(`x-86s/${s.file}`)} label={s.label[lang]} desc={s.desc[lang]} mic={s.mic} recorder={s.recorder} />
+                    <SamplePlayer src={auUrl(`x-86s/${s.file}`)} label={s.label[lang] ?? s.label.en} desc={s.desc[lang] ?? s.desc.en} mic={s.mic} recorder={s.recorder} />
                     {idx < arr.length-1 && <div style={{ height:'0.75rem' }} />}
                   </React.Fragment>
                 ))}
@@ -1189,7 +1189,7 @@ export default function MicrophonePage() {
                 </div>
                 {SAMPLES.filter(s=>s.category==='field' && s.mic==='X-86S').map((s,idx,arr)=>(
                   <React.Fragment key={s.id}>
-                    <SamplePlayer src={auUrl(`x-86s/${s.file}`)} label={s.label[lang]} desc={s.desc[lang]} mic={s.mic} recorder={s.recorder} />
+                    <SamplePlayer src={auUrl(`x-86s/${s.file}`)} label={s.label[lang] ?? s.label.en} desc={s.desc[lang] ?? s.desc.en} mic={s.mic} recorder={s.recorder} />
                     {idx < arr.length-1 && <div style={{ height:'0.75rem' }} />}
                   </React.Fragment>
                 ))}
@@ -1206,7 +1206,7 @@ export default function MicrophonePage() {
                 </div>
                 {SAMPLES.filter(s=>s.category==='field' && s.mic==='P-86S').map((s,idx,arr)=>(
                   <React.Fragment key={s.id}>
-                    <SamplePlayer src={auUrl(`p-86s/${s.file}`)} label={s.label[lang]} desc={s.desc[lang]} mic={s.mic} recorder={s.recorder} />
+                    <SamplePlayer src={auUrl(`p-86s/${s.file}`)} label={s.label[lang] ?? s.label.en} desc={s.desc[lang] ?? s.desc.en} mic={s.mic} recorder={s.recorder} />
                     {idx < arr.length-1 && <div style={{ height:'0.75rem' }} />}
                   </React.Fragment>
                 ))}

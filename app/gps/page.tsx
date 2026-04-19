@@ -6,7 +6,7 @@ import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
 // --- 多言語テキスト定義 ---
-type T3 = Record<Lang, string>;
+type T3 = Partial<Record<Lang, string>> & { en: string };
 type T3Node = Record<Lang, React.ReactNode>;
 
 // 1. 導入：宇宙時代とGPS
@@ -163,17 +163,23 @@ const openTools: {
     subtitle: {
       ja: '地球の音マップ — GPS × Audio',
       en: 'Sounds of the Earth — GPS × Audio',
+      ko: 'Sounds of the Earth — GPS × Audio',
+      pt: 'Sounds of the Earth — GPS × Audio',
       es: 'Sonidos de la Tierra — GPS × Audio',
     },
     desc: {
       ja: '世界中のフィールド録音スポットをインタラクティブな地図で探索・試聴。滝、海、鳥、森 — 地球が奏でる音楽に耳を傾けよう。あなたの録音も投稿できます。',
       en: 'Explore and listen to field recording spots around the world on an interactive map. Waterfalls, oceans, birds, forests — listen to the music the Earth plays. You can submit your own recordings too.',
+      ko: 'Explore and listen to field recording spots around the world on an interactive map. Waterfalls, oceans, birds, forests — listen to the music the Earth plays. You can submit your own recordings too.',
+      pt: 'Explore and listen to field recording spots around the world on an interactive map. Waterfalls, oceans, birds, forests — listen to the music the Earth plays. You can submit your own recordings too.',
       es: 'Explora y escucha puntos de grabación de campo en todo el mundo en un mapa interactivo. Cascadas, océanos, aves, bosques — escucha la música que toca la Tierra. También puedes enviar tus grabaciones.',
     },
     url: "/soundmap-lp",
     cta: {
       ja: '地球の音を聴く',
       en: 'Listen to Earth',
+      ko: 'Listen to Earth',
+      pt: 'Listen to Earth',
       es: 'Escuchar la Tierra',
     },
     isNew: true
@@ -183,17 +189,23 @@ const openTools: {
     subtitle: {
       ja: '善意の基地局データ',
       en: 'Open-Access Base Station Data',
+      ko: 'Open-Access Base Station Data',
+      pt: 'Open-Access Base Station Data',
       es: 'Datos de estación base de acceso abierto',
     },
     desc: {
       ja: 'センチメートル級の高精度な位置情報をオープンに提供。NTRIP方式による補正データ配信のテスト仕様と接続情報を公開しています。',
       en: 'Providing centimeter-level precision positioning data openly. We publish test specifications and connection details for NTRIP correction data distribution.',
+      ko: 'Providing centimeter-level precision positioning data openly. We publish test specifications and connection details for NTRIP correction data distribution.',
+      pt: 'Providing centimeter-level precision positioning data openly. We publish test specifications and connection details for NTRIP correction data distribution.',
       es: 'Proporcionando datos de posicionamiento de precisión centimétrica de forma abierta. Publicamos especificaciones de prueba y detalles de conexión para distribución de datos de corrección NTRIP.',
     },
     url: "/rtk-base",
     cta: {
       ja: '基地局情報を見る',
       en: 'View Base Station Info',
+      ko: 'View Base Station Info',
+      pt: 'View Base Station Info',
       es: 'Ver información de la estación base',
     },
   },
@@ -202,17 +214,23 @@ const openTools: {
     subtitle: {
       ja: 'Kuon R&D Edition',
       en: 'Kuon R&D Edition',
+      ko: 'Kuon R&D Edition',
+      pt: 'Kuon R&D Edition',
       es: 'Kuon R&D Edition',
     },
     desc: {
       ja: '空間と時間の交差点を解析するための精密なWebツール。地図上の直感的なクリック操作で、座標変換や緯度経度のマッピングを瞬時に実行します。',
       en: 'A precision web tool for analyzing the intersection of space and time. Perform coordinate conversions and latitude/longitude mapping instantly with intuitive click operations on the map.',
+      ko: 'A precision web tool for analyzing the intersection of space and time. Perform coordinate conversions and latitude/longitude mapping instantly with intuitive click operations on the map.',
+      pt: 'A precision web tool for analyzing the intersection of space and time. Perform coordinate conversions and latitude/longitude mapping instantly with intuitive click operations on the map.',
       es: 'Una herramienta web de precisión para analizar la intersección del espacio y el tiempo. Realice conversiones de coordenadas y mapeo de latitud/longitud al instante con operaciones intuitivas de clic en el mapa.',
     },
     url: "/geocode-viewer",
     cta: {
       ja: 'ビューワーを起動する',
       en: 'Launch Viewer',
+      ko: 'Launch Viewer',
+      pt: 'Launch Viewer',
       es: 'Iniciar visor',
     },
   }

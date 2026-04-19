@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WasmModule = any;
@@ -11,7 +12,7 @@ type WasmModule = any;
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 type AppStatus = 'idle' | 'decoding' | 'resampling' | 'encoding' | 'done' | 'error';
 type SampleRate = 44100 | 48000 | 88200 | 96000 | 176400 | 192000;
@@ -460,7 +461,7 @@ export default function ResamplerPage() {
       setStatus('idle');
     } catch (err) {
       console.error(err);
-      setErrorMsg(T.errorGeneric[lang]);
+      setErrorMsg(T.errorGeneric[lang] ?? T.errorGeneric.en);
       setStatus('error');
     }
   }, [lang]);
@@ -545,7 +546,7 @@ export default function ResamplerPage() {
       setStatus('done');
     } catch (err) {
       console.error(err);
-      setErrorMsg(T.errorGeneric[lang]);
+      setErrorMsg(T.errorGeneric[lang] ?? T.errorGeneric.en);
       setStatus('error');
     }
   }, [fileInfo, targetRate, quality, lang]);
@@ -575,6 +576,7 @@ export default function ResamplerPage() {
   };
 
   return (
+    <AuthGate appName="resampler">
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(160deg, #f0fdfa 0%, #ecfeff 30%, #f0f9ff 60%, #f8fafc 100%)',
@@ -1004,5 +1006,6 @@ export default function ResamplerPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
+    </AuthGate>
   );
 }

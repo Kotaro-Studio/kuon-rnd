@@ -2,6 +2,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link'; // ★Next.jsの高速リンクをインポート
+import { AuthGate } from '@/components/AuthGate';
 
 // --- LP本体のデータ定義（朝比奈さんの哲学をJSXパーツへ昇華） ---
 
@@ -141,6 +142,7 @@ export default function RevoxPage() {
   };
 
   return (
+    <AuthGate appName="revox">
     <div style={{ backgroundColor: '#fafafa', minHeight: '100vh', color: 'var(--text-main)', fontFamily: '"Hiragino Mincho ProN", "Yu Mincho", serif' }}>
       
       {/* --- ■ 1. 導入：哲学と使命 --- */}
@@ -283,5 +285,6 @@ export default function RevoxPage() {
       </section>
 
     </div>
+    </AuthGate>
   );
 }

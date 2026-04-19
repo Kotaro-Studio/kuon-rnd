@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // ─────────────────────────────────────────────
 // Types
@@ -842,6 +843,7 @@ export default function AnalyzerPage() {
 
   // ─── Render ───
   return (
+    <AuthGate appName="analyzer">
     <div style={containerStyle}>
       {/* Hero */}
       <div className="hero-enter-1" style={{ textAlign: 'center', marginBottom: 'clamp(24px, 5vw, 40px)' }}>
@@ -1172,5 +1174,6 @@ export default function AnalyzerPage() {
         🔒 {t(T.privacyNote)}
       </p>
     </div>
+    </AuthGate>
   );
 }

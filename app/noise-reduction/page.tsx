@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AuthGate } from '@/components/AuthGate';
 
 /* ─── THEME ─── */
 const C = {
@@ -517,6 +518,7 @@ export default function NoiseReductionPage() {
 
   /* ── render ── */
   return (
+    <AuthGate appName="noise-reduction">
     <div style={{ backgroundColor: C.bg, minHeight: '100vh', fontFamily: fontStack, padding: 'clamp(2rem,6vw,4rem) 5%' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
@@ -716,5 +718,6 @@ export default function NoiseReductionPage() {
         )}
       </div>
     </div>
+    </AuthGate>
   );
 }

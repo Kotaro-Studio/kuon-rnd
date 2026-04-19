@@ -12,10 +12,10 @@ import type { Lang } from '@/context/LangContext';
 type ProductKey = 'p-86s' | 'x-86s';
 
 interface ProductInfo {
-  name: Record<Lang, string>;
-  subtitle: Record<Lang, string>;
-  giftDesc: Record<Lang, string>;
-  passwordNote: Record<Lang, string>;
+  name: Partial<Record<Lang, string>> & { en: string };
+  subtitle: Partial<Record<Lang, string>> & { en: string };
+  giftDesc: Partial<Record<Lang, string>> & { en: string };
+  passwordNote: Partial<Record<Lang, string>> & { en: string };
 }
 
 const PRODUCTS: Record<ProductKey, ProductInfo> = {
@@ -23,21 +23,29 @@ const PRODUCTS: Record<ProductKey, ProductInfo> = {
     name: {
       ja: 'P-86S ステレオマイクロフォン',
       en: 'P-86S Stereo Microphone',
+      ko: 'P-86S 스테레오 마이크',
+      pt: 'P-86S Microfone Estéreo',
       es: 'P-86S Micrófono Estéreo',
     },
     subtitle: {
       ja: 'P-86S ステレオマイクロフォンのご注文を承りました。',
       en: 'Your order for the P-86S Stereo Microphone has been confirmed.',
+      ko: 'P-86S 스테레오 마이크 주문이 확인되었습니다.',
+      pt: 'Seu pedido do P-86S Microfone Estéreo foi confirmado.',
       es: 'Su pedido del P-86S Micrófono Estéreo ha sido confirmado.',
     },
     giftDesc: {
       ja: 'P-86S をご購入いただいたお客様に、空音開発のオーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。',
       en: 'As a P-86S owner, you get free access to our audio app "KUON NORMALIZE".',
+      ko: 'P-86S 소유자로서 당신은 우리 오디오 앱 "KUON NORMALIZE"에 무료로 접근할 수 있습니다.',
+      pt: 'Como proprietário do P-86S, você tem acesso gratuito ao nosso aplicativo de áudio "KUON NORMALIZE".',
       es: 'Como propietario del P-86S, obtiene acceso gratuito a nuestra aplicación de audio "KUON NORMALIZE".',
     },
     passwordNote: {
       ja: 'このパスワードはすべての P-86S オーナーが共有しています。仲間の証です。',
       en: 'This password is shared among all P-86S owners. It\'s a badge of our community.',
+      ko: '이 비밀번호는 모든 P-86S 소유자가 공유합니다. 우리 커뮤니티의 배지입니다.',
+      pt: 'Esta senha é compartilhada entre todos os proprietários do P-86S. É uma insígnia de nossa comunidade.',
       es: 'Esta contraseña es compartida entre todos los propietarios de P-86S. Es una insignia de nuestra comunidad.',
     },
   },
@@ -45,21 +53,29 @@ const PRODUCTS: Record<ProductKey, ProductInfo> = {
     name: {
       ja: 'X-86S プロフェッショナルステレオマイクロフォン',
       en: 'X-86S Professional Stereo Microphone',
+      ko: 'X-86S 프로페셔널 스테레오 마이크',
+      pt: 'X-86S Microfone Estéreo Profissional',
       es: 'X-86S Micrófono Estéreo Profesional',
     },
     subtitle: {
       ja: 'X-86S プロフェッショナルステレオマイクロフォンのご注文を承りました。',
       en: 'Your order for the X-86S Professional Stereo Microphone has been confirmed.',
+      ko: 'X-86S 프로페셔널 스테레오 마이크 주문이 확인되었습니다.',
+      pt: 'Seu pedido do X-86S Microfone Estéreo Profissional foi confirmado.',
       es: 'Su pedido del X-86S Micrófono Estéreo Profesional ha sido confirmado.',
     },
     giftDesc: {
       ja: 'X-86S をご購入いただいたお客様に、空音開発のオーディオアプリ「KUON NORMALIZE」を無料でお使いいただけます。',
       en: 'As an X-86S owner, you get free access to our audio app "KUON NORMALIZE".',
+      ko: 'X-86S 소유자로서 당신은 우리 오디오 앱 "KUON NORMALIZE"에 무료로 접근할 수 있습니다.',
+      pt: 'Como proprietário do X-86S, você tem acesso gratuito ao nosso aplicativo de áudio "KUON NORMALIZE".',
       es: 'Como propietario del X-86S, obtiene acceso gratuito a nuestra aplicación de audio "KUON NORMALIZE".',
     },
     passwordNote: {
       ja: 'このパスワードはすべてのマイクロフォンオーナーが共有しています。仲間の証です。',
       en: 'This password is shared among all microphone owners. It\'s a badge of our community.',
+      ko: '이 비밀번호는 모든 마이크 소유자가 공유합니다. 우리 커뮤니티의 배지입니다.',
+      pt: 'Esta senha é compartilhada entre todos os proprietários de microfones. É uma insígnia de nossa comunidade.',
       es: 'Esta contraseña es compartida entre todos los propietarios de micrófonos. Es una insignia de nuestra comunidad.',
     },
   },
@@ -68,47 +84,64 @@ const PRODUCTS: Record<ProductKey, ProductInfo> = {
 // ─────────────────────────────────────────────
 // Shared translations
 // ─────────────────────────────────────────────
-type T3 = Record<Lang, string>;
+type T3 = Partial<Record<Lang, string>> & { en: string };
+const t3 = (m: T3, lang: Lang) => m[lang] ?? m.en;
 
 const t = {
   title: {
     ja: 'ご購入ありがとうございます',
     en: 'Thank you for your purchase',
+    ko: '구매해주셔서 감사합니다',
+    pt: 'Obrigado pela sua compra',
     es: 'Gracias por su compra',
   } as T3,
   shipping: {
     ja: '決済確認後、1〜3 営業日以内に発送いたします。発送完了後、メールにてお知らせします。',
     en: 'We will ship within 1-3 business days after payment confirmation. You will receive a shipping notification via email.',
+    ko: '결제 확인 후 1-3 영업일 이내에 배송됩니다. 배송 완료 후 이메일로 알려드립니다.',
+    pt: 'Enviaremos dentro de 1-3 dias úteis após a confirmação do pagamento. Você receberá uma notificação de envio por e-mail.',
     es: 'Enviaremos dentro de 1-3 días hábiles después de la confirmación del pago. Recibirá una notificación de envío por correo electrónico.',
   } as T3,
   giftTitle: {
     ja: '購入者限定特典',
     en: 'Exclusive Bonus for Buyers',
+    ko: '구매자 전용 보너스',
+    pt: 'Bônus Exclusivo para Compradores',
     es: 'Bonificación exclusiva para compradores',
   } as T3,
   passwordLabel: {
     ja: 'アプリのパスワード',
     en: 'App Password',
+    ko: '앱 비밀번호',
+    pt: 'Senha do App',
     es: 'Contraseña de la aplicación',
   } as T3,
   openApp: {
     ja: 'KUON NORMALIZE を開く',
     en: 'Open KUON NORMALIZE',
+    ko: 'KUON NORMALIZE 열기',
+    pt: 'Abrir KUON NORMALIZE',
     es: 'Abrir KUON NORMALIZE',
   } as T3,
   emailNote: {
     ja: 'このパスワードはご登録のメールアドレスにもお送りしています。',
     en: 'This password has also been sent to your registered email address.',
+    ko: '이 비밀번호는 등록하신 이메일 주소로도 전송되었습니다.',
+    pt: 'Esta senha também foi enviada para o seu endereço de e-mail registrado.',
     es: 'Esta contraseña también se ha enviado a su dirección de correo electrónico registrada.',
   } as T3,
   backHome: {
     ja: '空音開発 トップページへ',
     en: 'Back to Kuon R&D Home',
+    ko: 'Kuon R&D 홈으로 돌아가기',
+    pt: 'Voltar à página inicial de Kuon R&D',
     es: 'Volver a la página principal de Kuon R&D',
   } as T3,
   backMic: {
     ja: 'マイクロフォンページへ戻る',
     en: 'Back to Microphone page',
+    ko: '마이크 페이지로 돌아가기',
+    pt: 'Voltar para a página do microfone',
     es: 'Volver a la página del micrófono',
   } as T3,
 };
@@ -212,6 +245,7 @@ function ThanksContent() {
   const searchParams = useSearchParams();
   const productParam = searchParams.get('product') as ProductKey | null;
   const product = productParam && PRODUCTS[productParam] ? PRODUCTS[productParam] : PRODUCTS['p-86s'];
+  const getStr = (m: Partial<Record<Lang, string>> & { en: string }) => m[lang] ?? m.en;
 
   return (
     <div style={containerStyle}>
@@ -228,7 +262,7 @@ function ThanksContent() {
           margin: '0 0 0.8rem',
           lineHeight: 1.4,
         }}>
-          {t.title[lang]}
+          {getStr(t.title)}
         </h1>
 
         {/* Subtitle — product-specific */}
@@ -238,7 +272,7 @@ function ThanksContent() {
           lineHeight: 1.8,
           margin: '0 0 0.5rem',
         }}>
-          {product.subtitle[lang]}
+          {getStr(product.subtitle)}
         </p>
 
         {/* Shipping Info */}
@@ -248,7 +282,7 @@ function ThanksContent() {
           lineHeight: 1.7,
           margin: '0 0 2rem',
         }}>
-          {t.shipping[lang]}
+          {getStr(t.shipping)}
         </p>
 
         {/* Divider */}
@@ -262,7 +296,7 @@ function ThanksContent() {
           color: '#0c4a6e',
           margin: '0 0 0.8rem',
         }}>
-          {t.giftTitle[lang]}
+          {getStr(t.giftTitle)}
         </h2>
 
         <p style={{
@@ -271,7 +305,7 @@ function ThanksContent() {
           lineHeight: 1.8,
           margin: '0 0 1.5rem',
         }}>
-          {product.giftDesc[lang]}
+          {getStr(product.giftDesc)}
         </p>
 
         {/* Password Box */}
@@ -282,7 +316,7 @@ function ThanksContent() {
             letterSpacing: '0.15em',
             textTransform: 'uppercase',
           }}>
-            {t.passwordLabel[lang]}
+            {getStr(t.passwordLabel)}
           </div>
           <div style={passwordValueStyle}>kuon</div>
         </div>
@@ -294,7 +328,7 @@ function ThanksContent() {
           margin: '0 0 0.5rem',
           fontStyle: 'italic',
         }}>
-          {product.passwordNote[lang]}
+          {getStr(product.passwordNote)}
         </p>
 
         <p style={{
@@ -303,12 +337,12 @@ function ThanksContent() {
           lineHeight: 1.6,
           margin: '0 0 1.5rem',
         }}>
-          {t.emailNote[lang]}
+          {getStr(t.emailNote)}
         </p>
 
         {/* CTA: Open App */}
         <Link href="/normalize" style={btnPrimary}>
-          {t.openApp[lang]}
+          {getStr(t.openApp)}
         </Link>
 
         {/* Gallery Invite */}
@@ -320,18 +354,18 @@ function ThanksContent() {
           border: '1px solid rgba(2,132,199,0.1)',
         }}>
           <p style={{ fontSize:'0.82rem', color:'#0c4a6e', fontWeight:600, margin:'0 0 0.4rem', fontFamily:serif }}>
-            {{
+            {getStr({
               ja: '🎙 オーナーズ・ギャラリーに参加しませんか？',
               en: '🎙 Join the Owner\'s Gallery!',
               es: '🎙 ¡Únase a la Galería de Propietarios!',
-            }[lang]}
+            })}
           </p>
           <p style={{ fontSize:'0.78rem', color:'#475569', lineHeight:1.7, margin:'0 0 0.8rem' }}>
-            {{
+            {getStr({
               ja: 'あなたの自慢の録音を空音開発のサイトで紹介しませんか？朝比奈幸太郎によるマスタリングも承ります。',
               en: 'Share your best recording on the Kuon R&D website. Mastering by Kotaro Asahina is also available.',
               es: 'Comparta su mejor grabación en el sitio de Kuon R&D. También disponible la masterización por Kotaro Asahina.',
-            }[lang]}
+            })}
           </p>
           <div style={{
             margin: '0.6rem 0 0.8rem',
@@ -342,11 +376,11 @@ function ThanksContent() {
             display: 'inline-block',
           }}>
             <span style={{ fontSize:'0.7rem', color:'#64748b', letterSpacing:'0.08em' }}>
-              {{
+              {getStr({
                 ja: '投稿パスワード:',
                 en: 'Submission password:',
                 es: 'Contraseña de envío:',
-              }[lang]}
+              })}
             </span>
             <span style={{
               fontFamily: '"SF Mono", "Fira Code", "Consolas", monospace',
@@ -360,18 +394,18 @@ function ThanksContent() {
             </span>
           </div>
           <p style={{ fontSize:'0.7rem', color:'#94a3b8', lineHeight:1.6, margin:'0 0 0.8rem' }}>
-            {{
+            {getStr({
               ja: '※ このパスワードはご購入確認メールにも記載されています。',
               en: '* This password is also included in your purchase confirmation email.',
               es: '* Esta contraseña también está incluida en su correo de confirmación.',
-            }[lang]}
+            })}
           </p>
           <Link href="/microphone#gallery-submit" style={{ ...linkStyle, fontWeight:500, fontSize:'0.82rem' }}>
-            {{
+            {getStr({
               ja: '録音を投稿する →',
               en: 'Submit a recording →',
               es: 'Enviar una grabación →',
-            }[lang]}
+            })}
           </Link>
         </div>
 
@@ -385,20 +419,16 @@ function ThanksContent() {
           textAlign: 'left',
         }}>
           <p style={{ color:'#92400e', fontSize:'0.78rem', lineHeight:1.7, margin:0 }}>
-            {{
-              ja: <>
+            {(lang === 'ja') ? <>
                 <strong>ソフトバンク（@softbank.ne.jp, @i.softbank.jp 等）のメールアドレスをご利用のお客様へ</strong><br/>
                 迷惑メールフィルタの設定により、当社からの確認メールが届かない場合がございます。メールが届いていない場合は、お手数ですが別のメールアドレス（Gmail 等）を添えて<Link href="/#contact" style={{ color:'#0284c7' }}>お問い合わせフォーム</Link>よりご連絡ください。パスワードを再送いたします。
-              </>,
-              en: <>
-                <strong>For customers using SoftBank email (@softbank.ne.jp, @i.softbank.jp, etc.)</strong><br/>
-                Our confirmation emails may not be delivered due to spam filter settings. If you have not received an email, please contact us via the <Link href="/#contact" style={{ color:'#0284c7' }}>contact form</Link> with an alternative email address (e.g. Gmail). We will resend your passwords.
-              </>,
-              es: <>
+              </> : (lang === 'es') ? <>
                 <strong>Para clientes con correo SoftBank (@softbank.ne.jp, @i.softbank.jp, etc.)</strong><br/>
                 Es posible que nuestros correos no lleguen debido a filtros de spam. Si no ha recibido un correo, contáctenos a través del <Link href="/#contact" style={{ color:'#0284c7' }}>formulario de contacto</Link> con una dirección alternativa (ej. Gmail). Reenviaremos sus contraseñas.
-              </>,
-            }[lang]}
+              </> : <>
+                <strong>For customers using SoftBank email (@softbank.ne.jp, @i.softbank.jp, etc.)</strong><br/>
+                Our confirmation emails may not be delivered due to spam filter settings. If you have not received an email, please contact us via the <Link href="/#contact" style={{ color:'#0284c7' }}>contact form</Link> with an alternative email address (e.g. Gmail). We will resend your passwords.
+              </>}
           </p>
         </div>
 
@@ -411,10 +441,10 @@ function ThanksContent() {
           alignItems: 'center',
         }}>
           <Link href="/microphone" style={linkStyle}>
-            {t.backMic[lang]}
+            {getStr(t.backMic)}
           </Link>
           <Link href="/" style={linkStyle}>
-            {t.backHome[lang]}
+            {getStr(t.backHome)}
           </Link>
         </div>
       </div>

@@ -6,6 +6,8 @@ import type { CSSProperties } from 'react';
 const LANGS: { code: Lang; label: string }[] = [
   { code: 'ja', label: 'JA' },
   { code: 'en', label: 'EN' },
+  { code: 'ko', label: 'KO' },
+  { code: 'pt', label: 'PT' },
   { code: 'es', label: 'ES' },
 ];
 

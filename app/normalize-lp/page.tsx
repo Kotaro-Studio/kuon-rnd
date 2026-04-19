@@ -251,7 +251,7 @@ function BuyMicButton({
 export default function NormalizeLandingPage() {
   // サイト共通 useLang() に統合（§19）— アプリロジックには一切触れない
   const { lang } = useLang();
-  const t = content[lang];
+  const t = content[lang as keyof typeof content] || content.en;
 
   const C = {
     bg: '#FFFFFF',

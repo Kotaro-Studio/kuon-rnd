@@ -156,7 +156,7 @@ function WaveformSVG({ clipped }: { clipped: boolean }) {
 export default function ItadakiLandingPage() {
   // サイト共通 useLang() に統合（§19）— アプリロジックには一切触れない
   const { lang } = useLang();
-  const t = content[lang];
+  const t = content[lang as keyof typeof content] || content.en;
 
   const C = {
     bg: '#FFFFFF',

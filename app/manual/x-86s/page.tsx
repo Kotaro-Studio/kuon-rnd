@@ -16,7 +16,7 @@ const PRO    = '#1d1d1f';
 const serif  = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans   = '"Helvetica Neue", Arial, sans-serif';
 
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 // ─────────────────────────────────────────────
 // Scroll-reveal hook
@@ -173,6 +173,7 @@ function GearCard({ item, lang }: { item: AccessoryItem; lang: Lang }) {
 export default function ManualX86S() {
   const { lang } = useLang();
   const t = (ja: string, en: string, es: string) => lang === 'ja' ? ja : lang === 'en' ? en : es;
+  const t3 = (m: L3) => m[lang] ?? m.en;
   const heroReveal = useReveal();
 
   return (
@@ -394,8 +395,8 @@ export default function ManualX86S() {
                 { label: { ja: '広め（50cm〜）', en: 'Wide (50cm+)', es: 'Amplio (50cm+)' }, desc: { ja: '壮大なスケール感。オーケストラやフィールド録音に。', en: 'Grand scale. For orchestras and field recording.', es: 'Gran escala. Para orquestas y grabación de campo.' } },
               ].map(d => (
                 <div key={d.label.en} style={{ background: '#f8f8fa', borderRadius: 12, padding: 16, border: '1px solid #eee' }}>
-                  <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 700, color: ACCENT, display: 'block', marginBottom: 4 }}>{d.label[lang]}</span>
-                  <span style={{ fontFamily: serif, fontSize: 13, color: '#666', lineHeight: 1.6 }}>{d.desc[lang]}</span>
+                  <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 700, color: ACCENT, display: 'block', marginBottom: 4 }}>{t3(d.label)}</span>
+                  <span style={{ fontFamily: serif, fontSize: 13, color: '#666', lineHeight: 1.6 }}>{t3(d.desc)}</span>
                 </div>
               ))}
             </div>

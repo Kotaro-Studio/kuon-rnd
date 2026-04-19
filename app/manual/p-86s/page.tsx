@@ -16,7 +16,7 @@ const WARN   = '#c62828';
 const serif  = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans   = '"Helvetica Neue", Arial, sans-serif';
 
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 // ─────────────────────────────────────────────
 // Scroll-reveal hook
@@ -241,6 +241,7 @@ function GearCard({ item, lang }: { item: GearItem | AccessoryItem; lang: Lang }
 export default function ManualP86S() {
   const { lang } = useLang();
   const t = (ja: string, en: string, es: string) => lang === 'ja' ? ja : lang === 'en' ? en : es;
+  const t3 = (m: L3) => m[lang] ?? m.en;
 
   // ─── Hero ───
   const heroReveal = useReveal();
@@ -406,10 +407,10 @@ export default function ManualP86S() {
             }}>{step.num}</div>
             <div>
               <h3 style={{ fontFamily: serif, fontSize: 'clamp(0.95rem,1.3vw,1.1rem)', fontWeight: 700, margin: '0 0 8px', color: '#1d1d1f' }}>
-                {step.title[lang]}
+                {t3(step.title)}
               </h3>
               <p style={{ fontFamily: serif, fontSize: 'clamp(0.8rem,1vw,0.9rem)', color: '#555', lineHeight: 1.9, margin: 0 }}>
-                {step.desc[lang]}
+                {t3(step.desc)}
               </p>
             </div>
           </div>
@@ -478,8 +479,8 @@ export default function ManualP86S() {
                 },
               ].map(d => (
                 <div key={d.label.en} style={{ background: '#f8f8fa', borderRadius: 12, padding: 16, border: '1px solid #eee' }}>
-                  <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 700, color: ACCENT, display: 'block', marginBottom: 4 }}>{d.label[lang]}</span>
-                  <span style={{ fontFamily: serif, fontSize: 13, color: '#666', lineHeight: 1.6 }}>{d.desc[lang]}</span>
+                  <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 700, color: ACCENT, display: 'block', marginBottom: 4 }}>{t3(d.label)}</span>
+                  <span style={{ fontFamily: serif, fontSize: 13, color: '#666', lineHeight: 1.6 }}>{t3(d.desc)}</span>
                 </div>
               ))}
             </div>

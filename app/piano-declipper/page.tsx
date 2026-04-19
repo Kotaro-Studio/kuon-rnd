@@ -2,6 +2,7 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import { decodeWAV, encodeWAV, interpolatePianoClip } from '../../utils/audioDSP_piano';
+import { AuthGate } from '@/components/AuthGate';
 
 type ProcessStatus = 'idle' | 'ready' | 'processing' | 'done' | 'error';
 
@@ -151,6 +152,7 @@ export default function PianoDeclipperApp() {
   };
 
   return (
+    <AuthGate appName="piano-declipper">
     <div style={styles.container}>
       <div style={styles.mainContent}>
         <div style={styles.titleArea}>
@@ -224,5 +226,6 @@ export default function PianoDeclipperApp() {
         )}
       </div>
     </div>
+    </AuthGate>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import { decodeWAV, encodeWAV, interpolateClip } from '../../utils/audioDSP';
+import { AuthGate } from '@/components/AuthGate';
 
 type ProcessStatus = 'idle' | 'ready' | 'processing' | 'done' | 'error';
 
@@ -190,6 +191,7 @@ export default function DeclipperApp() {
   };
 
   return (
+    <AuthGate appName="declipper">
     <div style={styles.container}>
       <div style={styles.mainContent}>
         
@@ -293,5 +295,6 @@ export default function DeclipperApp() {
 
       </div>
     </div>
+    </AuthGate>
   );
 }

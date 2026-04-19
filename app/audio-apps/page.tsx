@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 // ─────────────────────────────────────────────
 // Design tokens
@@ -276,16 +276,17 @@ const apps: AppEntry[] = [
 // Badge style resolver
 // ─────────────────────────────────────────────
 function badgeMeta(type: 'paid' | 'exclusive' | 'free', lang: Lang) {
+  const getBadgeLabel = (m: L3) => m[lang] ?? m.en;
   if (type === 'free') return {
-    label: ({ ja: '無料', en: 'FREE', es: 'GRATIS' } as L3)[lang],
+    label: getBadgeLabel({ ja: '無料', en: 'FREE', es: 'GRATIS' }),
     bg: 'rgba(5,150,105,0.1)', color: '#059669', dot: '#059669',
   };
   if (type === 'exclusive') return {
-    label: ({ ja: '限定', en: 'EXCLUSIVE', es: 'EXCLUSIVO' } as L3)[lang],
+    label: getBadgeLabel({ ja: '限定', en: 'EXCLUSIVE', es: 'EXCLUSIVO' }),
     bg: '#1a1a2e', color: '#fbbf24', dot: '#fbbf24',
   };
   return {
-    label: ({ ja: '有料', en: 'PAID', es: 'PREMIUM' } as L3)[lang],
+    label: getBadgeLabel({ ja: '有料', en: 'PAID', es: 'PREMIUM' }),
     bg: 'rgba(245,158,11,0.1)', color: '#b45309', dot: '#f59e0b',
   };
 }
@@ -600,7 +601,7 @@ export default function AudioAppsPage() {
                 0
               </div>
               <div style={{ fontSize: 10, color: '#9ca3af', letterSpacing: '0.12em', fontWeight: 600 }}>
-                {({ ja: 'インストール', en: 'INSTALL', es: 'INSTALACIÓN' } as L3)[lang]}
+                {(({ ja: 'インストール', en: 'INSTALL', es: 'INSTALACIÓN' } as L3)[lang]) ?? 'INSTALL'}
               </div>
             </div>
           </div>
@@ -619,11 +620,11 @@ export default function AudioAppsPage() {
           WebkitTextFillColor: 'transparent',
           position: 'relative',
         }}>
-          {({
+          {((({
             ja: '音と向き合う\nすべての人のために。',
             en: 'For everyone\nwho takes sound seriously.',
             es: 'Para todos los que\ntoman el sonido en serio.',
-          } as L3)[lang]}
+          } as L3)[lang]) ?? 'For everyone\nwho takes sound seriously.')}
         </h1>
 
         <p className="hero-enter-3" style={{
@@ -636,11 +637,11 @@ export default function AudioAppsPage() {
           whiteSpace: 'pre-line',
           position: 'relative',
         }}>
-          {({
+          {((({
             ja: 'すべてのアプリはブラウザだけで完結。\nインストールもアカウントも不要。\n開いた瞬間から、あなたのスタジオになる。',
             en: 'Every tool runs entirely in your browser.\nNo install. No account.\nYour studio, the moment you open it.',
             es: 'Todas las herramientas funcionan en tu navegador.\nSin instalación. Sin cuenta.\nTu estudio, desde el momento en que lo abres.',
-          } as L3)[lang]}
+          } as L3)[lang]) ?? 'Every tool runs entirely in your browser.\nNo install. No account.\nYour studio, the moment you open it.')}
         </p>
       </section>
 
@@ -689,11 +690,11 @@ export default function AudioAppsPage() {
             fontSize: 'clamp(14px, 2.2vw, 17px)',
             color: '#6b7280',
           }}>
-            {({
+            {((({
               ja: '次のツールを開発中——',
               en: 'Next tool in development —',
               es: 'Próxima herramienta en desarrollo —',
-            } as L3)[lang]}
+            } as L3)[lang]) ?? 'Next tool in development —')}
           </p>
         </div>
       </section>

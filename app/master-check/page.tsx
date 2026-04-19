@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // ─────────────────────────────────────────────
 // Types
@@ -833,6 +834,7 @@ export default function MasterCheckPage() {
 
   // ─── Render ───
   return (
+    <AuthGate appName="master-check">
     <div style={containerStyle}>
       {/* Hero */}
       <div className="hero-enter-1" style={{ textAlign: 'center', marginBottom: 'clamp(32px, 6vw, 56px)' }}>
@@ -1156,5 +1158,6 @@ export default function MasterCheckPage() {
         </p>
       )}
     </div>
+    </AuthGate>
   );
 }

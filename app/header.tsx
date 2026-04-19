@@ -14,20 +14,21 @@ const serif  = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans   = '"Helvetica Neue", Arial, sans-serif';
 const ACCENT = '#0284c7';
 
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 type MenuItem = { href: string; label: L3 };
 
 const MENU: MenuItem[] = [
-  { href: '/',                  label: { ja: 'トップ',           en: 'Top',        es: 'Inicio'     } },
-  { href: '/profile',           label: { ja: 'プロフィール',     en: 'About',      es: 'Perfil'     } },
-  { href: '/#technology',       label: { ja: 'テクノロジー',     en: 'Technology', es: 'Tecnología' } },
-  { href: '/gps#gps-tools',     label: { ja: 'GPS ツール',       en: 'GPS Tool',   es: 'GPS'        } },
-  { href: '/audio-apps',        label: { ja: 'オーディオアプリ', en: 'Audio App',  es: 'Audio'      } },
-  { href: '/microphone',        label: { ja: 'マイクロフォン',   en: 'Microphone', es: 'Micrófono'  } },
+  { href: '/',                  label: { ja: 'トップ',           en: 'Top',        ko: '홈',        pt: 'Início',     es: 'Inicio'     } },
+  { href: '/audio-apps',        label: { ja: 'アプリ',           en: 'Apps',       ko: '앱',        pt: 'Apps',       es: 'Apps'       } },
+  { href: '/microphone',        label: { ja: 'マイク',           en: 'Microphone', ko: '마이크',    pt: 'Microfone',  es: 'Micrófono'  } },
+  { href: '/soundmap',          label: { ja: '地球音マップ',     en: 'Sound Map',  ko: '지구의 소리', pt: 'Sons da Terra', es: 'Sonidos' } },
+  { href: '/#discover',         label: { ja: 'スカウト',         en: 'Discover',   ko: '디스커버',  pt: 'Descobrir',  es: 'Descubrir'  } },
 ];
 
-const CONTACT: L3 = { ja: 'コンタクト', en: 'Contact', es: 'Contacto' };
+const CONTACT: L3 = { ja: 'コンタクト', en: 'Contact', ko: '문의', pt: 'Contato', es: 'Contacto' };
+const LOGIN: L3 = { ja: 'ログイン', en: 'Log In', ko: '로그인', pt: 'Entrar', es: 'Entrar' };
+const MYPAGE: L3 = { ja: 'マイページ', en: 'My Page', ko: '마이페이지', pt: 'Minha Página', es: 'Mi Página' };
 
 // ─────────────────────────────────────────────
 // Header
@@ -38,6 +39,13 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile]     = useState(false);
   const [scrolled, setScrolled]     = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsLoggedIn(!!localStorage.getItem('kuon_user'));
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 900);
@@ -182,7 +190,7 @@ export function Header() {
                   onMouseOver={(e) => (e.currentTarget.style.color = ACCENT)}
                   onMouseOut={(e) => (e.currentTarget.style.color = active ? ACCENT : '#444')}
                 >
-                  {item.label[lang]}
+                  {(item.label[lang] ?? item.label.en)}
                   <span
                     aria-hidden
                     style={{
@@ -216,7 +224,23 @@ export function Header() {
                 e.currentTarget.style.color = ACCENT;
               }}
             >
-              {CONTACT[lang]}
+              {(CONTACT[lang] ?? CONTACT.en)}
+            </Link>
+
+            <Link
+              href={isLoggedIn ? '/mypage' : '/auth/login'}
+              style={{
+                textDecoration: 'none',
+                color: '#fff', fontFamily: sans,
+                fontSize: '0.78rem', letterSpacing: '0.14em', fontWeight: 500,
+                padding: '0.5rem 1.3rem', borderRadius: '999px',
+                background: ACCENT,
+                transition: 'opacity 0.2s ease',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.opacity = '0.85'; }}
+              onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; }}
+            >
+              {isLoggedIn ? (MYPAGE[lang] ?? MYPAGE.en) : (LOGIN[lang] ?? LOGIN.en)}
             </Link>
 
             <LangSwitcher />
@@ -315,7 +339,7 @@ export function Header() {
                     display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
                   }}
                 >
-                  <span>{item.label[lang]}</span>
+                  <span>{(item.label[lang] ?? item.label.en)}</span>
                   <span style={{ fontFamily: sans, fontSize: '0.7rem', color: '#bbb', letterSpacing: '0.18em' }}>
                     0{idx + 1}
                   </span>
@@ -339,7 +363,26 @@ export function Header() {
                 transition: `opacity 0.45s ease ${0.08 + MENU.length * 0.04}s, transform 0.45s cubic-bezier(0.2,0.8,0.4,1) ${0.08 + MENU.length * 0.04}s`,
               }}
             >
-              {CONTACT[lang].toUpperCase()}
+              {(CONTACT[lang] ?? CONTACT.en).toUpperCase()}
+            </Link>
+
+            <Link
+              href={isLoggedIn ? '/mypage' : '/auth/login'}
+              onClick={() => setMobileOpen(false)}
+              style={{
+                marginTop: '0.8rem',
+                textDecoration: 'none', textAlign: 'center',
+                fontFamily: sans, fontSize: '0.88rem',
+                letterSpacing: '0.2em', fontWeight: 500,
+                color: ACCENT, background: 'transparent',
+                padding: '0.9rem 2rem', borderRadius: '999px',
+                border: `1.5px solid ${ACCENT}`,
+                opacity: mobileOpen ? 1 : 0,
+                transform: mobileOpen ? 'translateY(0)' : 'translateY(14px)',
+                transition: `opacity 0.48s ease ${0.12 + MENU.length * 0.04}s, transform 0.48s cubic-bezier(0.2,0.8,0.4,1) ${0.12 + MENU.length * 0.04}s`,
+              }}
+            >
+              {(isLoggedIn ? (MYPAGE[lang] ?? MYPAGE.en) : (LOGIN[lang] ?? LOGIN.en)).toUpperCase()}
             </Link>
           </nav>
 

@@ -6,6 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import spotsData from '@/data/soundmap.json';
+import { AuthGate } from '@/components/AuthGate';
 
 // ─────────────────────────────────────────────
 // Constants
@@ -16,7 +17,7 @@ const ACCENT = '#bda678';
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
 
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 // ─────────────────────────────────────────────
 // Types
@@ -367,6 +368,7 @@ export default function SoundMapPage() {
   };
 
   return (
+    <AuthGate appName="soundmap">
     <>
       <style dangerouslySetInnerHTML={{ __html: injectCSS }} />
       <div style={{ minHeight: '100vh', background: '#fafafa', color: '#1e293b' }}>
@@ -650,6 +652,7 @@ export default function SoundMapPage() {
         </footer>
       </div>
     </>
+    </AuthGate>
   );
 }
 
