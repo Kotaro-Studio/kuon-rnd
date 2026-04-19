@@ -34,6 +34,32 @@ type AppEntry = {
 
 const apps: AppEntry[] = [
   {
+    id: 'tuner',
+    number: '12',
+    badge: 'YIN',
+    badgeType: 'free',
+    name: 'KUON TUNER PRO',
+    tagline: {
+      ja: 'あなたの耳は、\nもっと正確さを求めている。',
+      en: 'Your ears deserve\nbetter precision.',
+      ko: '당신의 귀는\n더 정확한 튜너를 원하고 있습니다.',
+      pt: 'Seus ouvidos merecem\nmais precisão.',
+      es: 'Tus oídos merecen\nmás precisión.',
+    },
+    desc: {
+      ja: 'YINアルゴリズムによる高精度クロマチックチューナー。移調楽器対応（Bb/Eb/F/A）。ストリーク・アチーブメント・セッション統計で練習が可視化される。基準ピッチ415〜466Hz。',
+      en: 'High-precision chromatic tuner powered by the YIN algorithm. Transposing instrument support (Bb/Eb/F/A). Streaks, achievements, and session stats make your practice visible. Reference pitch 415–466Hz.',
+      ko: 'YIN 알고리즘 기반 고정밀 크로마틱 튜너. 이조 악기 지원 (Bb/Eb/F/A). 스트릭, 업적, 세션 통계로 연습이 보입니다. 기준 피치 415~466Hz.',
+      pt: 'Afinador cromático de alta precisão com algoritmo YIN. Suporte a instrumentos transpositores (Bb/Eb/F/A). Streaks, conquistas e estatísticas de sessão. Pitch de referência 415–466Hz.',
+      es: 'Afinador cromático de alta precisión con algoritmo YIN. Soporte para instrumentos transpositores (Bb/Eb/F/A). Rachas, logros y estadísticas de sesión. Pitch de referencia 415–466Hz.',
+    },
+    href: '/tuner-lp',
+    accent: '#22c55e',
+    price: { ja: '無料', en: 'Free', ko: '무료', pt: 'Grátis', es: 'Gratis' },
+    cta: { ja: '詳細を見る', en: 'Learn More', ko: '자세히 보기', pt: 'Saiba mais', es: 'Ver más' },
+    isNew: true,
+  },
+  {
     id: 'resampler',
     number: '11',
     badge: 'SINC',
