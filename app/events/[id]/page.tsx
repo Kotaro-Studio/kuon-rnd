@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+
+const EventMiniMap = dynamic(() => import('@/components/EventMiniMap'), { ssr: false });
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -82,7 +85,6 @@ export default function EventDetailPage() {
   const { lang } = useLang();
   const params = useParams();
   const id = params.id as string;
-  const mapRef = useRef<HTMLDivElement>(null);
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
   const [interested, setInterested] = useState(false);
@@ -102,33 +104,6 @@ export default function EventDetailPage() {
       setLoading(false);
     })();
   }, [id]);
-
-  // Mini map (dynamic import to avoid SSR window error)
-  useEffect(() => {
-    if (!mapRef.current || !event) return;
-    let mapInstance: { remove: () => void } | null = null;
-
-    (async () => {
-      const L = await import('leaflet');
-      await import('leaflet/dist/leaflet.css');
-      const Lf = L.default || L;
-      if (!mapRef.current) return;
-
-      const map = Lf.map(mapRef.current, { center: [event.lat, event.lng], zoom: 15, zoomControl: false, dragging: false, scrollWheelZoom: false });
-      mapInstance = map;
-      Lf.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OSM', maxZoom: 18,
-      }).addTo(map);
-
-      const icon = Lf.divIcon({
-        html: `<div style="background:${ACCENT};width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-        className: '', iconSize: [16, 16] as [number, number], iconAnchor: [8, 8] as [number, number],
-      });
-      Lf.marker([event.lat, event.lng], { icon }).addTo(map);
-    })();
-
-    return () => { if (mapInstance) mapInstance.remove(); };
-  }, [event]);
 
   const handleInterested = async () => {
     setToggling(true);
@@ -305,7 +280,7 @@ export default function EventDetailPage() {
           <h2 style={{ fontFamily: serif, fontSize: '1rem', fontWeight: 400, color: '#111', marginBottom: '1rem' }}>
             {t3({ ja: '会場', en: 'Venue', es: 'Lugar' }, lang)}
           </h2>
-          <div ref={mapRef} style={{ width: '100%', height: 250, borderRadius: 8, overflow: 'hidden' }} />
+          <EventMiniMap lat={event.lat} lng={event.lng} />
           <a href={`https://www.google.com/maps/search/?api=1&query=${event.lat},${event.lng}`}
             target="_blank" rel="noopener"
             style={{ display: 'inline-block', marginTop: '0.8rem', fontFamily: sans, fontSize: '0.8rem', color: ACCENT, textDecoration: 'none' }}>

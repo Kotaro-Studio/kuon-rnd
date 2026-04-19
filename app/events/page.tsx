@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
-import type L_Type from 'leaflet';
+
+const EventsMapView = dynamic(() => import('@/components/EventsMapView'), { ssr: false });
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -121,10 +123,6 @@ function downloadICal(ev: EventData) {
 // ─────────────────────────────────────────────
 export default function EventsPage() {
   const { lang } = useLang();
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L_Type.Map | null>(null);
-  const markersRef = useRef<L_Type.LayerGroup | null>(null);
-  const leafletRef = useRef<typeof L_Type | null>(null);
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -157,108 +155,6 @@ export default function EventsPage() {
   }, [selectedDate, dateRange, genreFilter, typeFilter]);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
-
-  // Initialize map (dynamic import to avoid SSR window error)
-  useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
-
-    (async () => {
-      const L = await import('leaflet');
-      await import('leaflet/dist/leaflet.css');
-      leafletRef.current = L.default || L;
-      const Lf = leafletRef.current;
-
-      const map = Lf.map(mapRef.current!, {
-        center: [35.68, 139.76], // Tokyo
-        zoom: 5,
-        zoomControl: true,
-        attributionControl: true,
-      });
-
-      Lf.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 18,
-      }).addTo(map);
-
-      markersRef.current = Lf.layerGroup().addTo(map);
-      mapInstanceRef.current = map;
-    })();
-
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, []);
-
-  // Update markers when events change
-  useEffect(() => {
-    const Lf = leafletRef.current;
-    if (!Lf || !markersRef.current || !mapInstanceRef.current) return;
-    markersRef.current.clearLayers();
-
-    events.forEach((ev) => {
-      const typeInfo = EVENT_TYPES.find(t => t.id === ev.eventType);
-      const emoji = typeInfo?.emoji || '📌';
-
-      const icon = Lf.divIcon({
-        html: `<div style="
-          background: #fff;
-          border: 2px solid ${ACCENT};
-          border-radius: 50%;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 18px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          cursor: pointer;
-        ">${emoji}</div>`,
-        className: '',
-        iconSize: [36, 36] as [number, number],
-        iconAnchor: [18, 18] as [number, number],
-      });
-
-      const marker = Lf.marker([ev.lat, ev.lng], { icon });
-      const genreLabel = GENRES.find(g => g.id === ev.genre);
-
-      marker.bindPopup(`
-        <div style="font-family: ${sans}; min-width: 200px; max-width: 280px;">
-          <div style="font-size: 0.7rem; color: #999; margin-bottom: 4px;">
-            ${emoji} ${typeInfo ? t3(typeInfo.label, lang) : ev.eventType}
-            ${genreLabel ? ' / ' + t3(genreLabel.label, lang) : ''}
-          </div>
-          <div style="font-size: 1rem; font-weight: 600; color: #111; margin-bottom: 4px;">${ev.title}</div>
-          <div style="font-size: 0.8rem; color: #555; margin-bottom: 4px;">
-            ${formatDateDisplay(ev.date, lang)} ${ev.startTime}${ev.endTime ? ' - ' + ev.endTime : ''}
-          </div>
-          <div style="font-size: 0.8rem; color: #555; margin-bottom: 4px;">
-            📍 ${ev.venueName}
-          </div>
-          ${ev.price ? `<div style="font-size: 0.8rem; color: #059669; font-weight: 600; margin-bottom: 4px;">${ev.price}</div>` : ''}
-          ${ev.performers.length > 0 ? `<div style="font-size: 0.75rem; color: #777; margin-bottom: 6px;">
-            ${ev.performers.map(p => p.name).join(', ')}
-          </div>` : ''}
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <span style="font-size: 0.7rem; color: #999;">❤️ ${ev.interestedCount}</span>
-            <a href="/events/${ev.id}" style="font-size: 0.75rem; color: ${ACCENT}; text-decoration: none;">
-              ${t3({ ja: '詳細', en: 'Details', es: 'Detalles' }, lang)} →
-            </a>
-          </div>
-        </div>
-      `, { maxWidth: 300 });
-
-      marker.addTo(markersRef.current!);
-    });
-
-    // Fit bounds if events exist
-    if (events.length > 0 && mapInstanceRef.current) {
-      const bounds = Lf.latLngBounds(events.map(e => [e.lat, e.lng] as [number, number]));
-      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
-    }
-  }, [events, lang]);
 
   // Date navigation
   const shiftDate = (days: number) => {
@@ -361,7 +257,7 @@ export default function EventsPage() {
       <div style={{ position: 'relative' }}>
         {/* Map */}
         {!listMode && (
-          <div ref={mapRef} style={{ width: '100%', height: 'calc(100vh - 220px)', minHeight: 400 }} />
+          <EventsMapView events={events} lang={lang} loading={loading} />
         )}
 
         {/* List Mode */}
@@ -440,20 +336,6 @@ export default function EventsPage() {
           </div>
         )}
 
-        {/* Event count badge */}
-        {!listMode && (
-          <div style={{
-            position: 'absolute', bottom: 20, left: 20, zIndex: 1000,
-            background: '#fff', borderRadius: 8, padding: '0.5rem 1rem',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.15)', fontFamily: sans, fontSize: '0.8rem',
-          }}>
-            <span style={{ fontWeight: 600, color: ACCENT }}>{events.length}</span>
-            <span style={{ color: '#666', marginLeft: 4 }}>
-              {t3({ ja: '件のイベント', en: 'events', es: 'eventos' }, lang)}
-            </span>
-            {loading && <span style={{ color: '#999', marginLeft: 8 }}>...</span>}
-          </div>
-        )}
       </div>
 
       {/* ─── Bottom CTA ─── */}
