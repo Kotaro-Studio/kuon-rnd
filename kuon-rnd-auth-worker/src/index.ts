@@ -15,8 +15,8 @@ interface Env {
 interface UserData {
   email: string;
   name: string;
-  instrument: string;
-  region: string;
+  instrument: string;       // legacy — kept for backward compat
+  region: string;            // legacy — kept for backward compat
   bio: string;
   plan: 'free' | 'student' | 'pro';
   stripeCustomerId: string;
@@ -24,9 +24,26 @@ interface UserData {
   createdAt: string;
   lastLoginAt: string;
   appUsage: Record<string, number>;
-  appUsageMonth: string; // "2026-04" format for monthly reset
-  country: string;  // ISO country code (e.g. "JP", "US") — captured from Cloudflare
-  city: string;     // City name — captured from Cloudflare
+  appUsageMonth: string;
+  country: string;
+  city: string;
+  // ── Extended profile (v2) ──
+  role: string;              // e.g. "violin", "recording-engineer"
+  roleCategory: string;      // e.g. "strings", "production"
+  customRoleName: string;    // free text for "other-eastern" / "other-western"
+  birthDate: string;         // "YYYY-MM-DD" or ""
+  showBirthDate: boolean;
+  basedIn: string;           // free text location
+  mobility: string;          // "local" | "domestic" | "international"
+  avatarKey: string;         // KV key for avatar image
+  snsYoutube: string;
+  snsInstagram: string;
+  snsX: string;
+  snsSoundcloud: string;
+  snsWebsite: string;
+  availableForWork: boolean;
+  experienceLevel: string;   // "student" | "amateur" | "semi-pro" | "professional"
+  spokenLanguages: string;   // comma-separated: "ja,en,es"
 }
 
 interface PageviewData {
@@ -238,6 +255,22 @@ app.post('/api/auth/verify', async (c) => {
       appUsageMonth: currentMonth(),
       country: cfCountry,
       city: cfCity,
+      role: '',
+      roleCategory: '',
+      customRoleName: '',
+      birthDate: '',
+      showBirthDate: false,
+      basedIn: '',
+      mobility: '',
+      avatarKey: '',
+      snsYoutube: '',
+      snsInstagram: '',
+      snsX: '',
+      snsSoundcloud: '',
+      snsWebsite: '',
+      availableForWork: false,
+      experienceLevel: '',
+      spokenLanguages: '',
     };
   }
 
@@ -278,6 +311,23 @@ app.get('/api/auth/me', async (c) => {
     createdAt: user.createdAt,
     appUsage: user.appUsage,
     appUsageMonth: user.appUsageMonth,
+    // v2 fields
+    role: user.role || '',
+    roleCategory: user.roleCategory || '',
+    customRoleName: user.customRoleName || '',
+    birthDate: user.birthDate || '',
+    showBirthDate: user.showBirthDate || false,
+    basedIn: user.basedIn || '',
+    mobility: user.mobility || '',
+    avatarKey: user.avatarKey || '',
+    snsYoutube: user.snsYoutube || '',
+    snsInstagram: user.snsInstagram || '',
+    snsX: user.snsX || '',
+    snsSoundcloud: user.snsSoundcloud || '',
+    snsWebsite: user.snsWebsite || '',
+    availableForWork: user.availableForWork || false,
+    experienceLevel: user.experienceLevel || '',
+    spokenLanguages: user.spokenLanguages || '',
   });
 });
 
@@ -291,18 +341,44 @@ app.put('/api/auth/profile', async (c) => {
   const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
   if (!payload) return c.json({ error: 'Invalid token' }, 401);
 
-  const updates = await c.req.json<Partial<Pick<UserData, 'name' | 'instrument' | 'region' | 'bio'>>>();
+  type ProfileFields = 'name' | 'instrument' | 'region' | 'bio' | 'role' | 'roleCategory'
+    | 'customRoleName' | 'birthDate' | 'showBirthDate' | 'basedIn' | 'mobility'
+    | 'snsYoutube' | 'snsInstagram' | 'snsX' | 'snsSoundcloud' | 'snsWebsite'
+    | 'availableForWork' | 'experienceLevel' | 'spokenLanguages';
+  const updates = await c.req.json<Partial<Pick<UserData, ProfileFields>>>();
   const raw = await c.env.USERS.get(`user:${payload.email}`);
   if (!raw) return c.json({ error: 'User not found' }, 404);
 
   const user: UserData = JSON.parse(raw);
-  if (updates.name !== undefined) user.name = updates.name;
-  if (updates.instrument !== undefined) user.instrument = updates.instrument;
-  if (updates.region !== undefined) user.region = updates.region;
-  if (updates.bio !== undefined) user.bio = updates.bio;
+  const strFields: ProfileFields[] = [
+    'name', 'instrument', 'region', 'bio', 'role', 'roleCategory',
+    'customRoleName', 'birthDate', 'basedIn', 'mobility',
+    'snsYoutube', 'snsInstagram', 'snsX', 'snsSoundcloud', 'snsWebsite',
+    'experienceLevel', 'spokenLanguages',
+  ];
+  for (const f of strFields) {
+    if (updates[f] !== undefined) (user as Record<string, unknown>)[f] = updates[f];
+  }
+  if (updates.showBirthDate !== undefined) user.showBirthDate = updates.showBirthDate;
+  if (updates.availableForWork !== undefined) user.availableForWork = updates.availableForWork;
+  // Keep legacy instrument/region in sync
+  if (updates.role) user.instrument = updates.customRoleName || updates.role;
+  if (updates.basedIn !== undefined) user.region = updates.basedIn;
 
   await c.env.USERS.put(`user:${payload.email}`, JSON.stringify(user));
-  return c.json({ ok: true, user: { email: user.email, name: user.name, instrument: user.instrument, region: user.region, bio: user.bio, plan: user.plan, badges: user.badges } });
+  return c.json({
+    ok: true,
+    user: {
+      email: user.email, name: user.name, plan: user.plan, badges: user.badges,
+      role: user.role, roleCategory: user.roleCategory, customRoleName: user.customRoleName,
+      basedIn: user.basedIn, mobility: user.mobility, bio: user.bio,
+      birthDate: user.birthDate, showBirthDate: user.showBirthDate,
+      snsYoutube: user.snsYoutube, snsInstagram: user.snsInstagram,
+      snsX: user.snsX, snsSoundcloud: user.snsSoundcloud, snsWebsite: user.snsWebsite,
+      availableForWork: user.availableForWork, experienceLevel: user.experienceLevel,
+      spokenLanguages: user.spokenLanguages, avatarKey: user.avatarKey,
+    },
+  });
 });
 
 // ─────────────────────────────────────────────
@@ -595,6 +671,14 @@ app.get('/api/auth/admin/users', async (c) => {
       appUsageMonth: u.appUsageMonth,
       country: u.country || '',
       city: u.city || '',
+      role: u.role || '',
+      roleCategory: u.roleCategory || '',
+      customRoleName: u.customRoleName || '',
+      basedIn: u.basedIn || '',
+      mobility: u.mobility || '',
+      availableForWork: u.availableForWork || false,
+      experienceLevel: u.experienceLevel || '',
+      avatarKey: u.avatarKey || '',
     })),
     stats,
     page,
@@ -630,6 +714,84 @@ app.put('/api/auth/admin/plan', async (c) => {
   await c.env.USERS.put(userKey, JSON.stringify(user));
 
   return c.json({ ok: true, email: user.email, oldPlan, newPlan: user.plan });
+});
+
+// ─────────────────────────────────────────────
+// POST /api/auth/avatar — Upload avatar (2MB max, stored in KV)
+// ─────────────────────────────────────────────
+app.post('/api/auth/avatar', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const contentType = c.req.header('Content-Type') || '';
+  if (!contentType.includes('multipart/form-data')) {
+    return c.json({ error: 'Must be multipart/form-data' }, 400);
+  }
+
+  const formData = await c.req.formData();
+  const file = formData.get('avatar');
+  if (!file || !(file instanceof File)) {
+    return c.json({ error: 'No file uploaded' }, 400);
+  }
+
+  // Validate size (2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    return c.json({ error: 'File too large (max 2MB)' }, 400);
+  }
+
+  // Validate type
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowed.includes(file.type)) {
+    return c.json({ error: 'Invalid file type (JPEG, PNG, WebP only)' }, 400);
+  }
+
+  // Store as ArrayBuffer in KV
+  const buffer = await file.arrayBuffer();
+  const avatarKey = `avatar:${payload.email}`;
+  await c.env.USERS.put(avatarKey, buffer, {
+    metadata: { contentType: file.type, size: file.size },
+  });
+
+  // Update user record
+  const userRaw = await c.env.USERS.get(`user:${payload.email}`);
+  if (userRaw) {
+    const user: UserData = JSON.parse(userRaw);
+    user.avatarKey = avatarKey;
+    await c.env.USERS.put(`user:${payload.email}`, JSON.stringify(user));
+  }
+
+  return c.json({ ok: true, avatarKey });
+});
+
+// ─────────────────────────────────────────────
+// GET /api/auth/avatar/:email — Serve avatar image
+// ─────────────────────────────────────────────
+app.get('/api/auth/avatar/:email', async (c) => {
+  const email = decodeURIComponent(c.req.param('email')).toLowerCase();
+  const avatarKey = `avatar:${email}`;
+
+  const { value, metadata } = await c.env.USERS.getWithMetadata<{ contentType: string }>(avatarKey, 'arrayBuffer');
+  if (!value) {
+    // Return a simple default SVG avatar
+    const initial = email[0]?.toUpperCase() || '?';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+      <rect width="200" height="200" fill="#e2e8f0"/>
+      <text x="100" y="115" text-anchor="middle" font-family="Arial" font-size="80" fill="#94a3b8">${initial}</text>
+    </svg>`;
+    return new Response(svg, {
+      headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=3600' },
+    });
+  }
+
+  return new Response(value as ArrayBuffer, {
+    headers: {
+      'Content-Type': metadata?.contentType || 'image/jpeg',
+      'Cache-Control': 'public, max-age=86400',
+    },
+  });
 });
 
 // ─────────────────────────────────────────────
