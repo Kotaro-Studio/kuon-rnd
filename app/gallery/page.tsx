@@ -34,7 +34,7 @@ interface Recording {
 export default function GalleryPage() {
   const { lang } = useLang();
   const t = (...args: string[]) => {
-    const idx = lang === 'ja' ? 0 : lang === 'en' ? 1 : 2;
+    const idx = lang === 'ja' ? 0 : lang === 'en' ? 1 : lang === 'es' ? 2 : lang === 'ko' ? 3 : 0;
     return args[idx] || args[0];
   };
 
@@ -48,13 +48,14 @@ export default function GalleryPage() {
           Owner&apos;s Gallery
         </p>
         <h1 style={{ fontSize: 'clamp(1.5rem,3.5vw,2.8rem)', fontWeight: '200', letterSpacing: '0.07em', lineHeight: '1.75', fontFamily: serif, wordBreak: 'keep-all', maxWidth: '700px', margin: '0 auto 1rem' }}>
-          {t('オーナーの録音ギャラリー', 'Owner\'s Recording Gallery', 'Galería de Grabaciones')}
+          {t('オーナーの録音ギャラリー', 'Owner\'s Recording Gallery', 'Galería de Grabaciones', '오너 녹음 갤러리')}
         </h1>
         <p style={{ fontSize: 'clamp(0.85rem,1.2vw,0.95rem)', lineHeight: '2', color: '#555', fontFamily: sans, maxWidth: '600px', margin: '0 auto' }}>
           {t(
             'P-86S / X-86S オーナーの皆さまによる録音作品をご紹介します。',
             'Featuring recordings by P-86S / X-86S owners.',
-            'Presentamos grabaciones de los propietarios de P-86S / X-86S.'
+            'Presentamos grabaciones de los propietarios de P-86S / X-86S.',
+            'P-86S / X-86S 오너 분들의 녹음 작품을 소개합니다.'
           )}
         </p>
       </section>
@@ -63,7 +64,7 @@ export default function GalleryPage() {
       <section style={{ padding: '0 5% clamp(5rem,10vw,8rem)', maxWidth: '1100px', margin: '0 auto' }}>
         {items.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#94a3b8', fontFamily: sans, fontSize: '0.95rem' }}>
-            {t('まだ掲載された録音はありません。', 'No recordings featured yet.', 'Aún no hay grabaciones.')}
+            {t('まだ掲載された録音はありません。', 'No recordings featured yet.', 'Aún no hay grabaciones.', '아직 게시된 녹음이 없습니다.')}
           </p>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'clamp(1.2rem,2.5vw,1.8rem)' }}>
@@ -149,7 +150,8 @@ export default function GalleryPage() {
           {t(
             'あなたの録音も掲載しませんか？',
             'Want to feature your recording?',
-            '¿Quieres publicar tu grabación?'
+            '¿Quieres publicar tu grabación?',
+            '당신의 녹음도 게시하고 싶으신가요?'
           )}
         </p>
         <Link href="/microphone#gallery-submit" style={{
@@ -159,7 +161,7 @@ export default function GalleryPage() {
           borderRadius: '50px', boxShadow: '0 8px 28px rgba(2,132,199,0.3)',
           transition: 'all 0.3s ease',
         }}>
-          {t('録音を投稿する', 'Submit a Recording', 'Enviar una Grabación')}
+          {t('録音を投稿する', 'Submit a Recording', 'Enviar una Grabación', '녹음 게시하기')}
         </Link>
       </section>
     </div>

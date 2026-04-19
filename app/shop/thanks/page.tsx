@@ -358,6 +358,7 @@ function ThanksContent() {
               ja: '🎙 オーナーズ・ギャラリーに参加しませんか？',
               en: '🎙 Join the Owner\'s Gallery!',
               es: '🎙 ¡Únase a la Galería de Propietarios!',
+              ko: '🎙 오너 갤러리에 참여하세요!',
             })}
           </p>
           <p style={{ fontSize:'0.78rem', color:'#475569', lineHeight:1.7, margin:'0 0 0.8rem' }}>
@@ -365,6 +366,7 @@ function ThanksContent() {
               ja: 'あなたの自慢の録音を空音開発のサイトで紹介しませんか？朝比奈幸太郎によるマスタリングも承ります。',
               en: 'Share your best recording on the Kuon R&D website. Mastering by Kotaro Asahina is also available.',
               es: 'Comparta su mejor grabación en el sitio de Kuon R&D. También disponible la masterización por Kotaro Asahina.',
+              ko: '당신의 최고 녹음을 공음 R&D 웹사이트에서 공유하세요. 고타로 아사히나의 마스터링도 가능합니다.',
             })}
           </p>
           <div style={{
@@ -398,6 +400,7 @@ function ThanksContent() {
               ja: '※ このパスワードはご購入確認メールにも記載されています。',
               en: '* This password is also included in your purchase confirmation email.',
               es: '* Esta contraseña también está incluida en su correo de confirmación.',
+              ko: '* 이 비밀번호는 구매 확인 이메일에도 포함되어 있습니다.',
             })}
           </p>
           <Link href="/microphone#gallery-submit" style={{ ...linkStyle, fontWeight:500, fontSize:'0.82rem' }}>
@@ -405,6 +408,7 @@ function ThanksContent() {
               ja: '録音を投稿する →',
               en: 'Submit a recording →',
               es: 'Enviar una grabación →',
+              ko: '녹음 게시하기 →',
             })}
           </Link>
         </div>
@@ -425,6 +429,9 @@ function ThanksContent() {
               </> : (lang === 'es') ? <>
                 <strong>Para clientes con correo SoftBank (@softbank.ne.jp, @i.softbank.jp, etc.)</strong><br/>
                 Es posible que nuestros correos no lleguen debido a filtros de spam. Si no ha recibido un correo, contáctenos a través del <Link href="/#contact" style={{ color:'#0284c7' }}>formulario de contacto</Link> con una dirección alternativa (ej. Gmail). Reenviaremos sus contraseñas.
+              </> : (lang === 'ko') ? <>
+                <strong>소프트뱅크 이메일을 사용하는 고객님께 (@softbank.ne.jp, @i.softbank.jp 등)</strong><br/>
+                스팸 필터 설정으로 인해 당사 이메일이 전달되지 않을 수 있습니다. 이메일을 받지 못한 경우 <Link href="/#contact" style={{ color:'#0284c7' }}>문의 양식</Link>을 통해 다른 이메일 주소(예: Gmail)와 함께 문의해 주세요. 비밀번호를 다시 보내드립니다.
               </> : <>
                 <strong>For customers using SoftBank email (@softbank.ne.jp, @i.softbank.jp, etc.)</strong><br/>
                 Our confirmation emails may not be delivered due to spam filter settings. If you have not received an email, please contact us via the <Link href="/#contact" style={{ color:'#0284c7' }}>contact form</Link> with an alternative email address (e.g. Gmail). We will resend your passwords.

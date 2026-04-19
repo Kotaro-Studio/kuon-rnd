@@ -346,169 +346,169 @@ const content: Partial<Record<Lang, PrivacyContent>> & { en: PrivacyContent } = 
     lastUpdated: 'April 2026',
   },
   ko: {
-    title: 'Privacy Policy',
+    title: '개인정보보호정책',
     sections: [
       {
-        heading: '1. Introduction',
+        heading: '1. 소개',
         content: (
           <p style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
-            Kuon R&D ("we," "us," "our," or "the Site") is committed to protecting your personal information. This Privacy Policy explains what information we collect, how we use it, and how we protect it.
+            공음 R&D(이하 "당사" 또는 "본 웹사이트")는 개인정보 보호를 최우선으로 하고 있습니다. 본 정책은 당사가 수집하는 정보, 그 이용 방법 및 보호 방법을 설명합니다.
           </p>
         ),
       },
       {
-        heading: '2. Information We Collect',
+        heading: '2. 수집하는 정보',
         content: (
           <div style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
             <p>
-              <strong>Email Address</strong><br />
-              Collected via magic link authentication. Used for subscription registration, purchase confirmations, and password resets.
+              <strong>이메일 주소</strong><br />
+              매직링크 인증을 통해 수집됩니다. 구독 등록, 구매 확인, 비밀번호 재설정에 사용됩니다.
             </p>
             <p style={{ marginTop: '0.8rem' }}>
-              <strong>Profile Information</strong><br />
-              Optional: Name, instrument, region. Used for practice log aggregation and statistical analysis.
+              <strong>프로필 정보</strong><br />
+              선택 항목: 이름, 악기, 사용 지역. 연습 로그 집계 및 통계 분석에 사용됩니다.
             </p>
             <p style={{ marginTop: '0.8rem' }}>
-              <strong>App Usage Logs</strong><br />
-              KUON PLAYER upload timestamps, file metadata, MASTER CHECK processing logs. Used for service improvement and abuse prevention.
+              <strong>앱 사용 로그</strong><br />
+              KUON PLAYER 업로드 타임스탬프, 파일 메타데이터, MASTER CHECK 처리 로그. 서비스 개선 및 악용 방지에 사용됩니다.
             </p>
             <p style={{ marginTop: '0.8rem' }}>
-              <strong>Cookies & localStorage</strong><br />
-              kuon_token (HttpOnly Cookie): Session authentication<br />
-              kuon_user (localStorage): Profile information<br />
-              kuon_first_visit_* (localStorage): First visit timestamp (analytics)
+              <strong>쿠키 및 localStorage</strong><br />
+              kuon_token (HttpOnly 쿠키): 세션 인증<br />
+              kuon_user (localStorage): 프로필 정보<br />
+              kuon_first_visit_* (localStorage): 첫 방문 타임스탬프 (분석용)
             </p>
           </div>
         ),
       },
       {
-        heading: '3. Cookies and Local Storage',
+        heading: '3. 쿠키 및 로컬 스토리지',
         content: (
           <div style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
             <p>
               <strong>kuon_token</strong><br />
-              HttpOnly cookie used for session authentication. Not accessible via JavaScript. Expires in 30 days.
+              세션 인증에 사용되는 HttpOnly 쿠키. JavaScript에서 접근 불가. 30일 후 만료됩니다.
             </p>
             <p style={{ marginTop: '0.8rem' }}>
               <strong>kuon_user</strong><br />
-              Stores user profile (name, instrument, language preference) in localStorage.
+              사용자 프로필 (이름, 악기, 언어 설정)을 localStorage에 저장합니다.
             </p>
             <p style={{ marginTop: '0.8rem' }}>
               <strong>kuon_first_visit_*</strong><br />
-              Records first visit timestamp for analytics. Retained for 30 days.
+              첫 방문 타임스탬프를 기록합니다. 분석용. 30일간 보유됩니다.
             </p>
           </div>
         ),
       },
       {
-        heading: '4. Payment Information',
+        heading: '4. 결제 정보',
         content: (
           <p style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
-            Credit card information is processed via Stripe. We do not store card information. Please see Stripe Privacy Policy: <a href="https://stripe.com/privacy" style={{ color: '#0066cc' }}>https://stripe.com/privacy</a>
+            신용카드 정보는 Stripe을 통해 처리됩니다. 당사는 카드 정보를 저장하지 않습니다. Stripe 개인정보보호정책을 참조하세요: <a href="https://stripe.com/privacy" style={{ color: '#0066cc' }}>https://stripe.com/privacy</a>
           </p>
         ),
       },
       {
-        heading: '5. Email Communications',
+        heading: '5. 이메일 통신',
         content: (
           <p style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
-            Purchase confirmations, password reset emails, and subscription notifications are sent via Resend API (noreply@kotaroasahina.com). Email addresses are encrypted at rest. You can unsubscribe via the link in any email.
+            구매 확인 이메일, 비밀번호 재설정 이메일, 구독 알림은 Resend API (noreply@kotaroasahina.com)를 통해 발송됩니다. 이메일 주소는 암호화되어 저장됩니다. 각 이메일의 링크를 통해 구독을 취소할 수 있습니다.
           </p>
         ),
       },
       {
-        heading: '6. Data Storage',
+        heading: '6. 데이터 저장',
         content: (
           <div style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
             <p>
               <strong>Cloudflare KV</strong><br />
-              Stores user profiles, session information, KUON PLAYER metadata (track names, uploader names, password hashes). All KV data is encrypted.
+              사용자 프로필, 세션 정보, KUON PLAYER 메타데이터 (곡명, 업로더명, 비밀번호 해시)를 저장합니다. 모든 KV 데이터는 암호화됩니다.
             </p>
             <p style={{ marginTop: '0.8rem' }}>
               <strong>Cloudflare R2</strong><br />
-              Stores KUON PLAYER uploads and Owners Gallery recordings. Files are auto-deleted after 24 hours (KUON PLAYER) or upon user deletion request.
+              KUON PLAYER 업로드 파일 및 오너스 갤러리 녹음을 저장합니다. 파일은 24시간 후 자동 삭제 (KUON PLAYER) 또는 사용자 삭제 요청 시 삭제됩니다.
             </p>
           </div>
         ),
       },
       {
-        heading: '7. Third-Party Services',
+        heading: '7. 제3자 서비스',
         content: (
           <div style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
             <p>
               <strong>Stripe</strong><br />
-              Payment processing. See <a href="https://stripe.com/privacy" style={{ color: '#0066cc' }}>https://stripe.com/privacy</a>
+              결제 처리. <a href="https://stripe.com/privacy" style={{ color: '#0066cc' }}>https://stripe.com/privacy</a> 참조
             </p>
             <p style={{ marginTop: '0.8rem' }}>
               <strong>Resend</strong><br />
-              Email delivery. See <a href="https://resend.com/privacy" style={{ color: '#0066cc' }}>https://resend.com/privacy</a>
+              이메일 배송. <a href="https://resend.com/privacy" style={{ color: '#0066cc' }}>https://resend.com/privacy</a> 참조
             </p>
             <p style={{ marginTop: '0.8rem' }}>
               <strong>Cloudflare</strong><br />
-              Hosting, CDN, KV, R2. See <a href="https://www.cloudflare.com/privacy/" style={{ color: '#0066cc' }}>https://www.cloudflare.com/privacy/</a>
+              호스팅, CDN, KV, R2. <a href="https://www.cloudflare.com/privacy/" style={{ color: '#0066cc' }}>https://www.cloudflare.com/privacy/</a> 참조
             </p>
             <p style={{ marginTop: '0.8rem' }}>
-              <strong>Mapbox (if Sound Map feature used)</strong><br />
-              Map display. May request user GPS coordinates. See <a href="https://www.mapbox.com/privacy/" style={{ color: '#0066cc' }}>https://www.mapbox.com/privacy/</a>
+              <strong>Mapbox (Sound Map 기능 사용 시)</strong><br />
+              지도 표시. 사용자의 GPS 좌표를 요청할 수 있습니다. <a href="https://www.mapbox.com/privacy/" style={{ color: '#0066cc' }}>https://www.mapbox.com/privacy/</a> 참조
             </p>
           </div>
         ),
       },
       {
-        heading: '8. Data Retention and Deletion',
+        heading: '8. 데이터 보유 및 삭제',
         content: (
           <div style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
             <p>
-              <strong>Account Deletion</strong><br />
-              Email 369@kotaroasahina.com to request account deletion. We will delete profile and usage logs within 30 days. Payment records may be retained for up to 7 years for accounting compliance.
+              <strong>계정 삭제</strong><br />
+              369@kotaroasahina.com 으로 계정 삭제를 요청하면, 30일 이내에 프로필 및 사용 로그를 삭제합니다. 결제 기록은 회계 규정 준수상 최대 7년간 보유될 수 있습니다.
             </p>
             <p style={{ marginTop: '0.8rem' }}>
-              <strong>Uploaded Files</strong><br />
-              KUON PLAYER files are auto-deleted after 24 hours. Owners Gallery files are retained until the user requests deletion.
+              <strong>업로드된 파일</strong><br />
+              KUON PLAYER 파일은 24시간 후 자동 삭제됩니다. 오너스 갤러리 파일은 사용자가 삭제를 요청할 때까지 보유됩니다.
             </p>
             <p style={{ marginTop: '0.8rem' }}>
-              <strong>Cookies & localStorage</strong><br />
-              Delete via browser settings. Note: Deleting kuon_token will log you out.
+              <strong>쿠키 및 localStorage</strong><br />
+              브라우저 설정에서 삭제할 수 있습니다. 참고: kuon_token을 삭제하면 로그아웃됩니다.
             </p>
           </div>
         ),
       },
       {
-        heading: '9. Security',
+        heading: '9. 보안',
         content: (
           <p style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
-            We implement HTTPS encryption, HttpOnly cookies, and CSRF protection. However, no internet transmission is completely secure. Keep passwords strong and avoid accessing from public computers.
+            당사는 HTTPS 암호화, HttpOnly 쿠키, CSRF 보호를 구현하고 있습니다. 그러나 인터넷 통신의 완전한 안전을 보장할 수 없습니다. 강력한 비밀번호를 유지하고 공용 컴퓨터에서의 접근을 피하세요.
           </p>
         ),
       },
       {
-        heading: '10. Children\'s Privacy',
+        heading: '10. 아동 개인정보',
         content: (
           <p style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
-            The Site does not explicitly target users under 18. If a parent or guardian consents to a minor's account registration, the parent/guardian is responsible for managing that account's personal information.
+            본 웹사이트는 18세 미만의 사용자를 명시적으로 대상으로 하지 않습니다. 부모 또는 보호자가 미성년자의 계정 등록에 동의한 경우, 부모 또는 보호자가 해당 계정의 개인정보 관리에 책임이 있습니다.
           </p>
         ),
       },
       {
-        heading: '11. Policy Changes',
+        heading: '11. 정책 변경',
         content: (
           <p style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
-            We may update this policy without prior notice. Material changes will be announced via email or notice on this page.
+            당사는 본 정책을 사전 통지 없이 변경할 수 있습니다. 중요한 변경 사항은 이메일 또는 본 페이지의 공지로 안내합니다.
           </p>
         ),
       },
       {
-        heading: '12. Contact',
+        heading: '12. 문의',
         content: (
           <p style={{ lineHeight: 1.8, marginBottom: '1rem' }}>
-            For questions about personal information, deletion requests, or complaints:<br />
-            Email: <a href="mailto:369@kotaroasahina.com" style={{ color: '#0066cc' }}>369@kotaroasahina.com</a><br />
-            Address: 5-16-35 Jiyugaoka, Obihiro, Hokkaido 080-2476, Japan
+            개인정보에 대한 질문, 삭제 요청, 이의 사항은 다음으로 문의하세요:<br />
+            이메일: <a href="mailto:369@kotaroasahina.com" style={{ color: '#0066cc' }}>369@kotaroasahina.com</a><br />
+            주소: 북해도 오비히로시 지유가오카 5초메 16반지 35, 일본 080-2476
           </p>
         ),
       },
     ],
-    lastUpdated: 'April 2026',
+    lastUpdated: '2026년 4월',
   },
   pt: {
     title: 'Privacy Policy',

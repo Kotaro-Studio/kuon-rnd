@@ -68,6 +68,7 @@ const HEADPHONES: GearItem[] = [
       ja: '当スタジオが強く推奨するモニターヘッドホン。録音現場で正確なモニターができ、日常の音楽鑑賞にも最高の音質。低価格・頑丈・超ロングセラー。',
       en: 'Our studio\'s top recommendation. Accurate monitoring at any recording site, superb sound for daily listening. Affordable, tough, and a long-standing bestseller.',
       es: 'Nuestra recomendación principal. Monitoreo preciso en cualquier sitio de grabación, sonido excelente. Asequible, resistente y un éxito de ventas.',
+      ko: '우리 스튜디오의 최고 추천 모니터링 헤드폰. 어떤 녹음 현장에서도 정확한 모니터링이 가능하며, 일상적인 음악 감상도 최고의 음질로 제공합니다. 저렴하고 견고하며 오래된 베스트셀러입니다.',
     },
   },
 ];
@@ -79,14 +80,16 @@ const RECORDERS_ENTRY: GearItem[] = [
       ja: '32bit フロート録音対応。入門機ながら音割れの心配がほぼゼロ。最初の1台に最適。',
       en: '32-bit float recording. Virtually zero risk of clipping, perfect as your first recorder.',
       es: 'Grabación en 32 bits float. Prácticamente sin riesgo de distorsión, ideal como primera grabadora.',
+      ko: '32비트 플로트 녹음 대응. 입문 기기임에도 불구하고 음성 왜곡의 위험이 거의 없습니다. 첫 번째 레코더로 최적입니다.',
     },
   },
   {
     name: 'TASCAM DR-05XP', nameEn: 'TASCAM DR-05XP',
     desc: {
-      ja: 'バランス型プラグインパワー対応。TASCAMならではの堅実な音質と操作性。',
+      ja: 'バランス型プラグインパワー対応。TASCAMならではの堅실な音質と操作性。',
       en: 'Balanced plug-in power support. Solid TASCAM audio quality and usability.',
       es: 'Compatible con alimentación plug-in balanceada. Calidad y usabilidad sólidas de TASCAM.',
+      ko: '밸런스형 플러그인 파워 대응. TASCAM 특유의 견고한 음질과 조작성을 제공합니다.',
     },
   },
 ];
@@ -98,6 +101,7 @@ const RECORDERS_PRO: GearItem[] = [
       ja: '多機能・高音質。マイクカプセル交換可能。長時間のフィールド録音にも対応。',
       en: 'Feature-rich, high quality. Interchangeable mic capsules. Great for long field sessions.',
       es: 'Versátil y de alta calidad. Cápsulas intercambiables. Ideal para sesiones largas de campo.',
+      ko: '다기능, 고음질. 교환 가능한 마이크 캡슐. 장시간 필드 녹음에도 대응합니다.',
     },
   },
   {
@@ -106,6 +110,7 @@ const RECORDERS_PRO: GearItem[] = [
       ja: '32bit フロート + タッチスクリーン。プロの現場で活躍する最高峰のポータブルレコーダー。',
       en: '32-bit float + touchscreen. A top-tier portable recorder for professional use.',
       es: '32 bits float + pantalla táctil. Grabadora portátil de primera clase para uso profesional.',
+      ko: '32비트 플로트 + 터치스크린. 전문 현장에서 활용되는 최고급 휴대용 레코더입니다.',
     },
   },
 ];
@@ -122,6 +127,7 @@ const STEREO_BARS: AccessoryItem[] = [
       ja: 'ドイツ製マイクバーの定番。高い剛性で微細な振動を抑え、安価な製品とは「音の締まり」が全然違います。通常はこれ1本でOK。',
       en: 'The German standard stereo bar. Superior rigidity suppresses micro-vibrations — a clear difference in sound tightness. One bar is all you need.',
       es: 'La barra estéreo estándar alemana. Rigidez superior que suprime microvibraciones. Una barra es todo lo que necesitas.',
+      ko: '독일 제 마이크 바의 표준입니다. 높은 경도로 미세한 진동을 억제하여 음질의 탄탄함이 저가 제품과 완전히 다릅니다. 보통 이것 하나로 충분합니다.',
     },
   },
   {
@@ -130,6 +136,7 @@ const STEREO_BARS: AccessoryItem[] = [
       ja: 'ロングタイプ。自然界の録音やオーケストラなど、左右の幅を大きく取りたい場合に。壮大なステレオイメージを構築できます。',
       en: 'Long type. For nature recording or orchestras where you need wider spacing. Creates a grand stereo image.',
       es: 'Tipo largo. Para grabaciones de naturaleza u orquestas donde necesitas mayor separación.',
+      ko: '롱 타입입니다. 자연 녹음이나 오케스트라처럼 좌우 폭을 크게 원할 때 사용합니다. 장대한 스테레오 이미지를 구축할 수 있습니다.',
     },
   },
 ];
@@ -141,14 +148,16 @@ const STANDS: AccessoryItem[] = [
       ja: 'スタジオ常設向け。鉄板ベースの重量で床からの振動をシャットアウト。圧倒的に音が良くなるプロの定番。',
       en: 'For permanent studio use. Heavy iron base blocks floor vibrations. A pro standard for dramatically better sound.',
       es: 'Para uso permanente en estudio. Base de hierro pesada que bloquea vibraciones del suelo.',
+      ko: '스튜디오 상설용입니다. 철판 베이스의 무게로 바닥 진동을 차단합니다. 음질을 극적으로 개선하는 전문가 표준입니다.',
     },
   },
   {
     name: 'K&M 20120B',
     desc: {
-      ja: '折りたたみ式・持ち運び重視。軽量ながらドイツ製の精度でガタつきが少なく安定した録音が可能。',
+      ja: '折りたたみ式・持ち運び重視。軽量ながらドイツ製の精도でガタつきが少なく安定した録音が可能。',
       en: 'Foldable & portable. Lightweight but with German precision — minimal wobble for stable recording.',
       es: 'Plegable y portátil. Ligero pero con precisión alemana para grabaciones estables.',
+      ko: '접이식, 휴대성 중심입니다. 가볍지만 독일의 정밀도로 흔들림이 적고 안정적인 녹음이 가능합니다.',
     },
   },
 ];
@@ -160,6 +169,7 @@ const TOOLS: AccessoryItem[] = [
       ja: 'ユニバーサルブラケット。スタンドのポールにレコーダーやマイクバーを増設できる万能ツール。日常生活でも「痒い所に手が届く」逸品。',
       en: 'Universal bracket. Mount recorders or mic bars on any stand pole. Incredibly versatile — useful even outside audio.',
       es: 'Soporte universal. Monte grabadoras o barras de micrófono en cualquier poste. Increíblemente versátil.',
+      ko: '범용 브래킷입니다. 스탠드 폴에 레코더나 마이크 바를 추가할 수 있는 만능 도구입니다. 오디오 외에도 사용할 수 있는 유용한 제품입니다.',
     },
   },
   {
@@ -168,6 +178,7 @@ const TOOLS: AccessoryItem[] = [
       ja: '卓上スタンド。鉄製の重量級で振動を逃さない。デスクでの録音・ポッドキャスト収録に最適。',
       en: 'Desktop stand. Heavy iron construction absorbs vibrations. Ideal for desk recording and podcasts.',
       es: 'Soporte de escritorio. Construcción pesada de hierro que absorbe vibraciones.',
+      ko: '탁상용 스탠드입니다. 철제 헤비급 구조로 진동을 흡수합니다. 데스크 녹음과 팟캐스트 수록에 최적입니다.',
     },
   },
 ];
@@ -180,29 +191,32 @@ type GalleryItem = { src: string; alt: string; title: L3; desc: L3; contain?: bo
 const GALLERY: GalleryItem[] = [
   {
     src: '/IMG_20260211_080312.png', alt: 'P-86S Housing',
-    title: { ja: '極小のハウジング', en: 'Minimal Housing', es: 'Carcasa Mínima' },
+    title: { ja: '極小のハウジング', en: 'Minimal Housing', es: 'Carcasa Mínima', ko: '극소형 하우징' },
     desc: {
       ja: '音の回折や反射を防ぐため、シールドは最小限に。Sennheiser MKE 2 や DPA 4060 等の市販ラベリアマイクとほぼ同じ構造です。',
       en: 'Minimal shielding to prevent sound diffraction and reflection. Nearly identical structure to Sennheiser MKE 2 and DPA 4060 lavalier microphones.',
       es: 'Blindaje mínimo para evitar difracción y reflexión del sonido. Estructura casi idéntica a Sennheiser MKE 2 y DPA 4060.',
+      ko: '음의 회절과 반사를 방지하기 위해 차폐를 최소화합니다. Sennheiser MKE 2 및 DPA 4060 등의 상용 라벨리어 마이크와 거의 동일한 구조입니다.',
     },
   },
   {
     src: '/IMG_20260223_155624.jpg', alt: 'P-86S Cable',
-    title: { ja: '約1.5mのケーブル', en: '1.5m Cable Length', es: 'Cable de 1.5m' },
+    title: { ja: '約1.5mのケーブル', en: '1.5m Cable Length', es: 'Cable de 1.5m', ko: '약 1.5m 케이블' },
     desc: {
       ja: '現場での経験を活かした最適なケーブル長。マイクスタンドにレコーダーを設置すれば、取り回しに困ることはありません。',
       en: 'Optimal cable length refined through field experience. Mount your recorder on the mic stand for effortless setup.',
       es: 'Longitud de cable óptima refinada por experiencia en campo. Monte su grabadora en el soporte para una configuración sin esfuerzo.',
+      ko: '현장 경험을 통해 정제된 최적의 케이블 길이입니다. 마이크 스탠드에 레코더를 장착하면 쉽게 설정할 수 있습니다.',
     },
   },
   {
     src: '/glasses-mic.png', alt: 'Glasses Microphone', contain: true,
-    title: { ja: '応用：メガネマイク', en: 'Advanced: Glasses Mic', es: 'Avanzado: Micrófono de Gafas' },
+    title: { ja: '応用：メガネマイク', en: 'Advanced: Glasses Mic', es: 'Avanzado: Micrófono de Gafas', ko: '응용: 안경 마이크' },
     desc: {
       ja: 'その小ささと軽さを活かし、メガネのテンプルに装着。スタンド不要の「ウェアラブル録音」を実現します。',
       en: 'Leveraging its tiny size and weight, attach to glasses temples. Enables stand-free "wearable recording."',
       es: 'Aprovechando su tamaño y peso mínimos, se fija en las patillas de las gafas para grabación portátil.',
+      ko: '작은 크기와 가벼운 무게를 활용하여 안경 사원에 장착합니다. 스탠드 없이도 "웨어러블 녹음"을 실현합니다.',
     },
   },
 ];
@@ -240,7 +254,7 @@ function GearCard({ item, lang }: { item: GearItem | AccessoryItem; lang: Lang }
 // ═══════════════════════════════════════════════
 export default function ManualP86S() {
   const { lang } = useLang();
-  const t = (ja: string, en: string, es: string) => lang === 'ja' ? ja : lang === 'en' ? en : es;
+  const t = (ja: string, en: string, es: string, ko?: string) => lang === 'ja' ? ja : lang === 'en' ? en : lang === 'ko' ? (ko || en) : es;
   const t3 = (m: L3) => m[lang] ?? m.en;
 
   // ─── Hero ───
@@ -260,7 +274,7 @@ export default function ManualP86S() {
           fontFamily: sans, fontSize: 11, letterSpacing: '0.25em', color: ACCENT,
           textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: 18,
         }}>
-          {t('空音開発 P-86S', 'Kuon R&D P-86S', 'Kuon R&D P-86S')}
+          {t('空音開発 P-86S', 'Kuon R&D P-86S', 'Kuon R&D P-86S', 'Kuon R&D P-86S')}
         </span>
         <h1 style={{
           fontFamily: serif, fontSize: 'clamp(1.6rem,4.5vw,2.6rem)', fontWeight: 500,
@@ -270,6 +284,7 @@ export default function ManualP86S() {
             'P-86S スタートアップガイド',
             'P-86S Startup Guide',
             'Guía de Inicio P-86S',
+            'P-86S 스타트업 가이드',
           )}
         </h1>
         <p style={{
@@ -280,6 +295,7 @@ export default function ManualP86S() {
             '空音開発のクラフトマイクをご購入いただきありがとうございます。\n「ありのままの音」を記録するための、基本的な準備とセッティング方法を解説します。',
             'Thank you for purchasing our craft microphone.\nThis guide covers the basic preparation and setup for capturing pristine sound.',
             'Gracias por adquirir nuestro micrófono artesanal.\nEsta guía cubre la preparación y configuración básica para capturar sonido prístino.',
+            '공수 개발의 크래프트 마이크를 구매해주셔서 감사합니다.\n\"있는 그대로의 소리\"를 기록하기 위한 기본 준비와 설정 방법을 설명합니다.',
           )}
         </p>
       </div>
@@ -287,10 +303,10 @@ export default function ManualP86S() {
       {/* ═══ 1. NECESSARY GEAR ═══ */}
       <Section>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.2rem,2.5vw,1.6rem)', fontWeight: 700, textAlign: 'center', marginBottom: 12, color: '#1d1d1f' }}>
-          {t('必要機材リスト', 'Required Gear', 'Equipo Necesario')}
+          {t('必要機材リスト', 'Required Gear', 'Equipo Necesario', '필요한 기재 목록')}
         </h2>
         <p style={{ fontFamily: serif, fontSize: 'clamp(0.8rem,1.1vw,0.9rem)', color: '#888', textAlign: 'center', marginBottom: 50 }}>
-          {t('P-86S と一緒に揃えておきたい基本アイテム', 'Essential items to pair with your P-86S', 'Artículos esenciales para combinar con tu P-86S')}
+          {t('P-86S と一緒に揃えておきたい基本アイテム', 'Essential items to pair with your P-86S', 'Artículos esenciales para combinar con tu P-86S', 'P-86S와 함께 준비할 필수 항목')}
         </p>
 
         {/* Headphones */}
@@ -299,7 +315,7 @@ export default function ManualP86S() {
             fontFamily: sans, fontSize: 'clamp(0.75rem,1vw,0.85rem)', fontWeight: 700,
             letterSpacing: '0.15em', color: ACCENT, textTransform: 'uppercase', marginBottom: 18,
           }}>
-            {t('モニターヘッドホン', 'Monitor Headphones', 'Auriculares de Monitoreo')}
+            {t('モニターヘッドホン', 'Monitor Headphones', 'Auriculares de Monitoreo', '모니터 헤드폰')}
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
             {HEADPHONES.map(h => <GearCard key={h.name} item={h} lang={lang} />)}
@@ -312,13 +328,14 @@ export default function ManualP86S() {
             fontFamily: sans, fontSize: 'clamp(0.75rem,1vw,0.85rem)', fontWeight: 700,
             letterSpacing: '0.15em', color: ACCENT, textTransform: 'uppercase', marginBottom: 18,
           }}>
-            {t('対応レコーダー', 'Compatible Recorders', 'Grabadoras Compatibles')}
+            {t('対応レコーダー', 'Compatible Recorders', 'Grabadoras Compatibles', '호환 레코더')}
           </h3>
           <p style={{ fontFamily: serif, fontSize: 'clamp(0.8rem,1vw,0.88rem)', color: '#666', marginBottom: 20, lineHeight: 1.8 }}>
             {t(
               'P-86Sは「プラグインパワー」で駆動します。ご予算と用途に合わせてお選びください。',
               'The P-86S runs on plug-in power. Choose based on your budget and use case.',
               'El P-86S funciona con alimentación plug-in. Elige según tu presupuesto y uso.',
+              'P-86S는 \"플러그인 파워\"로 작동합니다. 예산과 사용 사례에 따라 선택하십시오.',
             )}
           </p>
 
@@ -349,17 +366,18 @@ export default function ManualP86S() {
           <span style={{ fontSize: 32, flexShrink: 0, lineHeight: 1 }}>&#x26a0;&#xfe0f;</span>
           <div>
             <h3 style={{ fontFamily: sans, fontSize: 'clamp(0.9rem,1.3vw,1.05rem)', fontWeight: 700, color: WARN, margin: '0 0 8px' }}>
-              {t('【重要】ファンタム電源（+48V）は絶対に使用しないでください', 'IMPORTANT: Never apply phantom power (+48V)', 'IMPORTANTE: Nunca aplique alimentación fantasma (+48V)')}
+              {t('【重要】ファンタム電源（+48V）は絶対に使用しないでください', 'IMPORTANT: Never apply phantom power (+48V)', 'IMPORTANTE: Nunca aplique alimentación fantasma (+48V)', '【중요】팬텀 전원(+48V)을 절대 사용하지 마십시오')}
             </h3>
             <p style={{ fontFamily: serif, fontSize: 'clamp(0.8rem,1vw,0.88rem)', color: '#555', lineHeight: 1.8, margin: 0 }}>
               {t(
                 'P-86Sは音質を極限まで追求するために繊細な回路設計を採用しています。業務用のファンタム電源（+48V）をかけると、回路が一瞬で破損します。ファンタム電源で使用したい方は、XLR端子モデルの X-86S をお求めください。',
                 'The P-86S uses a delicate circuit design to pursue the ultimate sound quality. Applying phantom power (+48V) will instantly destroy the circuit. If you need phantom power, please consider the X-86S with XLR connectors.',
                 'El P-86S utiliza un diseño de circuito delicado para lograr la máxima calidad de sonido. Aplicar alimentación fantasma (+48V) destruirá el circuito instantáneamente. Si necesita alimentación fantasma, considere el X-86S con conectores XLR.',
+                'P-86S는 최고의 음질을 추구하기 위해 섬세한 회로 설계를 채택했습니다. 전문 팬텀 전원(+48V)을 적용하면 회로가 즉시 손상됩니다. 팬텀 전원이 필요하시면 XLR 커넥터가 있는 X-86S를 고려하십시오.',
               )}
             </p>
             <Link href="/microphone" style={{ fontFamily: sans, fontSize: 13, color: ACCENT, textDecoration: 'none', fontWeight: 600, display: 'inline-block', marginTop: 10 }}>
-              {t('X-86S について詳しく →', 'Learn about X-86S →', 'Más sobre X-86S →')}
+              {t('X-86S について詳しく →', 'Learn about X-86S →', 'Más sobre X-86S →', 'X-86S에 대해 자세히 알아보기 →')}
             </Link>
           </div>
         </div>
@@ -368,7 +386,7 @@ export default function ManualP86S() {
       {/* ═══ 3. CONNECTION STEPS ═══ */}
       <Section bg="#fff">
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.2rem,2.5vw,1.6rem)', fontWeight: 700, textAlign: 'center', marginBottom: 50, color: '#1d1d1f' }}>
-          {t('接続の手順', 'Connection Steps', 'Pasos de Conexión')}
+          {t('接続の手順', 'Connection Steps', 'Pasos de Conexión', '연결 단계')}
         </h2>
         {[
           {

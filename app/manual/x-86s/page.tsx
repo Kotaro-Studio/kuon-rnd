@@ -68,6 +68,7 @@ const ADAPTERS: AdapterItem[] = [
       ja: '最も安価に導入できる標準的なファンタム電源変換アダプター。まずは音を出してみたい、コストを抑えたいという方はこちらをお選びください。',
       en: 'The most affordable standard phantom power adapter. Choose this if you want to get started quickly at a lower cost.',
       es: 'El adaptador de alimentación fantasma estándar más asequible. Elija esto si desea comenzar rápidamente a menor costo.',
+      ko: '가장 저렴하게 도입할 수 있는 표준 팬텀 전원 변환 어댑터입니다. 먼저 소리를 내고 싶거나 비용을 절약하고 싶다면 이것을 선택하십시오.',
     },
   },
   {
@@ -76,6 +77,7 @@ const ADAPTERS: AdapterItem[] = [
       ja: '「マイク探しの旅を終わらせたい」なら、迷わずこちらです。回路の質が圧倒的に高く、X-86Sのポテンシャルを100%引き出し、クリアで深みのある「真実の音」を奏でます。無指向性マイクのおすすめ構成として、プロのレコーディングエンジニアにも自信を持って推薦できる組み合わせです。',
       en: 'If you want to end your search for the perfect microphone, this is the answer. Its circuit quality is outstanding — it unlocks 100% of the X-86S potential, delivering a clear, deep "true sound." A recommended omnidirectional microphone setup we confidently endorse even to professional recording engineers.',
       es: 'Si desea terminar su búsqueda del micrófono perfecto, esta es la respuesta. La calidad de su circuito es excepcional — desbloquea el 100% del potencial del X-86S para un sonido verdadero, claro y profundo.',
+      ko: '완벽한 마이크를 찾는 여정을 끝내고 싶다면 이것입니다. 회로 품질이 탁월하여 X-86S의 잠재력을 100% 끌어내 명확하고 깊은 \"참 소리\"를 제공합니다. 전문 녹음 엔지니어도 자신있게 추천할 수 있는 무지향성 마이크 설정입니다.',
     },
   },
 ];
@@ -92,6 +94,7 @@ const STEREO_BARS: AccessoryItem[] = [
       ja: 'ドイツ製マイクバーの定番。高い剛性で微細な振動を抑え、安価な製品とは「音の締まり」が全然違います。通常はこれ1本でOK。',
       en: 'The German standard stereo bar. Superior rigidity suppresses micro-vibrations — a clear difference in sound quality. One bar is all you need.',
       es: 'La barra estéreo estándar alemana. Rigidez superior que suprime microvibraciones. Una barra es todo lo que necesitas.',
+      ko: '독일 제 마이크 바의 표준입니다. 높은 경도로 미세한 진동을 억제하여 음질의 탄탄함이 저가 제품과 완전히 다릅니다. 보통 이것 하나로 충분합니다.',
     },
   },
   {
@@ -100,6 +103,7 @@ const STEREO_BARS: AccessoryItem[] = [
       ja: 'ロングタイプ。自然界の録音やオーケストラなど、左右の幅を大きく取りたい場合に。壮大なステレオイメージを構築できます。',
       en: 'Long type. For nature recording or orchestras where you need wider spacing. Creates a grand stereo image.',
       es: 'Tipo largo. Para grabaciones de naturaleza u orquestas donde necesitas mayor separación.',
+      ko: '롱 타입입니다. 자연 녹음이나 오케스트라처럼 좌우 폭을 크게 원할 때 사용합니다. 장대한 스테레오 이미지를 구축할 수 있습니다.',
     },
   },
 ];
@@ -111,6 +115,7 @@ const STANDS: AccessoryItem[] = [
       ja: 'スタジオ常設向け。鉄板ベースの重量で床からの振動をシャットアウト。プロの定番で、無指向性マイクの性能を最大限に引き出すおすすめのスタンド。',
       en: 'For permanent studio use. Heavy iron base blocks floor vibrations. A professional standard — the recommended stand for maximizing omnidirectional microphone performance.',
       es: 'Para uso permanente en estudio. Base de hierro que bloquea vibraciones del suelo. Estándar profesional.',
+      ko: '스튜디오 상설용입니다. 철판 베이스의 무게로 바닥 진동을 차단합니다. 전문가 표준이며 무지향성 마이크 성능을 최대한 끌어내는 권장 스탠드입니다.',
     },
   },
   {
@@ -119,6 +124,7 @@ const STANDS: AccessoryItem[] = [
       ja: '折りたたみ式・持ち運び重視。軽量ながらドイツ製の精度でガタつきが少なく安定した録音が可能。',
       en: 'Foldable & portable. Lightweight but with German precision — minimal wobble for stable recording.',
       es: 'Plegable y portátil. Ligero pero con precisión alemana para grabaciones estables.',
+      ko: '접이식, 휴대성 중심입니다. 가볍지만 독일의 정밀도로 흔들림이 적고 안정적인 녹음이 가능합니다.',
     },
   },
 ];
@@ -130,14 +136,16 @@ const TOOLS: AccessoryItem[] = [
       ja: 'ユニバーサルブラケット。スタンドのポールにレコーダーやマイクバーを増設できる万能ツール。',
       en: 'Universal bracket. Mount recorders or mic bars on any stand pole. Incredibly versatile.',
       es: 'Soporte universal. Monte grabadoras o barras de micrófono en cualquier poste.',
+      ko: '범용 브래킷입니다. 스탠드 폴에 레코더나 마이크 바를 추가할 수 있습니다.',
     },
   },
   {
     name: 'K&M 232B',
     desc: {
-      ja: '卓上スタンド。鉄製の重量級で振動を逃さない。デスクでの録音・ポッドキャスト収録に最適。',
+      ja: '卓上スタンド。鉄製の重量級で振動を逃さない。デスクでの録音・ポッドキャスト収録に最적。',
       en: 'Desktop stand. Heavy iron construction absorbs vibrations. Ideal for desk recording and podcasts.',
       es: 'Soporte de escritorio. Construcción pesada de hierro que absorbe vibraciones.',
+      ko: '탁상용 스탠드입니다. 철제 헤비급 구조로 진동을 흡수합니다. 데스크 녹음과 팟캐스트 수록에 최적입니다.',
     },
   },
 ];
@@ -172,7 +180,7 @@ function GearCard({ item, lang }: { item: AccessoryItem; lang: Lang }) {
 // ═══════════════════════════════════════════════
 export default function ManualX86S() {
   const { lang } = useLang();
-  const t = (ja: string, en: string, es: string) => lang === 'ja' ? ja : lang === 'en' ? en : es;
+  const t = (ja: string, en: string, es: string, ko?: string) => lang === 'ja' ? ja : lang === 'en' ? en : lang === 'ko' ? (ko || en) : es;
   const t3 = (m: L3) => m[lang] ?? m.en;
   const heroReveal = useReveal();
 

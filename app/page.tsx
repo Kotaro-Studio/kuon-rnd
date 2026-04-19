@@ -16,8 +16,8 @@ const ACCENT = '#0284c7';
 // ─────────────────────────────────────────────
 export default function Home() {
   const { lang } = useLang();
-  const t = <T,>(ja: T, en: T, es: T): T =>
-    lang === 'ja' ? ja : lang === 'en' ? en : es;
+  const t = <T,>(ja: T, en: T, es: T, ko?: T): T =>
+    lang === 'ja' ? ja : lang === 'en' ? en : lang === 'es' ? es : ko ?? es;
 
   return (
     <div style={{
@@ -67,7 +67,8 @@ export default function Home() {
           }}>
             {t('誰かが、あなたの音楽を\n探している。',
                'Someone is looking\nfor your music.',
-               'Alguien est\u00e1 buscando\ntu m\u00fasica.')}
+               'Alguien está buscando\ntu música.',
+               '누군가가 당신의 음악을\n찾고 있습니다.')}
           </h1>
 
           <p style={{
@@ -81,7 +82,8 @@ export default function Home() {
           }}>
             {t('録音し、成長を記録し、世界に発信する。\n空音開発は、音楽家が音楽家であり続けるためのプラットフォームです。',
                'Record. Track your growth. Reach the world.\nKuon R&D is the platform where musicians stay musicians.',
-               'Graba. Registra tu crecimiento. Llega al mundo.\nKuon R&D es la plataforma donde los m\u00fasicos siguen siendo m\u00fasicos.')}
+               'Graba. Registra tu crecimiento. Llega al mundo.\nKuon R&D es la plataforma donde los músicos siguen siendo músicos.',
+               '녹음하세요. 성장을 기록하세요. 세계에 도달하세요.\n공음 R&D는 음악가가 음악가로 남을 수 있는 플랫폼입니다.')}
           </p>
 
           <div style={{

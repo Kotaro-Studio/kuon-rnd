@@ -67,12 +67,12 @@ const T = {
     en: '100% Free — No Install — No Upload',
     es: '100% Gratis — Sin Instalación — Sin Subida',
   } as L3,
-  heroStat1: { ja: '¥0', en: '¥0', es: '¥0' } as L3,
-  heroStat1Label: { ja: '完全無料', en: 'Completely Free', es: 'Totalmente Gratis' } as L3,
-  heroStat2: { ja: 'Sinc', en: 'Sinc', es: 'Sinc' } as L3,
-  heroStat2Label: { ja: '補間アルゴリズム', en: 'Interpolation', es: 'Interpolación' } as L3,
-  heroStat3: { ja: '128', en: '128', es: '128' } as L3,
-  heroStat3Label: { ja: 'タップ（Ultra モード）', en: 'Taps (Ultra mode)', es: 'Taps (modo Ultra)' } as L3,
+  heroStat1: { ja: '¥0', en: '¥0', es: '¥0', ko: '₩0' } as L3,
+  heroStat1Label: { ja: '完全無料', en: 'Completely Free', es: 'Totalmente Gratis', ko: '완전 무료' } as L3,
+  heroStat2: { ja: 'Sinc', en: 'Sinc', es: 'Sinc', ko: 'Sinc' } as L3,
+  heroStat2Label: { ja: '補間アルゴリズム', en: 'Interpolation', es: 'Interpolación', ko: '보간 알고리즘' } as L3,
+  heroStat3: { ja: '128', en: '128', es: '128', ko: '128' } as L3,
+  heroStat3Label: { ja: 'タップ（Ultra モード）', en: 'Taps (Ultra mode)', es: 'Taps (modo Ultra)', ko: '탭(Ultra 모드)' } as L3,
 
   // The Big Question
   bigQTitle: {
@@ -179,37 +179,37 @@ const T = {
     en: 'Features of KUON\u00A0RESAMPLER',
     es: 'Características de KUON\u00A0RESAMPLER',
   } as L3,
-  feat1Title: { ja: 'Sinc 補間 × Kaiser 窓', en: 'Sinc × Kaiser Window', es: 'Sinc × Ventana Kaiser' } as L3,
+  feat1Title: { ja: 'Sinc 補間 × Kaiser 窓', en: 'Sinc × Kaiser Window', es: 'Sinc × Ventana Kaiser', ko: 'Sinc 보간 × Kaiser 윈도우' } as L3,
   feat1Desc: {
     ja: '理論的に最適な帯域制限フィルタ。線形補間やスプラインでは得られない数学的正確さ。',
     en: 'Theoretically optimal bandlimited filter. Mathematical precision unattainable with linear or spline interpolation.',
     es: 'Filtro de banda limitada teóricamente óptimo. Precisión matemática inalcanzable con interpolación lineal o spline.',
   } as L3,
-  feat2Title: { ja: '3段階の品質プリセット', en: '3 Quality Presets', es: '3 Niveles de Calidad' } as L3,
+  feat2Title: { ja: '3段階の品質プリセット', en: '3 Quality Presets', es: '3 Niveles de Calidad', ko: '3단계 품질 프리셋' } as L3,
   feat2Desc: {
     ja: 'Standard（32タップ）/ High（64タップ）/ Ultra（128タップ）。用途に応じて速度と品質のバランスを選択。',
     en: 'Standard (32-tap) / High (64-tap) / Ultra (128-tap). Choose the speed-quality balance for your needs.',
     es: 'Estándar (32 taps) / Alta (64 taps) / Ultra (128 taps). Elige el balance velocidad-calidad según tu necesidad.',
   } as L3,
-  feat3Title: { ja: 'アンチエイリアスフィルタ', en: 'Anti-Aliasing Filter', es: 'Filtro Anti-Aliasing' } as L3,
+  feat3Title: { ja: 'アンチエイリアスフィルタ', en: 'Anti-Aliasing Filter', es: 'Filtro Anti-Aliasing', ko: '안티에일리어싱 필터' } as L3,
   feat3Desc: {
     ja: 'ダウンサンプリング時、自動的にカットオフ周波数をスケーリング。折り返しノイズを -120dB まで抑制。',
     en: 'Automatically scales cutoff frequency during downsampling. Suppresses aliasing to -120dB.',
     es: 'Escala automáticamente la frecuencia de corte al submuestrear. Suprime el aliasing a -120dB.',
   } as L3,
-  feat4Title: { ja: '完全ブラウザ処理', en: '100% Browser Processing', es: '100% en el Navegador' } as L3,
+  feat4Title: { ja: '完全ブラウザ処理', en: '100% Browser Processing', es: '100% en el Navegador', ko: '완전 브라우저 처리' } as L3,
   feat4Desc: {
     ja: 'すべての計算がブラウザ内で完結。音声データはサーバーに送信されません。プライバシー完全保護。',
     en: 'All computation runs in your browser. Audio data is never sent to a server. Complete privacy.',
     es: 'Todo el cálculo se realiza en tu navegador. Los datos nunca se envían al servidor. Privacidad total.',
   } as L3,
-  feat5Title: { ja: 'WAV / FLAC / MP3 入力', en: 'WAV / FLAC / MP3 Input', es: 'Entrada WAV / FLAC / MP3' } as L3,
+  feat5Title: { ja: 'WAV / FLAC / MP3 入力', en: 'WAV / FLAC / MP3 Input', es: 'Entrada WAV / FLAC / MP3', ko: 'WAV / FLAC / MP3 입력' } as L3,
   feat5Desc: {
     ja: 'ブラウザが対応するすべてのオーディオ形式をデコード。出力は 32-bit float WAV。',
     en: 'Decodes all audio formats supported by your browser. Output is 32-bit float WAV.',
     es: 'Decodifica todos los formatos de audio que soporta tu navegador. Salida en WAV 32-bit float.',
   } as L3,
-  feat6Title: { ja: '32-bit Float 出力', en: '32-bit Float Output', es: 'Salida 32-bit Float' } as L3,
+  feat6Title: { ja: '32-bit Float 出力', en: '32-bit Float Output', es: 'Salida 32-bit Float', ko: '32비트 Float 출력' } as L3,
   feat6Desc: {
     ja: '変換後も最大限のダイナミックレンジを維持。後続の処理で品質劣化なし。',
     en: 'Maintains maximum dynamic range after conversion. No quality loss in subsequent processing.',
@@ -222,19 +222,19 @@ const T = {
     en: 'Done in 3 Steps',
     es: 'Listo en 3 Pasos',
   } as L3,
-  step1Title: { ja: 'ファイルをドロップ', en: 'Drop Your File', es: 'Suelta tu Archivo' } as L3,
+  step1Title: { ja: 'ファイルをドロップ', en: 'Drop Your File', es: 'Suelta tu Archivo', ko: '파일을 드롭하세요' } as L3,
   step1Desc: {
     ja: 'WAV / FLAC / MP3 / AAC / OGG — あらゆる形式に対応',
     en: 'WAV / FLAC / MP3 / AAC / OGG — all formats supported',
     es: 'WAV / FLAC / MP3 / AAC / OGG — todos los formatos',
   } as L3,
-  step2Title: { ja: 'サンプルレートと品質を選択', en: 'Choose Rate & Quality', es: 'Elige Frecuencia y Calidad' } as L3,
+  step2Title: { ja: 'サンプルレートと品質を選択', en: 'Choose Rate & Quality', es: 'Elige Frecuencia y Calidad', ko: '샘플링 레이트와 품질 선택' } as L3,
   step2Desc: {
     ja: '44.1k / 48k / 88.2k / 96k / 176.4k / 192kHz + 3段階の品質プリセット',
     en: '44.1k / 48k / 88.2k / 96k / 176.4k / 192kHz + 3 quality presets',
     es: '44.1k / 48k / 88.2k / 96k / 176.4k / 192kHz + 3 niveles de calidad',
   } as L3,
-  step3Title: { ja: '変換してダウンロード', en: 'Convert & Download', es: 'Convertir y Descargar' } as L3,
+  step3Title: { ja: '変換してダウンロード', en: 'Convert & Download', es: 'Convertir y Descargar', ko: '변환 및 다운로드' } as L3,
   step3Desc: {
     ja: '32-bit float WAV で出力。ダイナミックレンジを完全保持。',
     en: 'Output as 32-bit float WAV. Full dynamic range preserved.',
@@ -247,19 +247,19 @@ const T = {
     en: 'How We Compare',
     es: 'Comparación con Otros',
   } as L3,
-  compFeature: { ja: '機能', en: 'Feature', es: 'Característica' } as L3,
-  compKuon: { ja: 'KUON\u00A0RESAMPLER', en: 'KUON\u00A0RESAMPLER', es: 'KUON\u00A0RESAMPLER' } as L3,
-  compSox: { ja: 'SoX', en: 'SoX', es: 'SoX' } as L3,
-  compAudacity: { ja: 'Audacity', en: 'Audacity', es: 'Audacity' } as L3,
-  compOnline: { ja: 'オンラインツール', en: 'Online Tools', es: 'Herramientas Online' } as L3,
+  compFeature: { ja: '機能', en: 'Feature', es: 'Característica', ko: '기능' } as L3,
+  compKuon: { ja: 'KUON\u00A0RESAMPLER', en: 'KUON\u00A0RESAMPLER', es: 'KUON\u00A0RESAMPLER', ko: 'KUON RESAMPLER' } as L3,
+  compSox: { ja: 'SoX', en: 'SoX', es: 'SoX', ko: 'SoX' } as L3,
+  compAudacity: { ja: 'Audacity', en: 'Audacity', es: 'Audacity', ko: 'Audacity' } as L3,
+  compOnline: { ja: 'オンラインツール', en: 'Online Tools', es: 'Herramientas Online', ko: '온라인 도구' } as L3,
 
-  compRow1: { ja: 'インストール不要', en: 'No Install', es: 'Sin Instalación' } as L3,
-  compRow2: { ja: 'サーバー送信なし', en: 'No Server Upload', es: 'Sin Subida' } as L3,
-  compRow3: { ja: 'Sinc 補間', en: 'Sinc Interpolation', es: 'Interpolación Sinc' } as L3,
-  compRow4: { ja: 'Kaiser 窓', en: 'Kaiser Window', es: 'Ventana Kaiser' } as L3,
-  compRow5: { ja: '品質プリセット', en: 'Quality Presets', es: 'Presets de Calidad' } as L3,
-  compRow6: { ja: '32-bit Float 出力', en: '32-bit Float Output', es: 'Salida 32-bit Float' } as L3,
-  compRow7: { ja: '無料', en: 'Free', es: 'Gratis' } as L3,
+  compRow1: { ja: 'インストール不要', en: 'No Install', es: 'Sin Instalación', ko: '설치 불필요' } as L3,
+  compRow2: { ja: 'サーバー送信なし', en: 'No Server Upload', es: 'Sin Subida', ko: '서버 업로드 없음' } as L3,
+  compRow3: { ja: 'Sinc 補間', en: 'Sinc Interpolation', es: 'Interpolación Sinc', ko: 'Sinc 보간' } as L3,
+  compRow4: { ja: 'Kaiser 窓', en: 'Kaiser Window', es: 'Ventana Kaiser', ko: 'Kaiser 윈도우' } as L3,
+  compRow5: { ja: '品質プリセット', en: 'Quality Presets', es: 'Presets de Calidad', ko: '품질 프리셋' } as L3,
+  compRow6: { ja: '32-bit Float 出力', en: '32-bit Float Output', es: 'Salida 32-bit Float', ko: '32비트 Float 출력' } as L3,
+  compRow7: { ja: '無料', en: 'Free', es: 'Gratis', ko: '무료' } as L3,
 
   // Targets
   targetsTitle: {
@@ -301,7 +301,7 @@ const T = {
   } as L3,
 
   // FAQ
-  faqTitle: { ja: 'よくある質問', en: 'FAQ', es: 'Preguntas Frecuentes' } as L3,
+  faqTitle: { ja: 'よくある質問', en: 'FAQ', es: 'Preguntas Frecuentes', ko: '자주 묻는 질문' } as L3,
 
   faq1Q: {
     ja: 'Q. アップサンプリングで本当に音質は良くなりますか？',
