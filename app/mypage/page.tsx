@@ -46,6 +46,12 @@ export default function MyPage() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', instrument: '', region: '', bio: '' });
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showEmailChange, setShowEmailChange] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -88,6 +94,56 @@ export default function MyPage() {
       }
     } catch { /* ignore */ }
     setSaving(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/auth/account', { method: 'DELETE' });
+      if (res.ok) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('kuon_user');
+          localStorage.removeItem('kuon_first_visit');
+        }
+        router.push('/');
+      }
+    } catch { /* ignore */ }
+    setDeleting(false);
+  };
+
+  const handleEmailChange = async () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      setEmailMsg({ type: 'err', text: t3({ ja: '有効なメールアドレスを入力してください', en: 'Please enter a valid email', es: 'Ingrese un email valido' }, lang) });
+      return;
+    }
+    setEmailSending(true);
+    setEmailMsg(null);
+    try {
+      const res = await fetch('/api/auth/change-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newEmail }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEmailMsg({ type: 'ok', text: t3({
+          ja: `${newEmail} に確認メールを送信しました。メール内のリンクをクリックして変更を完了してください。`,
+          en: `Verification email sent to ${newEmail}. Click the link in the email to complete the change.`,
+          es: `Email de verificacion enviado a ${newEmail}. Haga clic en el enlace para completar el cambio.`,
+        }, lang) });
+        setNewEmail('');
+      } else {
+        const errMsg = data.error === 'Email already in use'
+          ? t3({ ja: 'このメールアドレスは既に使用されています', en: 'This email is already in use', es: 'Este email ya esta en uso' }, lang)
+          : data.error === 'Same email'
+          ? t3({ ja: '現在のメールアドレスと同じです', en: 'Same as current email', es: 'Mismo email actual' }, lang)
+          : (data.error || 'Error');
+        setEmailMsg({ type: 'err', text: errMsg });
+      }
+    } catch {
+      setEmailMsg({ type: 'err', text: 'Network error' });
+    }
+    setEmailSending(false);
   };
 
   const handleLogout = async () => {
@@ -523,6 +579,219 @@ export default function MyPage() {
           }}>
             {t3({ ja: 'トップへ', en: 'Top', es: 'Inicio' }, lang)}
           </Link>
+        </div>
+
+        {/* Email Change */}
+        <div style={{
+          background: '#fff',
+          borderRadius: 12,
+          padding: '1.5rem',
+          boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
+          marginTop: '1.5rem',
+          marginBottom: '1.5rem',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: showEmailChange ? '1rem' : 0,
+          }}>
+            <h2 style={{ fontFamily: serif, fontSize: '1rem', fontWeight: 400, color: '#111' }}>
+              {t3({ ja: 'メールアドレス変更', en: 'Change Email', ko: '이메일 변경', pt: 'Alterar Email', es: 'Cambiar Email' }, lang)}
+            </h2>
+            {!showEmailChange && (
+              <button
+                onClick={() => { setShowEmailChange(true); setEmailMsg(null); }}
+                style={{
+                  fontFamily: sans, fontSize: '0.75rem', color: ACCENT,
+                  background: 'none', border: `1px solid ${ACCENT}`,
+                  borderRadius: 20, padding: '0.3rem 0.8rem', cursor: 'pointer',
+                }}
+              >
+                {t3({ ja: '変更', en: 'Change', ko: '변경', pt: 'Alterar', es: 'Cambiar' }, lang)}
+              </button>
+            )}
+          </div>
+
+          {showEmailChange && (
+            <div>
+              <p style={{ fontFamily: sans, fontSize: '0.8rem', color: '#888', marginBottom: '0.8rem', lineHeight: 1.6 }}>
+                {t3({
+                  ja: '新しいメールアドレスに確認メールを送信します。メール内のリンクをクリックすると変更が完了します。',
+                  en: 'A verification email will be sent to your new address. Click the link in the email to complete the change.',
+                  ko: '새 이메일 주소로 확인 메일이 발송됩니다. 메일의 링크를 클릭하면 변경이 완료됩니다.',
+                  pt: 'Um email de verificacao sera enviado para o novo endereco. Clique no link para concluir.',
+                  es: 'Se enviara un email de verificacion a la nueva direccion. Haga clic en el enlace para completar.',
+                }, lang)}
+              </p>
+              <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder={t3({ ja: '新しいメールアドレス', en: 'New email address', ko: '새 이메일 주소', pt: 'Novo email', es: 'Nuevo email' }, lang)}
+                  style={{
+                    flex: 1, padding: '0.6rem 0.8rem', border: '1px solid #ddd',
+                    borderRadius: 8, fontFamily: sans, fontSize: '0.85rem',
+                    boxSizing: 'border-box', outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={handleEmailChange}
+                  disabled={emailSending}
+                  style={{
+                    fontFamily: sans, fontSize: '0.8rem', color: '#fff',
+                    background: emailSending ? '#94a3b8' : ACCENT,
+                    border: 'none', borderRadius: 8, padding: '0.6rem 1rem',
+                    cursor: emailSending ? 'wait' : 'pointer', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {emailSending
+                    ? t3({ ja: '送信中...', en: 'Sending...', es: 'Enviando...' }, lang)
+                    : t3({ ja: '送信', en: 'Send', ko: '전송', pt: 'Enviar', es: 'Enviar' }, lang)
+                  }
+                </button>
+              </div>
+              {emailMsg && (
+                <p style={{
+                  fontFamily: sans, fontSize: '0.8rem', lineHeight: 1.6,
+                  color: emailMsg.type === 'ok' ? '#10b981' : '#ef4444',
+                  marginBottom: '0.5rem',
+                }}>
+                  {emailMsg.text}
+                </p>
+              )}
+              <button
+                onClick={() => { setShowEmailChange(false); setEmailMsg(null); setNewEmail(''); }}
+                style={{
+                  fontFamily: sans, fontSize: '0.75rem', color: '#999',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                }}
+              >
+                {t3({ ja: 'キャンセル', en: 'Cancel', ko: '취소', pt: 'Cancelar', es: 'Cancelar' }, lang)}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        {/* Account Deletion — prominent danger zone  */}
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <div style={{
+          background: '#fff',
+          borderRadius: 12,
+          padding: '1.5rem',
+          boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
+          marginBottom: '1.5rem',
+          border: '1px solid #fecaca',
+        }}>
+          <h2 style={{
+            fontFamily: serif,
+            fontSize: '1rem',
+            fontWeight: 400,
+            color: '#dc2626',
+            marginBottom: '0.8rem',
+          }}>
+            {t3({
+              ja: 'アカウントの削除',
+              en: 'Delete Account',
+              ko: '계정 삭제',
+              pt: 'Excluir Conta',
+              es: 'Eliminar Cuenta',
+            }, lang)}
+          </h2>
+          <p style={{
+            fontFamily: sans,
+            fontSize: '0.8rem',
+            color: '#888',
+            lineHeight: 1.7,
+            marginBottom: '1rem',
+          }}>
+            {t3({
+              ja: 'アカウントを削除すると、プロフィール情報・利用履歴を含むすべてのデータが完全に削除されます。この操作は取り消せません。',
+              en: 'Deleting your account will permanently remove all your data including profile information and usage history. This action cannot be undone.',
+              ko: '계정을 삭제하면 프로필 정보 및 이용 기록을 포함한 모든 데이터가 완전히 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+              pt: 'Excluir sua conta removera permanentemente todos os seus dados, incluindo perfil e historico de uso. Esta acao nao pode ser desfeita.',
+              es: 'Eliminar su cuenta eliminara permanentemente todos sus datos, incluido perfil e historial de uso. Esta accion no se puede deshacer.',
+            }, lang)}
+          </p>
+
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              style={{
+                fontFamily: sans,
+                fontSize: '0.85rem',
+                color: '#dc2626',
+                background: '#fff',
+                border: '2px solid #dc2626',
+                borderRadius: 8,
+                padding: '0.7rem 1.5rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+                letterSpacing: '0.05em',
+                width: '100%',
+              }}
+            >
+              {t3({
+                ja: 'アカウントを削除する',
+                en: 'Delete My Account',
+                ko: '계정 삭제하기',
+                pt: 'Excluir Minha Conta',
+                es: 'Eliminar Mi Cuenta',
+              }, lang)}
+            </button>
+          ) : (
+            <div style={{
+              background: '#fef2f2',
+              borderRadius: 8,
+              padding: '1.2rem',
+              border: '1px solid #fecaca',
+            }}>
+              <p style={{
+                fontFamily: sans,
+                fontSize: '0.85rem',
+                color: '#991b1b',
+                fontWeight: 600,
+                marginBottom: '1rem',
+                lineHeight: 1.6,
+              }}>
+                {t3({
+                  ja: '本当に削除しますか？すべてのデータが完全に失われます。',
+                  en: 'Are you sure? All your data will be permanently lost.',
+                  ko: '정말 삭제하시겠습니까? 모든 데이터가 영구적으로 손실됩니다.',
+                  pt: 'Tem certeza? Todos os dados serao perdidos permanentemente.',
+                  es: 'Esta seguro? Todos los datos se perderan permanentemente.',
+                }, lang)}
+              </p>
+              <div style={{ display: 'flex', gap: '0.8rem' }}>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{
+                    flex: 1, fontFamily: sans, fontSize: '0.8rem', color: '#666',
+                    background: '#fff', border: '1px solid #ddd', borderRadius: 8,
+                    padding: '0.6rem', cursor: 'pointer',
+                  }}
+                >
+                  {t3({ ja: 'キャンセル', en: 'Cancel', ko: '취소', pt: 'Cancelar', es: 'Cancelar' }, lang)}
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  style={{
+                    flex: 1, fontFamily: sans, fontSize: '0.8rem', color: '#fff',
+                    background: deleting ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: 8,
+                    padding: '0.6rem', cursor: deleting ? 'wait' : 'pointer', fontWeight: 600,
+                  }}
+                >
+                  {deleting
+                    ? t3({ ja: '削除中...', en: 'Deleting...', es: 'Eliminando...' }, lang)
+                    : t3({ ja: '完全に削除する', en: 'Delete Permanently', ko: '영구 삭제', pt: 'Excluir Permanentemente', es: 'Eliminar Permanentemente' }, lang)
+                  }
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Member since */}
