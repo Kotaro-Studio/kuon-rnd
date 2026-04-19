@@ -26,6 +26,8 @@ const PRODUCTS: FooterLink[] = [
   { href: '/audio-apps',  label: { ja: 'オーディオアプリ', en: 'Audio Apps', ko: '오디오 앱', pt: 'Apps de Áudio', es: 'Aplicaciones de Audio' } },
   { href: '/microphone',  label: { ja: 'マイク', en: 'Microphone', ko: '마이크', pt: 'Microfone', es: 'Micrófono' } },
   { href: '/soundmap',    label: { ja: '地球音マップ', en: 'Sound Map', ko: '지구 음향 맵', pt: 'Mapa de Sons', es: 'Mapa de Sonidos' } },
+  { href: '/events-lp',   label: { ja: "Today's Live", en: "Today's Live", ko: "Today's Live", pt: "Today's Live", es: "Today's Live" } },
+  { href: '/gps',         label: { ja: 'GPSアプリ', en: 'GPS Apps', ko: 'GPS 앱', pt: 'Apps GPS', es: 'Apps GPS' } },
   { href: '/player-lp',   label: { ja: 'KUON PLAYER', en: 'KUON PLAYER', ko: 'KUON PLAYER', pt: 'KUON PLAYER', es: 'KUON PLAYER' } },
   { href: '/gallery',     label: { ja: 'ギャラリー', en: 'Gallery', ko: '갤러리', pt: 'Galeria', es: 'Galería' } },
 ];
