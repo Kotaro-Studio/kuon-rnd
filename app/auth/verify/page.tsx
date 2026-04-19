@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
@@ -13,6 +13,18 @@ type L3 = Partial<Record<Lang, string>> & { en: string };
 const t3 = (m: L3, lang: Lang) => m[lang] ?? m.en;
 
 export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: sans, color: '#555' }}>Loading...</p>
+      </div>
+    }>
+      <VerifyContent />
+    </Suspense>
+  );
+}
+
+function VerifyContent() {
   const { lang } = useLang();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
