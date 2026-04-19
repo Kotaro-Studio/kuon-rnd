@@ -478,4 +478,134 @@ app.get('/api/auth/stats', async (c) => {
   return c.json({ totalUsers: list.keys.length });
 });
 
+// ─────────────────────────────────────────────
+// GET /api/auth/admin/users — Admin: paginated user list with search
+// ─────────────────────────────────────────────
+app.get('/api/auth/admin/users', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload || payload.email !== '369@kotaroasahina.com') {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const search = (c.req.query('search') || '').toLowerCase();
+  const planFilter = c.req.query('plan') || '';
+  const page = parseInt(c.req.query('page') || '1', 10);
+  const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 100);
+
+  // Fetch all user keys from KV (KV list is paginated with cursor)
+  const allUsers: UserData[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const listResult = await c.env.USERS.list({
+      prefix: 'user:',
+      cursor,
+      limit: 1000,
+    });
+
+    // Fetch user data for each key in this batch
+    const batchPromises = listResult.keys.map(async (key) => {
+      const raw = await c.env.USERS.get(key.name);
+      if (raw) {
+        try {
+          return JSON.parse(raw) as UserData;
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+    for (const user of batchResults) {
+      if (user) allUsers.push(user);
+    }
+
+    cursor = listResult.list_complete ? undefined : listResult.cursor;
+  } while (cursor);
+
+  // Apply filters
+  let filtered = allUsers;
+
+  if (search) {
+    filtered = filtered.filter(u =>
+      u.email.toLowerCase().includes(search) ||
+      (u.name && u.name.toLowerCase().includes(search)) ||
+      (u.instrument && u.instrument.toLowerCase().includes(search))
+    );
+  }
+
+  if (planFilter && ['free', 'student', 'pro'].includes(planFilter)) {
+    filtered = filtered.filter(u => u.plan === planFilter);
+  }
+
+  // Sort by createdAt descending (newest first)
+  filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // Stats
+  const stats = {
+    total: allUsers.length,
+    free: allUsers.filter(u => u.plan === 'free').length,
+    student: allUsers.filter(u => u.plan === 'student').length,
+    pro: allUsers.filter(u => u.plan === 'pro').length,
+    filtered: filtered.length,
+  };
+
+  // Paginate
+  const totalPages = Math.ceil(filtered.length / limit);
+  const start = (page - 1) * limit;
+  const paged = filtered.slice(start, start + limit);
+
+  return c.json({
+    users: paged.map(u => ({
+      email: u.email,
+      name: u.name,
+      instrument: u.instrument,
+      region: u.region,
+      plan: u.plan,
+      badges: u.badges,
+      createdAt: u.createdAt,
+      lastLoginAt: u.lastLoginAt,
+      appUsage: u.appUsage,
+      appUsageMonth: u.appUsageMonth,
+    })),
+    stats,
+    page,
+    totalPages,
+    limit,
+  });
+});
+
+// ─────────────────────────────────────────────
+// PUT /api/auth/admin/plan — Admin: change a user's plan
+// ─────────────────────────────────────────────
+app.put('/api/auth/admin/plan', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload || payload.email !== '369@kotaroasahina.com') {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const { email, plan } = await c.req.json<{ email: string; plan: string }>();
+  if (!email || !['free', 'student', 'pro'].includes(plan)) {
+    return c.json({ error: 'Invalid email or plan' }, 400);
+  }
+
+  const userKey = `user:${email.toLowerCase().trim()}`;
+  const raw = await c.env.USERS.get(userKey);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+
+  const user: UserData = JSON.parse(raw);
+  const oldPlan = user.plan;
+  user.plan = plan as 'free' | 'student' | 'pro';
+  await c.env.USERS.put(userKey, JSON.stringify(user));
+
+  return c.json({ ok: true, email: user.email, oldPlan, newPlan: user.plan });
+});
+
 export default app;
