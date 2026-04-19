@@ -52,6 +52,46 @@ interface PageviewData {
   pages: Record<string, number>;
 }
 
+// ─────────────────────────────────────────────
+// Event / Live Schedule types
+// ─────────────────────────────────────────────
+interface EventData {
+  id: string;
+  creatorEmail: string;
+  title: string;
+  description: string;
+  date: string;            // YYYY-MM-DD
+  startTime: string;       // HH:MM
+  endTime: string;         // HH:MM or ""
+  venueName: string;
+  venueAddress: string;
+  lat: number;
+  lng: number;
+  price: string;           // free text: "¥3,000", "Free", "$20" etc.
+  eventType: string;       // concert | recital | jam-session | workshop | festival | recital-exam | open-mic | other
+  genre: string;           // classical | jazz | pop | folk | world | chamber | orchestra | choir | brass-band | other
+  performers: EventPerformer[];
+  interestedCount: number;
+  interestedEmails: string[];  // emails of users who clicked "interested"
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface EventPerformer {
+  name: string;
+  role: string;            // instrument / role name
+  email: string;           // kuon user email (optional, "" if external)
+}
+
+interface VenueData {
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  usageCount: number;
+  lastUsed: string;
+}
+
 interface MagicSession {
   email: string;
   expires: number;
@@ -886,6 +926,350 @@ app.get('/api/auth/admin/pageviews', async (c) => {
       topPages: Object.entries(allPages).sort((a, b) => b[1] - a[1]).slice(0, 20),
     },
   });
+});
+
+// ─────────────────────────────────────────────
+// EVENT / LIVE SCHEDULE ENDPOINTS
+// ─────────────────────────────────────────────
+
+function generateEventId(): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── POST /api/auth/events — Create event (Pro only) ──
+app.post('/api/auth/events', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  // Check plan
+  const userRaw = await c.env.USERS.get(`user:${payload.email}`);
+  if (!userRaw) return c.json({ error: 'User not found' }, 404);
+  const user: UserData = JSON.parse(userRaw);
+  if (user.plan !== 'pro') {
+    return c.json({ error: 'Pro plan required' }, 403);
+  }
+
+  const body = await c.req.json<Partial<EventData>>();
+  if (!body.title || !body.date || !body.venueName || body.lat === undefined || body.lng === undefined) {
+    return c.json({ error: 'Missing required fields: title, date, venueName, lat, lng' }, 400);
+  }
+
+  const id = generateEventId();
+  const now = new Date().toISOString();
+  const event: EventData = {
+    id,
+    creatorEmail: payload.email,
+    title: body.title,
+    description: body.description || '',
+    date: body.date,
+    startTime: body.startTime || '',
+    endTime: body.endTime || '',
+    venueName: body.venueName,
+    venueAddress: body.venueAddress || '',
+    lat: body.lat,
+    lng: body.lng,
+    price: body.price || '',
+    eventType: body.eventType || 'concert',
+    genre: body.genre || 'other',
+    performers: body.performers || [],
+    interestedCount: 0,
+    interestedEmails: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  // Store event
+  await c.env.SESSIONS.put(`event:${id}`, JSON.stringify(event), { expirationTtl: 365 * 24 * 3600 });
+
+  // Add to date index
+  const dateKey = `events-date:${body.date}`;
+  const dateRaw = await c.env.SESSIONS.get(dateKey);
+  const dateIds: string[] = dateRaw ? JSON.parse(dateRaw) : [];
+  dateIds.push(id);
+  await c.env.SESSIONS.put(dateKey, JSON.stringify(dateIds), { expirationTtl: 365 * 24 * 3600 });
+
+  // Add to user index
+  const userKey = `events-user:${payload.email}`;
+  const userEventsRaw = await c.env.SESSIONS.get(userKey);
+  const userEvents: string[] = userEventsRaw ? JSON.parse(userEventsRaw) : [];
+  userEvents.push(id);
+  await c.env.SESSIONS.put(userKey, JSON.stringify(userEvents), { expirationTtl: 365 * 24 * 3600 });
+
+  // Auto-save venue to venue database
+  if (body.venueName && body.lat && body.lng) {
+    const venueKey = `venue:${body.venueName.toLowerCase().replace(/\s+/g, '-')}`;
+    const existingVenue = await c.env.SESSIONS.get(venueKey);
+    const venue: VenueData = existingVenue ? JSON.parse(existingVenue) : {
+      name: body.venueName,
+      address: body.venueAddress || '',
+      lat: body.lat,
+      lng: body.lng,
+      usageCount: 0,
+      lastUsed: '',
+    };
+    venue.usageCount += 1;
+    venue.lastUsed = now;
+    // Update address/coords if newer
+    venue.address = body.venueAddress || venue.address;
+    venue.lat = body.lat;
+    venue.lng = body.lng;
+    await c.env.SESSIONS.put(venueKey, JSON.stringify(venue));
+  }
+
+  return c.json({ ok: true, event });
+});
+
+// ── GET /api/auth/events — List events (public, with filters) ──
+app.get('/api/auth/events', async (c) => {
+  const date = c.req.query('date') || todayStr();
+  const range = parseInt(c.req.query('range') || '1', 10); // days to include
+  const genre = c.req.query('genre') || '';
+  const eventType = c.req.query('eventType') || '';
+
+  const allEvents: EventData[] = [];
+  const fetchPromises: Promise<void>[] = [];
+
+  for (let i = 0; i < Math.min(range, 90); i++) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + i);
+    const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    fetchPromises.push(
+      c.env.SESSIONS.get(`events-date:${dayStr}`).then(async (raw) => {
+        if (!raw) return;
+        const ids: string[] = JSON.parse(raw);
+        const eventPromises = ids.map(async (id) => {
+          const eventRaw = await c.env.SESSIONS.get(`event:${id}`);
+          if (eventRaw) {
+            const ev: EventData = JSON.parse(eventRaw);
+            // Apply filters
+            if (genre && ev.genre !== genre) return;
+            if (eventType && ev.eventType !== eventType) return;
+            allEvents.push(ev);
+          }
+        });
+        await Promise.all(eventPromises);
+      })
+    );
+  }
+
+  await Promise.all(fetchPromises);
+
+  // Sort by date + startTime
+  allEvents.sort((a, b) => {
+    const dateCompare = a.date.localeCompare(b.date);
+    if (dateCompare !== 0) return dateCompare;
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  // Strip interestedEmails from public response
+  const publicEvents = allEvents.map(({ interestedEmails, ...rest }) => rest);
+
+  return c.json({ events: publicEvents, total: publicEvents.length });
+});
+
+// ── GET /api/auth/events/:id — Single event detail (public) ──
+app.get('/api/auth/events/:id', async (c) => {
+  const id = c.req.param('id');
+  const raw = await c.env.SESSIONS.get(`event:${id}`);
+  if (!raw) return c.json({ error: 'Event not found' }, 404);
+
+  const event: EventData = JSON.parse(raw);
+  // Strip interestedEmails
+  const { interestedEmails, ...publicEvent } = event;
+
+  // Enrich performers with avatar info
+  const enrichedPerformers = await Promise.all(
+    event.performers.map(async (p) => {
+      if (p.email) {
+        const uRaw = await c.env.USERS.get(`user:${p.email}`);
+        if (uRaw) {
+          const u: UserData = JSON.parse(uRaw);
+          return { ...p, userName: u.name, hasAvatar: !!u.avatarKey };
+        }
+      }
+      return { ...p, userName: '', hasAvatar: false };
+    })
+  );
+
+  return c.json({ event: { ...publicEvent, performers: enrichedPerformers } });
+});
+
+// ── PUT /api/auth/events/:id — Update own event (Pro only) ──
+app.put('/api/auth/events/:id', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const id = c.req.param('id');
+  const raw = await c.env.SESSIONS.get(`event:${id}`);
+  if (!raw) return c.json({ error: 'Event not found' }, 404);
+
+  const event: EventData = JSON.parse(raw);
+  if (event.creatorEmail !== payload.email && payload.email !== '369@kotaroasahina.com') {
+    return c.json({ error: 'Not your event' }, 403);
+  }
+
+  const updates = await c.req.json<Partial<EventData>>();
+  const oldDate = event.date;
+
+  // Apply updates
+  const updatableFields: (keyof EventData)[] = [
+    'title', 'description', 'date', 'startTime', 'endTime',
+    'venueName', 'venueAddress', 'lat', 'lng', 'price',
+    'eventType', 'genre', 'performers',
+  ];
+  for (const field of updatableFields) {
+    if (updates[field] !== undefined) {
+      (event as Record<string, unknown>)[field] = updates[field];
+    }
+  }
+  event.updatedAt = new Date().toISOString();
+
+  await c.env.SESSIONS.put(`event:${id}`, JSON.stringify(event), { expirationTtl: 365 * 24 * 3600 });
+
+  // If date changed, update date indexes
+  if (updates.date && updates.date !== oldDate) {
+    // Remove from old date index
+    const oldDateKey = `events-date:${oldDate}`;
+    const oldDateRaw = await c.env.SESSIONS.get(oldDateKey);
+    if (oldDateRaw) {
+      const oldIds: string[] = JSON.parse(oldDateRaw);
+      await c.env.SESSIONS.put(oldDateKey, JSON.stringify(oldIds.filter(i => i !== id)), { expirationTtl: 365 * 24 * 3600 });
+    }
+    // Add to new date index
+    const newDateKey = `events-date:${updates.date}`;
+    const newDateRaw = await c.env.SESSIONS.get(newDateKey);
+    const newIds: string[] = newDateRaw ? JSON.parse(newDateRaw) : [];
+    newIds.push(id);
+    await c.env.SESSIONS.put(newDateKey, JSON.stringify(newIds), { expirationTtl: 365 * 24 * 3600 });
+  }
+
+  return c.json({ ok: true, event });
+});
+
+// ── DELETE /api/auth/events/:id — Delete own event ──
+app.delete('/api/auth/events/:id', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const id = c.req.param('id');
+  const raw = await c.env.SESSIONS.get(`event:${id}`);
+  if (!raw) return c.json({ error: 'Event not found' }, 404);
+
+  const event: EventData = JSON.parse(raw);
+  if (event.creatorEmail !== payload.email && payload.email !== '369@kotaroasahina.com') {
+    return c.json({ error: 'Not your event' }, 403);
+  }
+
+  // Remove from date index
+  const dateKey = `events-date:${event.date}`;
+  const dateRaw = await c.env.SESSIONS.get(dateKey);
+  if (dateRaw) {
+    const ids: string[] = JSON.parse(dateRaw);
+    await c.env.SESSIONS.put(dateKey, JSON.stringify(ids.filter(i => i !== id)), { expirationTtl: 365 * 24 * 3600 });
+  }
+
+  // Remove from user index
+  const userKey = `events-user:${event.creatorEmail}`;
+  const userEventsRaw = await c.env.SESSIONS.get(userKey);
+  if (userEventsRaw) {
+    const userEvents: string[] = JSON.parse(userEventsRaw);
+    await c.env.SESSIONS.put(userKey, JSON.stringify(userEvents.filter(i => i !== id)), { expirationTtl: 365 * 24 * 3600 });
+  }
+
+  // Delete event
+  await c.env.SESSIONS.delete(`event:${id}`);
+
+  return c.json({ ok: true });
+});
+
+// ── GET /api/auth/events/user/me — List my events ──
+app.get('/api/auth/events/user/me', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const userKey = `events-user:${payload.email}`;
+  const userEventsRaw = await c.env.SESSIONS.get(userKey);
+  const ids: string[] = userEventsRaw ? JSON.parse(userEventsRaw) : [];
+
+  const events: EventData[] = [];
+  const fetchPromises = ids.map(async (id) => {
+    const raw = await c.env.SESSIONS.get(`event:${id}`);
+    if (raw) events.push(JSON.parse(raw));
+  });
+  await Promise.all(fetchPromises);
+
+  // Sort by date descending
+  events.sort((a, b) => b.date.localeCompare(a.date));
+
+  return c.json({ events });
+});
+
+// ── POST /api/auth/events/:id/interested — Toggle "interested" ──
+app.post('/api/auth/events/:id/interested', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const id = c.req.param('id');
+  const raw = await c.env.SESSIONS.get(`event:${id}`);
+  if (!raw) return c.json({ error: 'Event not found' }, 404);
+
+  const event: EventData = JSON.parse(raw);
+  const idx = event.interestedEmails.indexOf(payload.email);
+  if (idx >= 0) {
+    event.interestedEmails.splice(idx, 1);
+    event.interestedCount = Math.max(0, event.interestedCount - 1);
+  } else {
+    event.interestedEmails.push(payload.email);
+    event.interestedCount += 1;
+  }
+  event.updatedAt = new Date().toISOString();
+  await c.env.SESSIONS.put(`event:${id}`, JSON.stringify(event), { expirationTtl: 365 * 24 * 3600 });
+
+  return c.json({ ok: true, interested: idx < 0, count: event.interestedCount });
+});
+
+// ── GET /api/auth/venues/search — Search venue database ──
+app.get('/api/auth/venues/search', async (c) => {
+  const query = (c.req.query('q') || '').toLowerCase();
+  if (!query || query.length < 2) return c.json({ venues: [] });
+
+  // List all venue keys
+  const list = await c.env.SESSIONS.list({ prefix: 'venue:' });
+  const venues: VenueData[] = [];
+
+  const fetchPromises = list.keys.map(async (key) => {
+    const raw = await c.env.SESSIONS.get(key.name);
+    if (raw) {
+      const venue: VenueData = JSON.parse(raw);
+      if (venue.name.toLowerCase().includes(query) || venue.address.toLowerCase().includes(query)) {
+        venues.push(venue);
+      }
+    }
+  });
+  await Promise.all(fetchPromises);
+
+  // Sort by usage count descending
+  venues.sort((a, b) => b.usageCount - a.usageCount);
+
+  return c.json({ venues: venues.slice(0, 20) });
 });
 
 export default app;

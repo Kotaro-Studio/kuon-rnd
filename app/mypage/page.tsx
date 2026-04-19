@@ -180,6 +180,45 @@ interface UserData {
   availableForWork: boolean; experienceLevel: string; spokenLanguages: string;
 }
 
+// ─────────────────────────────────────────────
+// Event types
+// ─────────────────────────────────────────────
+interface EventPerformer { name: string; role: string; email: string; }
+interface EventData {
+  id: string; creatorEmail: string; title: string; description: string;
+  date: string; startTime: string; endTime: string;
+  venueName: string; venueAddress: string; lat: number; lng: number;
+  price: string; eventType: string; genre: string;
+  performers: EventPerformer[]; interestedCount: number;
+  createdAt: string; updatedAt: string;
+}
+
+interface VenueData { name: string; address: string; lat: number; lng: number; usageCount: number; }
+
+const EVENT_TYPES_LIST = [
+  { id: 'concert', label: { ja: 'コンサート', en: 'Concert', es: 'Concierto' } },
+  { id: 'recital', label: { ja: 'リサイタル', en: 'Recital', es: 'Recital' } },
+  { id: 'jam-session', label: { ja: 'ジャムセッション', en: 'Jam Session', es: 'Jam Session' } },
+  { id: 'workshop', label: { ja: 'ワークショップ', en: 'Workshop', es: 'Taller' } },
+  { id: 'festival', label: { ja: 'フェスティバル', en: 'Festival', es: 'Festival' } },
+  { id: 'recital-exam', label: { ja: '発表会', en: 'Student Recital', es: 'Audición' } },
+  { id: 'open-mic', label: { ja: 'オープンマイク', en: 'Open Mic', es: 'Micrófono abierto' } },
+  { id: 'other', label: { ja: 'その他', en: 'Other', es: 'Otro' } },
+] as const;
+
+const GENRE_LIST = [
+  { id: 'classical', label: { ja: 'クラシック', en: 'Classical', es: 'Clásica' } },
+  { id: 'jazz', label: { ja: 'ジャズ', en: 'Jazz', es: 'Jazz' } },
+  { id: 'pop', label: { ja: 'ポップス', en: 'Pop', es: 'Pop' } },
+  { id: 'folk', label: { ja: 'フォーク', en: 'Folk', es: 'Folk' } },
+  { id: 'world', label: { ja: 'ワールド', en: 'World', es: 'Mundo' } },
+  { id: 'chamber', label: { ja: '室内楽', en: 'Chamber', es: 'Cámara' } },
+  { id: 'orchestra', label: { ja: 'オーケストラ', en: 'Orchestra', es: 'Orquesta' } },
+  { id: 'choir', label: { ja: '合唱', en: 'Choir', es: 'Coro' } },
+  { id: 'brass-band', label: { ja: '吹奏楽', en: 'Brass Band', es: 'Banda' } },
+  { id: 'other', label: { ja: 'その他', en: 'Other', es: 'Otro' } },
+] as const;
+
 const PLAN_LABELS: Record<string, L3> = {
   free:    { ja: 'Free',    en: 'Free',    es: 'Gratis'      },
   student: { ja: 'Student', en: 'Student', es: 'Estudiante'  },
@@ -239,6 +278,20 @@ export default function MyPage() {
   const [newEmail, setNewEmail] = useState('');
   const [emailSending, setEmailSending] = useState(false);
   const [emailMsg, setEmailMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  // Event management (Pro only)
+  const [myEvents, setMyEvents] = useState<EventData[]>([]);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [eventSaving, setEventSaving] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [venueSearch, setVenueSearch] = useState('');
+  const [venueSuggestions, setVenueSuggestions] = useState<VenueData[]>([]);
+  const [eventForm, setEventForm] = useState({
+    title: '', description: '', date: '', startTime: '', endTime: '',
+    venueName: '', venueAddress: '', lat: 0, lng: 0,
+    price: '', eventType: 'concert', genre: 'classical',
+    performers: [{ name: '', role: '', email: '' }] as EventPerformer[],
+  });
 
   useEffect(() => {
     (async () => {
@@ -343,6 +396,115 @@ export default function MyPage() {
     await fetch('/api/auth/logout', { method: 'POST' });
     if (typeof window !== 'undefined') { localStorage.removeItem('kuon_user'); localStorage.removeItem('kuon_first_visit'); }
     router.push('/');
+  };
+
+  // Fetch my events
+  useEffect(() => {
+    if (!user || user.plan !== 'pro') return;
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/events/user/me');
+        if (res.ok) {
+          const data = await res.json();
+          setMyEvents(data.events || []);
+        }
+      } catch { /* ignore */ }
+    })();
+  }, [user]);
+
+  // Venue search
+  useEffect(() => {
+    if (venueSearch.length < 2) { setVenueSuggestions([]); return; }
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/auth/venues/search?q=${encodeURIComponent(venueSearch)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setVenueSuggestions(data.venues || []);
+        }
+      } catch { /* ignore */ }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [venueSearch]);
+
+  const resetEventForm = () => {
+    setEventForm({
+      title: '', description: '', date: '', startTime: '', endTime: '',
+      venueName: '', venueAddress: '', lat: 0, lng: 0,
+      price: '', eventType: 'concert', genre: 'classical',
+      performers: [{ name: '', role: '', email: '' }],
+    });
+    setEditingEventId(null);
+    setVenueSearch('');
+    setVenueSuggestions([]);
+  };
+
+  const handleEventSave = async () => {
+    if (!eventForm.title || !eventForm.date || !eventForm.venueName) return;
+    setEventSaving(true);
+    try {
+      const url = editingEventId ? `/api/auth/events/${editingEventId}` : '/api/auth/events';
+      const method = editingEventId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...eventForm,
+          performers: eventForm.performers.filter(p => p.name),
+        }),
+      });
+      if (res.ok) {
+        // Refresh events
+        const refresh = await fetch('/api/auth/events/user/me');
+        if (refresh.ok) { const data = await refresh.json(); setMyEvents(data.events || []); }
+        setShowEventForm(false);
+        resetEventForm();
+      }
+    } catch { /* ignore */ }
+    setEventSaving(false);
+  };
+
+  const handleEventDelete = async (eventId: string) => {
+    try {
+      const res = await fetch(`/api/auth/events/${eventId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMyEvents(prev => prev.filter(e => e.id !== eventId));
+      }
+    } catch { /* ignore */ }
+  };
+
+  const startEditEvent = (ev: EventData) => {
+    setEditingEventId(ev.id);
+    setEventForm({
+      title: ev.title, description: ev.description, date: ev.date,
+      startTime: ev.startTime, endTime: ev.endTime,
+      venueName: ev.venueName, venueAddress: ev.venueAddress,
+      lat: ev.lat, lng: ev.lng, price: ev.price,
+      eventType: ev.eventType, genre: ev.genre,
+      performers: ev.performers.length > 0 ? ev.performers : [{ name: '', role: '', email: '' }],
+    });
+    setShowEventForm(true);
+  };
+
+  const selectVenue = (v: VenueData) => {
+    setEventForm(prev => ({ ...prev, venueName: v.name, venueAddress: v.address, lat: v.lat, lng: v.lng }));
+    setVenueSearch('');
+    setVenueSuggestions([]);
+  };
+
+  const addPerformer = () => {
+    setEventForm(prev => ({ ...prev, performers: [...prev.performers, { name: '', role: '', email: '' }] }));
+  };
+
+  const updatePerformer = (idx: number, field: keyof EventPerformer, value: string) => {
+    setEventForm(prev => {
+      const p = [...prev.performers];
+      p[idx] = { ...p[idx], [field]: value };
+      return { ...prev, performers: p };
+    });
+  };
+
+  const removePerformer = (idx: number) => {
+    setEventForm(prev => ({ ...prev, performers: prev.performers.filter((_, i) => i !== idx) }));
   };
 
   // Role change handler
@@ -718,6 +880,220 @@ export default function MyPage() {
             </p>
           )}
         </div>
+
+        {/* ─── Live Schedule (Pro only) ─── */}
+        {user.plan === 'pro' && (
+          <div style={cardStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2 style={{ fontFamily: serif, fontSize: '1rem', fontWeight: 400, color: '#111' }}>
+                🎵 {t3({ ja: 'ライブスケジュール', en: 'Live Schedule', es: 'Agenda de Eventos' }, lang)}
+              </h2>
+              {!showEventForm && (
+                <button onClick={() => { resetEventForm(); setShowEventForm(true); }}
+                  style={{ fontFamily: sans, fontSize: '0.75rem', color: '#fff', background: ACCENT, border: 'none', borderRadius: 20, padding: '0.35rem 0.8rem', cursor: 'pointer' }}>
+                  + {t3({ ja: '新規投稿', en: 'New Event', es: 'Nuevo' }, lang)}
+                </button>
+              )}
+            </div>
+
+            {/* Event Form */}
+            {showEventForm && (
+              <div style={{ background: '#f8fafc', borderRadius: 10, padding: '1.2rem', marginBottom: '1rem', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  {/* Title */}
+                  <div>
+                    <label style={labelStyle}>{t3({ ja: 'イベント名 *', en: 'Event Title *', es: 'Título *' }, lang)}</label>
+                    <input value={eventForm.title} onChange={e => setEventForm({ ...eventForm, title: e.target.value })}
+                      placeholder={t3({ ja: '例: ショパンピアノリサイタル', en: 'e.g. Chopin Piano Recital', es: 'ej. Recital de Piano Chopin' }, lang)}
+                      style={inputStyle} />
+                  </div>
+
+                  {/* Date & Time */}
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 140 }}>
+                      <label style={labelStyle}>{t3({ ja: '日付 *', en: 'Date *', es: 'Fecha *' }, lang)}</label>
+                      <input type="date" value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} style={inputStyle} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 100 }}>
+                      <label style={labelStyle}>{t3({ ja: '開始', en: 'Start', es: 'Inicio' }, lang)}</label>
+                      <input type="time" value={eventForm.startTime} onChange={e => setEventForm({ ...eventForm, startTime: e.target.value })} style={inputStyle} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 100 }}>
+                      <label style={labelStyle}>{t3({ ja: '終了', en: 'End', es: 'Fin' }, lang)}</label>
+                      <input type="time" value={eventForm.endTime} onChange={e => setEventForm({ ...eventForm, endTime: e.target.value })} style={inputStyle} />
+                    </div>
+                  </div>
+
+                  {/* Type & Genre */}
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 140 }}>
+                      <label style={labelStyle}>{t3({ ja: 'タイプ', en: 'Type', es: 'Tipo' }, lang)}</label>
+                      <select value={eventForm.eventType} onChange={e => setEventForm({ ...eventForm, eventType: e.target.value })} style={{ ...inputStyle, appearance: 'auto' as const }}>
+                        {EVENT_TYPES_LIST.map(t => <option key={t.id} value={t.id}>{t3(t.label, lang)}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 140 }}>
+                      <label style={labelStyle}>{t3({ ja: 'ジャンル', en: 'Genre', es: 'Género' }, lang)}</label>
+                      <select value={eventForm.genre} onChange={e => setEventForm({ ...eventForm, genre: e.target.value })} style={{ ...inputStyle, appearance: 'auto' as const }}>
+                        {GENRE_LIST.map(g => <option key={g.id} value={g.id}>{t3(g.label, lang)}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Venue */}
+                  <div style={{ position: 'relative' }}>
+                    <label style={labelStyle}>{t3({ ja: '会場名 *', en: 'Venue *', es: 'Lugar *' }, lang)}</label>
+                    <input value={eventForm.venueName}
+                      onChange={e => { setEventForm({ ...eventForm, venueName: e.target.value }); setVenueSearch(e.target.value); }}
+                      placeholder={t3({ ja: '例: サントリーホール', en: 'e.g. Carnegie Hall', es: 'ej. Sala de conciertos' }, lang)}
+                      style={inputStyle} />
+                    {venueSuggestions.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #ddd', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: 160, overflowY: 'auto' }}>
+                        {venueSuggestions.map((v, i) => (
+                          <div key={i} onClick={() => selectVenue(v)}
+                            style={{ padding: '0.6rem 0.8rem', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: '0.8rem', fontFamily: sans }}>
+                            <strong>{v.name}</strong>
+                            <span style={{ color: '#999', marginLeft: 8 }}>{v.address}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t3({ ja: '住所', en: 'Address', es: 'Dirección' }, lang)}</label>
+                    <input value={eventForm.venueAddress} onChange={e => setEventForm({ ...eventForm, venueAddress: e.target.value })} style={inputStyle} />
+                  </div>
+
+                  {/* Lat / Lng */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>{t3({ ja: '緯度 *', en: 'Latitude *', es: 'Latitud *' }, lang)}</label>
+                      <input type="number" step="any" value={eventForm.lat || ''} onChange={e => setEventForm({ ...eventForm, lat: parseFloat(e.target.value) || 0 })} style={inputStyle}
+                        placeholder="35.6812" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>{t3({ ja: '経度 *', en: 'Longitude *', es: 'Longitud *' }, lang)}</label>
+                      <input type="number" step="any" value={eventForm.lng || ''} onChange={e => setEventForm({ ...eventForm, lng: parseFloat(e.target.value) || 0 })} style={inputStyle}
+                        placeholder="139.7671" />
+                    </div>
+                  </div>
+                  <p style={{ fontFamily: sans, fontSize: '0.7rem', color: '#999', margin: '-0.3rem 0 0 0' }}>
+                    {t3({
+                      ja: 'Google マップで会場を右クリック→座標コピー、または空音開発のジオコードビューワーを使用',
+                      en: 'Right-click on Google Maps → copy coordinates, or use Kuon Geocode Viewer',
+                      es: 'Clic derecho en Google Maps → copiar coordenadas',
+                    }, lang)}
+                    {' '}
+                    <a href="/geocode-viewer" target="_blank" style={{ color: ACCENT }}>Geocode Viewer →</a>
+                  </p>
+
+                  {/* Price */}
+                  <div>
+                    <label style={labelStyle}>{t3({ ja: 'チケット価格', en: 'Ticket Price', es: 'Precio' }, lang)}</label>
+                    <input value={eventForm.price} onChange={e => setEventForm({ ...eventForm, price: e.target.value })}
+                      placeholder={t3({ ja: '例: ¥3,000 / 無料', en: 'e.g. $20 / Free', es: 'ej. $20 / Gratis' }, lang)} style={inputStyle} />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label style={labelStyle}>{t3({ ja: '説明', en: 'Description', es: 'Descripción' }, lang)}</label>
+                    <textarea value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                  </div>
+
+                  {/* Performers */}
+                  <div>
+                    <label style={labelStyle}>{t3({ ja: '出演者', en: 'Performers', es: 'Artistas' }, lang)}</label>
+                    {eventForm.performers.map((p, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.4rem', alignItems: 'center' }}>
+                        <input value={p.name} onChange={e => updatePerformer(idx, 'name', e.target.value)}
+                          placeholder={t3({ ja: '名前', en: 'Name', es: 'Nombre' }, lang)} style={{ ...inputStyle, flex: 2 }} />
+                        <input value={p.role} onChange={e => updatePerformer(idx, 'role', e.target.value)}
+                          placeholder={t3({ ja: '楽器/役割', en: 'Role', es: 'Rol' }, lang)} style={{ ...inputStyle, flex: 1 }} />
+                        <input value={p.email} onChange={e => updatePerformer(idx, 'email', e.target.value)}
+                          placeholder="email (任意)" style={{ ...inputStyle, flex: 1.5, fontSize: '0.75rem' }} />
+                        {eventForm.performers.length > 1 && (
+                          <button onClick={() => removePerformer(idx)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }}>×</button>
+                        )}
+                      </div>
+                    ))}
+                    <button onClick={addPerformer} style={{ fontFamily: sans, fontSize: '0.75rem', color: ACCENT, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      + {t3({ ja: '出演者を追加', en: 'Add performer', es: 'Agregar artista' }, lang)}
+                    </button>
+                  </div>
+
+                  {/* Submit / Cancel */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <button onClick={() => { setShowEventForm(false); resetEventForm(); }}
+                      style={{ flex: 1, fontFamily: sans, fontSize: '0.85rem', color: '#666', background: '#f1f5f9', border: 'none', borderRadius: 8, padding: '0.6rem', cursor: 'pointer' }}>
+                      {t3({ ja: 'キャンセル', en: 'Cancel', es: 'Cancelar' }, lang)}
+                    </button>
+                    <button onClick={handleEventSave} disabled={eventSaving || !eventForm.title || !eventForm.date || !eventForm.venueName}
+                      style={{
+                        flex: 2, fontFamily: sans, fontSize: '0.85rem', color: '#fff',
+                        background: (eventSaving || !eventForm.title || !eventForm.date || !eventForm.venueName) ? '#94a3b8' : ACCENT,
+                        border: 'none', borderRadius: 8, padding: '0.6rem', cursor: eventSaving ? 'wait' : 'pointer', fontWeight: 600,
+                      }}>
+                      {eventSaving ? '...' : editingEventId
+                        ? t3({ ja: '更新する', en: 'Update', es: 'Actualizar' }, lang)
+                        : t3({ ja: '投稿する', en: 'Post Event', es: 'Publicar' }, lang)}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* My Events List */}
+            {myEvents.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                {myEvents.map(ev => {
+                  const isPast = ev.date < new Date().toISOString().slice(0, 10);
+                  return (
+                    <div key={ev.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
+                      padding: '0.7rem', borderRadius: 8, background: isPast ? '#f8fafc' : '#fff',
+                      border: '1px solid #e2e8f0', opacity: isPast ? 0.6 : 1,
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: sans, fontSize: '0.85rem', fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {ev.title}
+                        </div>
+                        <div style={{ fontFamily: sans, fontSize: '0.7rem', color: '#999' }}>
+                          {ev.date} {ev.startTime} / {ev.venueName}
+                          {' '}<span style={{ color: '#dc2626' }}>❤️ {ev.interestedCount}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
+                        <a href={`/events/${ev.id}`} target="_blank" style={{ fontFamily: sans, fontSize: '0.7rem', color: ACCENT, textDecoration: 'none', border: `1px solid ${ACCENT}`, borderRadius: 4, padding: '2px 6px' }}>
+                          {t3({ ja: '表示', en: 'View', es: 'Ver' }, lang)}
+                        </a>
+                        {!isPast && (
+                          <button onClick={() => startEditEvent(ev)} style={{ fontFamily: sans, fontSize: '0.7rem', color: '#666', background: '#f1f5f9', border: '1px solid #ddd', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}>
+                            {t3({ ja: '編集', en: 'Edit', es: 'Editar' }, lang)}
+                          </button>
+                        )}
+                        <button onClick={() => { if (confirm(t3({ ja: '削除しますか？', en: 'Delete this event?', es: 'Eliminar este evento?' }, lang))) handleEventDelete(ev.id); }}
+                          style={{ fontFamily: sans, fontSize: '0.7rem', color: '#dc2626', background: 'none', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}>
+                          {t3({ ja: '削除', en: 'Delete', es: 'Eliminar' }, lang)}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : !showEventForm ? (
+              <p style={{ fontFamily: sans, fontSize: '0.85rem', color: '#ccc' }}>
+                {t3({ ja: 'まだイベントを投稿していません', en: 'No events posted yet', es: 'Sin eventos publicados' }, lang)}
+              </p>
+            ) : null}
+
+            {/* Link to events map */}
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <a href="/events" target="_blank" style={{ fontFamily: sans, fontSize: '0.8rem', color: ACCENT, textDecoration: 'none' }}>
+                🗺️ {t3({ ja: 'イベントマップを見る →', en: 'View Events Map →', es: 'Ver Mapa de Eventos →' }, lang)}
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* ─── Quick Links ─── */}
         <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>

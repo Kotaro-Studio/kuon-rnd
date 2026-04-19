@@ -1530,3 +1530,232 @@ Phase 5（13〜24ヶ月）: コンテンツ + 認定
 - 音大との公式提携（教育機関向けプラン）
 - 共演・セッションマッチング（SNS 機能の発展形）
 - 人材発掘プラットフォーム（演奏家と録音エンジニアのマッチング）
+
+---
+
+## 29. 【最重要】無料/有料アプリの課金戦略（2026年4月19日 確定）
+
+> このセクションはプラットフォーム全体の収益設計の根幹であり、
+> 全ての開発判断においてこの方針を最優先とする。
+
+### 基本原則：コストゼロのものに制限をかけない
+
+ブラウザ完結型アプリ（NORMALIZE、DECLIPPER、MASTER CHECK、DSD CONVERTER、RESAMPLER、
+NOISE REDUCTION、DUAL MONO、PIANO DECLIPPER、KUON PLAYER、CONVERTER、ANALYZER 等）は、
+Cloudflare Pages で配信しており、ユーザーのブラウザ内で処理が完結する。
+100万人が使ってもサーバーコストは増えない。
+
+**コストがゼロのものに使用制限をかけると、得るものがなく失うものだけが大きい。**
+月2回の壁でユーザーが離脱し、二度と戻ってこない。
+
+### 確定した課金モデル
+
+| 層 | アプリ種別 | コスト | 制限 | 根拠 |
+|---|---|---|---|---|
+| ブラウザアプリ | NORMALIZE, DECLIPPER 等 | ¥0 | **無制限** | コストゼロ＝制限する理由がない |
+| サーバーアプリ（無料会員） | SEPARATOR, SUBTITLE 等 | 実コストあり | **初月無制限 → 月3回** | 習慣化させてから制限 |
+| サーバーアプリ（サブスク） | 同上 | 実コストあり | **無制限** | ¥980/月で十分ペイ |
+| P-86S 購入者 | 全て | — | **サブスク3ヶ月無料** | フライホイール |
+
+### 戦略的根拠
+
+1. **ブラウザアプリは集客エンジン**
+   - SEO で世界中から人が来る
+   - 「こんな高品質なツールが無料？」という驚きがブランド信頼になる
+   - 登録不要でも使えるが、ログインすると設定保存・処理履歴が見られる → 自然な登録誘導
+
+2. **サーバーアプリは「初月無制限 → 月3回」が最適**
+   - 「月2回」では体験として不十分。「月3回」が習慣化の閾値
+   - 初月無制限で「これがないと困る」状態を作ってから制限する
+   - 一度も使ったことがないものにお金を払う人はいない
+
+3. **P-86S 購入者 → サブスク3ヶ月無料**
+   - マイク購入者は最もロイヤリティが高い層
+   - 3ヶ月あれば確実に習慣化 → 解約率低下
+   - これが §28 のフライホイールの起点
+
+4. **使用回数カウントの基盤は既に構築済み**
+   - Auth Worker の `POST /api/auth/track` で月別カウント可能
+   - サーバーアプリ実装時に制限ロジックを入れるのが最も効率的
+   - ブラウザアプリには制限ロジックを入れない
+
+### Canva / Figma モデルとの類似性
+
+この構造は Canva や Figma と同じ。ブラウザで動くものは無料で開放してユーザーベースを
+最大化し、サーバーリソースを消費するプレミアム機能で課金する。
+空音開発の場合、サーバーリソースとは GPU/CPU による音声処理（Demucs, Whisper 等）。
+
+### 絶対にやってはいけないこと
+
+- NG: ブラウザ完結アプリに使用回数制限をかける
+- NG: ログインしないとブラウザアプリが使えなくする
+- NG: 無料体験を「月1回」にする（体験として不十分）
+- NG: P-86S 購入者にサブスク特典を付与しない
+
+---
+
+## 30. オーナー管理ダッシュボード（実装済み）
+
+### 概要
+
+- ページ: `kuon-rnd.com/admin`
+- アクセス権限: オーナー（369@kotaroasahina.com）のみ
+- データソース: Auth Worker の管理API（`/api/auth/admin/users`）
+
+### 機能
+
+- 登録ユーザー一覧（ページネーション付き）
+- ユーザー検索（名前・メールアドレス）
+- 統計情報（総ユーザー数・プラン別内訳・新規登録数）
+- ユーザー詳細（プロフィール・利用状況）
+- プラン変更（free → student → pro）
+
+### 関連ファイル
+
+| ファイル | 役割 |
+|---------|------|
+| `app/admin/page.tsx` | ダッシュボードUI |
+| `app/api/auth/admin/route.ts` | 管理API プロキシ |
+| `kuon-rnd-auth-worker/src/index.ts` | GET `/api/auth/admin/users` + PUT `/api/auth/admin/plan` |
+
+### セキュリティ
+
+- JWT 検証 + メールアドレスが `369@kotaroasahina.com` であることを確認
+- 一般ユーザーがアクセスしても 403 Forbidden
+
+---
+
+## 31. ライブスケジュール / イベントマップ機能（実装済み）
+
+### 概要
+
+Pro 会員が音楽ライブ・コンサート・イベントの情報を投稿し、
+Leaflet.js + OpenStreetMap の世界地図上にピン表示する機能。
+旅行中でもコンサートを探せる。Airbnb ライクな UI。
+
+### 全体フロー
+
+```
+Pro ユーザーがマイページでイベント情報を入力
+  │ （タイトル、日付、時間、会場、座標、価格、ジャンル、出演者）
+  ▼
+/api/auth/events（POST）→ Auth Worker
+  │ → KV に保存（event:{id}, events-date:{日付}, events-user:{email}）
+  │ → 会場 DB に自動蓄積（venue:{名前}）
+  ▼
+/events（公開ページ・ログイン不要）
+  │ → Leaflet.js で世界地図表示
+  │ → 日付範囲・ジャンル・タイプでフィルター
+  │ → ピンクリックで詳細ポップアップ
+  ▼
+/events/{id}（個別イベントページ）
+  │ → OGP 対応（SNS シェア時にカード表示）
+  │ → 「気になる」ボタン（ログインユーザーのみ）
+  │ → iCal エクスポート（.ics ダウンロード）
+  │ → ミニマップ + Google Maps リンク
+  │ → 出演者プロフィールリンク（Kuon ユーザーの場合）
+```
+
+### データ構造
+
+```typescript
+interface EventData {
+  id: string;               // 16桁 hex
+  creatorEmail: string;
+  title: string;
+  description: string;
+  date: string;             // "YYYY-MM-DD"
+  startTime: string;        // "HH:MM"
+  endTime: string;
+  venueName: string;
+  venueAddress: string;
+  lat: number; lng: number;
+  price: string;            // "¥3,000", "Free", "$20"
+  eventType: string;        // concert | recital | jam-session | workshop | festival | recital-exam | open-mic | other
+  genre: string;            // classical | jazz | pop | folk | world | chamber | orchestra | choir | brass-band | other
+  performers: EventPerformer[];
+  interestedCount: number;
+  interestedEmails: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface VenueData {
+  name: string; address: string;
+  lat: number; lng: number;
+  usageCount: number;       // 自動カウントアップ
+  lastUsed: string;
+}
+```
+
+### KV キー設計（SESSIONS Namespace）
+
+| キーパターン | 内容 | TTL |
+|---|---|---|
+| `event:{id}` | イベント本体 JSON | 365日 |
+| `events-date:{YYYY-MM-DD}` | その日のイベント ID リスト | 365日 |
+| `events-user:{email}` | ユーザーのイベント ID リスト | 365日 |
+| `venue:{name-slug}` | 会場データ（自動蓄積） | なし |
+
+### Worker エンドポイント（kuon-rnd-auth-worker に追加）
+
+| メソッド | パス | 認証 | 用途 |
+|---------|------|------|------|
+| POST | `/api/auth/events` | JWT（Pro のみ） | イベント作成 + 会場 DB 自動保存 |
+| GET | `/api/auth/events` | なし | 公開イベント一覧（date/range/genre/eventType フィルター） |
+| GET | `/api/auth/events/:id` | なし | イベント詳細（出演者情報を enrichment） |
+| PUT | `/api/auth/events/:id` | JWT（作成者 or オーナー） | イベント更新 |
+| DELETE | `/api/auth/events/:id` | JWT（作成者 or オーナー） | イベント削除 |
+| GET | `/api/auth/events/user/me` | JWT | 自分のイベント一覧 |
+| POST | `/api/auth/events/:id/interested` | JWT | 「気になる」トグル |
+| GET | `/api/auth/venues/search` | なし | 会場サジェスト検索 |
+
+### 関連ファイル
+
+| ファイル | 役割 |
+|---------|------|
+| `kuon-rnd-auth-worker/src/index.ts` | 全イベント API エンドポイント |
+| `app/api/auth/events/route.ts` | GET/POST プロキシ |
+| `app/api/auth/events/[id]/route.ts` | GET/PUT/DELETE プロキシ |
+| `app/api/auth/events/[id]/layout.tsx` | Edge Runtime（動的ルート） |
+| `app/api/auth/events/[id]/interested/route.ts` | POST プロキシ |
+| `app/api/auth/events/user/me/route.ts` | GET プロキシ |
+| `app/api/auth/venues/search/route.ts` | GET プロキシ |
+| `app/events/page.tsx` | 公開地図ページ（Leaflet.js） |
+| `app/events/layout.tsx` | SEO メタデータ |
+| `app/events/[id]/page.tsx` | 個別イベント詳細ページ |
+| `app/events/[id]/layout.tsx` | Edge Runtime + OGP メタデータ |
+| `app/mypage/page.tsx` | Pro 向けイベント管理セクション |
+
+### IQ180 追加機能
+
+1. **イベントタイプ分類** — 8種類（コンサート/リサイタル/ジャムセッション/ワークショップ/フェスティバル/発表会/オープンマイク/その他）
+2. **ジャンルフィルター** — 10種類（クラシック/ジャズ/ポップス/フォーク/ワールド/室内楽/オーケストラ/合唱/吹奏楽/その他）
+3. **「気になる」ボタン** — ログインユーザーがトグル、カウント表示で演奏者に集客の手応えを提供
+4. **iCal エクスポート** — ワンクリックで .ics ファイルダウンロード → Google/Apple カレンダーに追加
+5. **過去イベントアーカイブ** — 演奏履歴として蓄積（マイページで全イベント表示、過去分は薄く表示）
+6. **OGP 対応個別ページ** — `/events/{id}` で SNS シェア時にカード表示
+7. **会場 DB 自動蓄積** — 同じ会場名を入力するとサジェスト表示、座標も自動入力
+8. **出演者リンク** — Kuon ユーザーの場合はアバター付きで表示
+
+### 将来実装
+
+- 共演者への通知・メッセージ機能
+- 近隣イベント通知（プッシュ通知）
+- 繰り返しイベント（毎週のジャムセッション等）
+- 会場データベースの管理画面（Admin）
+
+---
+
+## 22. 作業履歴（続き）
+
+### 2026-04-19 セッション（ライブスケジュール / イベントマップ機能）
+
+| カテゴリ | 変更内容 |
+|---|---|
+| Auth Worker 拡張 | `kuon-rnd-auth-worker/src/index.ts` に EventData/VenueData 型定義、イベント CRUD（POST/GET/PUT/DELETE）、「気になる」トグル、ユーザーイベント一覧、会場サジェスト検索の全 8 エンドポイント追加。KV インデックス設計（event:{id}, events-date:{日付}, events-user:{email}, venue:{slug}）。Pro プラン制限。 |
+| API プロキシ | `app/api/auth/events/` 配下に 5 ファイル新規作成（route.ts, [id]/route.ts, [id]/layout.tsx, [id]/interested/route.ts, user/me/route.ts）。`app/api/auth/venues/search/route.ts` 新規作成。全て `runtime = 'edge'`。 |
+| イベントマップ | `app/events/page.tsx` 新規作成。Leaflet.js + OpenStreetMap タイル。日付ナビゲーション、日付範囲選択（1/7/14/30日）、イベントタイプ・ジャンルフィルター、地図/リスト表示切替。ピンクリックでポップアップ（タイトル・日時・会場・出演者・「気になる」数）。`app/events/layout.tsx` SEO。 |
+| 個別イベントページ | `app/events/[id]/page.tsx` 新規作成。OGP 対応。「気になる」ボタン、iCal ダウンロード、ミニマップ、Google Maps リンク、出演者カード（アバター付き）、X シェア、URL コピー。`app/events/[id]/layout.tsx` Edge Runtime。 |
+| マイページ拡張 | `app/mypage/page.tsx` に Pro 限定イベント管理セクション追加。投稿フォーム（タイトル・日付・時間・タイプ・ジャンル・会場名+住所+緯度経度・価格・説明・出演者複数入力）。会場サジェスト機能。マイイベント一覧（過去分は薄く表示）。編集・削除 UI。 |
+| CLAUDE.md | §31 ライブスケジュール/イベントマップ機能の全仕様追加。作業履歴更新。 |
