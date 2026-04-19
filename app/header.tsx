@@ -23,6 +23,7 @@ const MENU: MenuItem[] = [
   { href: '/audio-apps',        label: { ja: 'アプリ',           en: 'Apps',       ko: '앱',        pt: 'Apps',       es: 'Apps'       } },
   { href: '/microphone',        label: { ja: 'マイク',           en: 'Microphone', ko: '마이크',    pt: 'Microfone',  es: 'Micrófono'  } },
   { href: '/soundmap',          label: { ja: '地球音マップ',     en: 'Sound Map',  ko: '지구의 소리', pt: 'Sons da Terra', es: 'Sonidos' } },
+  { href: '/events-lp',         label: { ja: 'ライブ情報',       en: "Today's Live", ko: '공연 정보', pt: 'Ao Vivo',   es: 'En Vivo'   } },
   { href: '/#discover',         label: { ja: 'スカウト',         en: 'Discover',   ko: '디스커버',  pt: 'Descobrir',  es: 'Descubrir'  } },
 ];
 
