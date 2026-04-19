@@ -25,6 +25,14 @@ interface UserData {
   lastLoginAt: string;
   appUsage: Record<string, number>;
   appUsageMonth: string; // "2026-04" format for monthly reset
+  country: string;  // ISO country code (e.g. "JP", "US") — captured from Cloudflare
+  city: string;     // City name — captured from Cloudflare
+}
+
+interface PageviewData {
+  total: number;
+  countries: Record<string, number>;
+  pages: Record<string, number>;
 }
 
 interface MagicSession {
@@ -94,6 +102,11 @@ function generateToken(): string {
 function currentMonth(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 // ─────────────────────────────────────────────
@@ -194,6 +207,10 @@ app.post('/api/auth/verify', async (c) => {
     return c.json({ error: 'Token expired' }, 401);
   }
 
+  // Capture country from Cloudflare (passed by Pages proxy as X-CF-Country)
+  const cfCountry = c.req.header('X-CF-Country') || '';
+  const cfCity = c.req.header('X-CF-City') || '';
+
   // Get or create user
   const userKey = `user:${session.email}`;
   let userData: UserData;
@@ -202,6 +219,9 @@ app.post('/api/auth/verify', async (c) => {
   if (existing) {
     userData = JSON.parse(existing);
     userData.lastLoginAt = new Date().toISOString();
+    // Update geo on each login (user may travel)
+    if (cfCountry) userData.country = cfCountry;
+    if (cfCity) userData.city = cfCity;
   } else {
     userData = {
       email: session.email,
@@ -216,6 +236,8 @@ app.post('/api/auth/verify', async (c) => {
       lastLoginAt: new Date().toISOString(),
       appUsage: {},
       appUsageMonth: currentMonth(),
+      country: cfCountry,
+      city: cfCity,
     };
   }
 
@@ -571,6 +593,8 @@ app.get('/api/auth/admin/users', async (c) => {
       lastLoginAt: u.lastLoginAt,
       appUsage: u.appUsage,
       appUsageMonth: u.appUsageMonth,
+      country: u.country || '',
+      city: u.city || '',
     })),
     stats,
     page,
@@ -606,6 +630,100 @@ app.put('/api/auth/admin/plan', async (c) => {
   await c.env.USERS.put(userKey, JSON.stringify(user));
 
   return c.json({ ok: true, email: user.email, oldPlan, newPlan: user.plan });
+});
+
+// ─────────────────────────────────────────────
+// POST /api/auth/pageview — Track page view (no auth required)
+// ─────────────────────────────────────────────
+app.post('/api/auth/pageview', async (c) => {
+  const { path, country } = await c.req.json<{ path: string; country: string }>();
+  const page = path || '/';
+  const cc = (country || 'XX').toUpperCase();
+  const day = todayStr();
+  const key = `pv:${day}`;
+
+  // Read current data
+  const raw = await c.env.SESSIONS.get(key);
+  let pv: PageviewData;
+  if (raw) {
+    pv = JSON.parse(raw);
+  } else {
+    pv = { total: 0, countries: {}, pages: {} };
+  }
+
+  // Increment
+  pv.total += 1;
+  pv.countries[cc] = (pv.countries[cc] || 0) + 1;
+  pv.pages[page] = (pv.pages[page] || 0) + 1;
+
+  // Store with 90-day TTL
+  await c.env.SESSIONS.put(key, JSON.stringify(pv), { expirationTtl: 90 * 24 * 3600 });
+
+  return c.json({ ok: true });
+});
+
+// ─────────────────────────────────────────────
+// GET /api/auth/admin/pageviews — Admin: pageview stats (last 30 days)
+// ─────────────────────────────────────────────
+app.get('/api/auth/admin/pageviews', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload || payload.email !== '369@kotaroasahina.com') {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const days = parseInt(c.req.query('days') || '30', 10);
+  const results: { date: string; total: number; countries: Record<string, number>; pages: Record<string, number> }[] = [];
+
+  // Fetch each day's data
+  const now = new Date();
+  const fetchPromises: Promise<void>[] = [];
+
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    fetchPromises.push(
+      c.env.SESSIONS.get(`pv:${dayStr}`).then((raw) => {
+        if (raw) {
+          const pv: PageviewData = JSON.parse(raw);
+          results.push({ date: dayStr, ...pv });
+        } else {
+          results.push({ date: dayStr, total: 0, countries: {}, pages: {} });
+        }
+      })
+    );
+  }
+
+  await Promise.all(fetchPromises);
+
+  // Sort by date descending
+  results.sort((a, b) => b.date.localeCompare(a.date));
+
+  // Aggregate totals
+  const totalViews = results.reduce((sum, r) => sum + r.total, 0);
+  const allCountries: Record<string, number> = {};
+  const allPages: Record<string, number> = {};
+  for (const r of results) {
+    for (const [cc, n] of Object.entries(r.countries)) {
+      allCountries[cc] = (allCountries[cc] || 0) + n;
+    }
+    for (const [p, n] of Object.entries(r.pages)) {
+      allPages[p] = (allPages[p] || 0) + n;
+    }
+  }
+
+  return c.json({
+    days: results,
+    summary: {
+      totalViews,
+      countries: allCountries,
+      topPages: Object.entries(allPages).sort((a, b) => b[1] - a[1]).slice(0, 20),
+    },
+  });
 });
 
 export default app;
