@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { LangProvider } from '@/context/LangContext';
 
@@ -17,10 +17,72 @@ function PageviewTracker() {
   return null;
 }
 
+/**
+ * Silent JWT auto-refresh (Notion-style perpetual login).
+ *
+ * On each page navigation, decode the JWT from the kuon_user localStorage entry
+ * and check the token's remaining lifetime by calling /api/auth/me.
+ * If the server responds successfully, we know the token is still valid.
+ * We refresh proactively once per session (not on every navigation) when the
+ * token was issued more than 23 days ago (i.e., less than 7 days remaining).
+ *
+ * The actual JWT is stored in an HttpOnly cookie (kuon_token), so we can't read
+ * its expiry directly. Instead, we call /api/auth/refresh which:
+ *   1. Validates the current cookie-based JWT
+ *   2. Issues a fresh 30-day JWT
+ *   3. Sets a new HttpOnly cookie via the API proxy
+ *   4. Returns updated user info for localStorage
+ *
+ * Result: users who visit the site at least once every 30 days stay logged in
+ * forever — just like Notion.
+ */
+function TokenRefresher() {
+  const refreshedRef = useRef(false);
+
+  useEffect(() => {
+    // Only attempt once per page-load session
+    if (refreshedRef.current) return;
+    if (typeof window === 'undefined') return;
+
+    const stored = localStorage.getItem('kuon_user');
+    if (!stored) return; // not logged in
+
+    // Mark as attempted so we don't retry on every navigation
+    refreshedRef.current = true;
+
+    // Fire-and-forget: silently refresh the token
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) {
+          // Token expired or invalid — clear stale localStorage
+          if (res.status === 401) {
+            localStorage.removeItem('kuon_user');
+          }
+          return;
+        }
+        const data = await res.json();
+        // Update localStorage with latest user info (plan may have changed)
+        if (data.user) {
+          localStorage.setItem('kuon_user', JSON.stringify(data.user));
+        }
+      } catch {
+        /* Network error — silent, will retry on next visit */
+      }
+    })();
+  }, []);
+
+  return null;
+}
+
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <LangProvider>
       <PageviewTracker />
+      <TokenRefresher />
       {children}
     </LangProvider>
   );

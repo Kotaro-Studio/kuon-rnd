@@ -1759,3 +1759,309 @@ interface VenueData {
 | 個別イベントページ | `app/events/[id]/page.tsx` 新規作成。OGP 対応。「気になる」ボタン、iCal ダウンロード、ミニマップ、Google Maps リンク、出演者カード（アバター付き）、X シェア、URL コピー。`app/events/[id]/layout.tsx` Edge Runtime。 |
 | マイページ拡張 | `app/mypage/page.tsx` に Pro 限定イベント管理セクション追加。投稿フォーム（タイトル・日付・時間・タイプ・ジャンル・会場名+住所+緯度経度・価格・説明・出演者複数入力）。会場サジェスト機能。マイイベント一覧（過去分は薄く表示）。編集・削除 UI。 |
 | CLAUDE.md | §31 ライブスケジュール/イベントマップ機能の全仕様追加。作業履歴更新。 |
+
+### 2026-04-21 セッション（Google OAuth + 技術記事 + シェア機能 + フロントLP完全リデザイン）
+
+| カテゴリ | 変更内容 |
+|---|---|
+| Google OAuth | `app/auth/login/page.tsx` にプレースホルダだった Client ID を本物に差し替え（`342028960302-rmcnf6238nuucuccps033nibik1qigaf.apps.googleusercontent.com`）。Google Cloud Console で OAuth アプリを本番公開済み（「対象」→「本番環境」に切替）。基本スコープ（email/profile）のため100人制限は適用されず実質無制限。 |
+| How it works: DSD | `app/how-it-works/dsd/page.tsx`（1289行）+ `layout.tsx` 新規作成。世界初ブラウザDSDプレーヤーの技術解説記事。シグマデルタ変調、DSF/DFFバイナリ、Rust Wasm エンジン、バイトLUT最適化、Blackman-sinc FIRデシメーションフィルタ（数式付き）、8MBチャンクストリーミング、WAVエクスポート、ベンチマーク。ACCENT=#7C3AED（紫）。SEO 18キーワード。 |
+| How it works: DDP | `app/how-it-works/ddp/page.tsx`（948行）+ `layout.tsx` 新規作成。DDPバイナリパース技術解説。DDPID/DDPMS/PQパケット構造、バイトレベル図、トラック構築アルゴリズム、Gap Listen機能、プライバシーモデル。ACCENT=#0284c7。 |
+| DDP シェア機能 | `app/ddp-checker/page.tsx` に Canvas API によるサマリーカード生成（1200×630px PNG）追加。トラック表・Red Book Compliant バッジ・「Verified by KUON R&D」ウォーターマーク・日付スタンプ。保存ボタン + X シェアボタン。Technical Specs セクション（6項目）。IQ180シェアナッジ。`/how-it-works/ddp` リンク。表示レイヤーのみ変更、音声処理ロジック不変。 |
+| DSD シェア機能 | `app/dsd/page.tsx` に変換完了後の技術詳細表示（Input Format, DSD Type, Output, Engine, Filter）追加。X シェアボタン、シェアナッジ、`/how-it-works/dsd` リンク。表示レイヤーのみ変更。 |
+| フロントLP リデザイン | `app/page.tsx` を全面書き換え（1147行→約500行）。11セクション構成: Hero, Trust Bar, WHO IS THIS FOR（4ペルソナカード）, App Showcase（8アプリ→LP導線）, Microphone（P-86S/X-86S）, Discover, Pricing（3tier）, FAQ（6問アコーディオン）, Founder（ビジョン引用＋美しいボタン）, Final CTA, Contact（Formspree維持）。5言語対応。IQ180心理設計。 |
+| フロントLP 修正 | NORMALIZE に「マイク購入者限定」ゴールドバッジ追加。全アプリカードをLP页にリンク。FAQ将来対応化（「すべて無料」→「多くは無料＋一部サブスク」）。発送範囲を「国際郵便が届くすべての国・地域」に。Trust Bar「35+カ国」→「🌐世界中に発送」。Pricing小見出し将来対応化。Free tier CTA「登録なしで今すぐ使う」。 |
+| 創業者セクション | blockquote でビジョン引用（世界の音楽文化発展・音楽家の創造性・エンジニアの表現・国境を越えた繋がり・芸術の発展）。プロフィールリンクを pill 型美ボタンに。肩書に「音楽プロデューサー」追加。 |
+| フッター修正 | `app/footer.tsx` の「について」→「私たちについて」に修正（自然な日本語化）。 |
+| 型チェック | 全変更に対して `npx tsc --noEmit --strict` 通過確認済み。DSD記事の `useLang()` 分割代入バグ（65件 TS2345）を修正。 |
+
+---
+
+## 32. Google Cloud Platform（GCP）活用計画
+
+### 背景
+
+Google OAuth 実装のために Google Cloud Console でプロジェクトを作成した（2026-04-21）。
+$300 の無料クレジット（90日間）が付与されており、これを活用してサブスク用サーバーアプリを開発予定。
+
+### GCP プロジェクト情報
+
+| 項目 | 内容 |
+|------|------|
+| プロジェクト | kuon-rnd（Google Cloud Console） |
+| OAuth Client ID | `342028960302-rmcnf6238nuucuccps033nibik1qigaf.apps.googleusercontent.com` |
+| OAuth ステータス | 本番公開済み（基本スコープのみ・ユーザー数無制限） |
+| 無料クレジット | $300（90日間・2026年7月頃まで） |
+
+### GCP vs Azure 比較（オーナー確認済み）
+
+| 観点 | GCP | Azure |
+|------|-----|-------|
+| 無料枠 | $300/90日 → Cloud Run 月200万リクエスト | B2プラン ¥8,000〜15,000/月 |
+| コンテナ | Cloud Run（自動スケール・リクエスト時のみ課金） | App Service（常時起動） |
+| GPU | NVIDIA T4（$0.35/h）, A100 利用可能 | NCasT4_v3（$0.526/h） |
+| AI/ML | Vertex AI, Cloud TPU, Gemini API | Azure OpenAI, Azure ML |
+| 音声系 | Speech-to-Text, Text-to-Speech | Azure Speech |
+| 翻訳 | Cloud Translation（月50万文字無料） | Azure Translator（月200万文字無料） |
+| ストレージ | Cloud Storage（5GB無料） | Blob Storage |
+
+### 方針決定
+
+**Cloud Run をメインに採用**。理由：
+1. リクエスト時のみ課金 → 初期ユーザー少数でもコスト最小
+2. 月200万リクエスト無料枠あり
+3. Docker コンテナなので Azure への移行も容易
+4. $300 クレジットで約3ヶ月の実験が可能
+
+### GCP で開発予定のサブスクアプリ（5本）
+
+| # | アプリ名 | 技術 | 用途 | 優先度 |
+|---|---------|------|------|--------|
+| 1 | KUON SEPARATOR | Demucs v4 (Meta) + Cloud Run | ボーカル/ドラム/ベース/楽器分離 | ★★★★★ |
+| 2 | KUON SUBTITLE | Whisper + Cloud Translation | 音声書き起こし + 多言語字幕生成 | ★★★★★ |
+| 3 | KUON HARMONY | music21 + Cloud Run | 和声自動分析 | ★★★★ |
+| 4 | KUON KARAOKE | Demucs + ピッチシフト | 自動カラオケ生成 | ★★★ |
+| 5 | KUON TRANSCRIPT | Whisper + pyannote | レッスン書き起こし（話者分離） | ★★★ |
+
+### 課金制御フロー（§29 準拠）
+
+```
+ユーザーがサーバーアプリにアクセス
+  │
+  ├── ログインなし → 初回は無料で体験（制限付き）
+  │
+  ├── 無料会員 → 初月無制限 → 月3回
+  │
+  ├── Student (¥480/月) → 無制限
+  │
+  └── Pro (¥980/月) → 無制限 + 優先処理
+```
+
+Auth Worker の `POST /api/auth/track` で月別カウントを管理。
+
+---
+
+## 33. 認証システム詳細（実装済み）
+
+### 認証方式
+
+| 方式 | 状態 | 概要 |
+|------|------|------|
+| マジックリンク | 実装済み | メールアドレス入力 → Resend 経由でログインリンク送信 → クリックで JWT 発行 |
+| Google OAuth | 実装済み | Google Identity Services (GIS) → credential トークン → Auth Worker で検証 → JWT 発行 |
+
+### Google OAuth フロー
+
+```
+ブラウザ（/auth/login）
+  │ Google One Tap / Sign-In ボタンクリック
+  ▼
+Google Identity Services
+  │ credential（JWT）トークン発行
+  ▼
+/api/auth/google（Next.js API Route プロキシ）
+  │
+  ▼
+kuon-rnd-auth-worker POST /api/auth/google
+  │ ① credential を Google の公開鍵で検証
+  │ ② email, name, picture を抽出
+  │ ③ KV にユーザー作成 or 既存ユーザー更新
+  │ ④ JWT 発行（HS256, 30日有効）
+  ▼
+ブラウザ
+  │ localStorage に kuon_user を保存
+  │ /mypage にリダイレクト
+```
+
+### 関連ファイル
+
+| ファイル | 役割 |
+|---------|------|
+| `app/auth/login/page.tsx` | ログインページ（マジックリンク + Google ボタン） |
+| `app/auth/verify/page.tsx` | マジックリンク検証ページ |
+| `app/auth/confirm-email/page.tsx` | メールアドレス変更確認ページ |
+| `kuon-rnd-auth-worker/src/index.ts` | POST `/api/auth/google` エンドポイント |
+
+### 注意事項
+
+- Google Client ID はフロントエンドに公開しても安全（公開鍵のみ）
+- Client Secret は不要（GIS の credential フローでは使用しない）
+- OAuth consent screen は本番公開済み（基本スコープ = 無制限ユーザー）
+- sensitive/restricted スコープを追加する場合は Google の審査が必要
+
+---
+
+## 34. How it works 技術記事システム（実装済み）
+
+### 概要
+
+アプリの技術的な仕組みを解説する記事ページ。SEO 効果 + 技術力の証明 + シェアコンテンツとして機能。
+
+### 記事一覧
+
+| 記事 | パス | 行数 | テーマカラー |
+|------|------|------|------------|
+| DSD プレーヤー解説 | `/how-it-works/dsd` | 1289行 | #7C3AED（紫） |
+| DDP チェッカー解説 | `/how-it-works/ddp` | 948行 | #0284c7（青） |
+
+### DSD 記事の内容
+
+1. DSD とは何か（シグマデルタ変調の原理）
+2. なぜブラウザで再生が困難だったか
+3. DSF / DFF バイナリフォーマットの構造（バイトレベル図解）
+4. Rust Wasm エンジンの設計
+5. バイトレベル LUT 最適化
+6. Blackman 窓 sinc FIR ローパスフィルタ（数式付き）
+7. 8MB チャンクストリーミング処理
+8. WAV エクスポート
+9. ベンチマーク結果
+
+### DDP 記事の内容
+
+1. DDP とは何か（CD マスタリングの最終形態）
+2. DDPID / DDPMS / PQ パケットの構造
+3. バイナリパースのアルゴリズム
+4. トラック構築ロジック
+5. Gap Listen 機能の仕組み
+6. ブラウザ完結のプライバシーモデル
+
+### IQ180 シェア設計
+
+DSD/DDP のような専門ツールのユーザーは「プロフェッショナルとしての誇り」を持つ。
+中断（15秒ゲート等）は拒絶されるため、以下の方式を採用:
+
+1. **シェアアーティファクト** — DDP サマリーカード（Canvas API, 1200×630px PNG）をダウンロード・X シェア可能に
+2. **技術記事リンク** — 「How this works →」の小さなリンクでSEO＋シェアを促進
+3. **ナッジテキスト** — 「まだ知らない人がいます」等、知識伝播欲求に訴えるメッセージ
+4. **変換後の技術詳細** — DSD 変換完了後に入力フォーマット・エンジン・フィルタ情報を表示
+
+---
+
+## 35. 登録ナッジ設計方針（Canva モデル）
+
+### 基本原則
+
+ブラウザ完結アプリは **ログインなしで制限なく使える**（§29 準拠）。
+登録促進は「機能制限」ではなく「付加価値の訴求」で行う。
+
+### 正しい挙動
+
+```
+ユーザーがアプリを開く → すぐに使える（制限なし）
+  ↓
+処理完了後、ソフトナッジを表示:
+  「無料登録すると、設定の保存・処理履歴の確認ができます」
+  「成長グラフで上達を可視化しませんか？」
+```
+
+### やってはいけないこと
+
+- NG: アプリ画面をブロックする全画面モーダル
+- NG: 「登録しないと使えません」のメッセージ
+- NG: 使用回数制限（ブラウザ完結アプリの場合）
+- NG: 処理途中での中断
+
+### RegistrationNudge の6つの訴求タイプ
+
+| タイプ | 訴求内容 | 表示タイミング |
+|--------|---------|-------------|
+| download | 結果のダウンロード保存 | 処理完了後 |
+| history | 処理履歴の確認 | 2回目以降の使用時 |
+| presets | 設定のプリセット保存 | 設定変更時 |
+| advanced | 高度な機能へのアクセス | 特定機能使用時 |
+| share | 結果のシェア機能 | 処理完了後 |
+| general | 一般的な登録メリット | ページ下部 |
+
+### NORMALIZE の特殊扱い
+
+NORMALIZE アプリはマイク購入者限定特典。
+フロント LP では「マイク購入者限定」ゴールドバッジで表示。
+パスワード「kuon」で認証（§21 参照）。
+
+---
+
+## 36. フロントページ LP 設計仕様（2026-04-21 確定版）
+
+### ページ構成（11セクション）
+
+| # | セクション | 目的 | 心理設計 |
+|---|-----------|------|---------|
+| 1 | HERO | 第一印象・感情フック | 3秒以内に「音楽家のための場所」と認識させる |
+| 2 | TRUST BAR | 信頼の裏付け | 数字で安心感を提供（15+ツール / 世界発送 / 5言語 / ブラウザ完結） |
+| 3 | WHO IS THIS FOR | 自己同一化 | 4ペルソナ（演奏家・音大生・エンジニア・ファン）で「自分の場所だ」と感じさせる |
+| 4 | APP SHOWCASE | 価値の証明 | 8アプリをグリッド表示。全カードからLP页へ導線 |
+| 5 | MICROPHONE | ハード×ソフト訴求 | 「ソフトウェアだけじゃない」で二刀流ブランドを印象付け |
+| 6 | DISCOVER | 探索欲求 | 地球音マップ + ライブ情報で「こんなこともできるのか」 |
+| 7 | PRICING | 決断促進 | 「まずは無料で」→ アップセル自然導線 |
+| 8 | FAQ | 不安解消 | 将来のPro限定アプリにも矛盾しない表現 |
+| 9 | FOUNDER | 共感と信頼 | ビジョン引用 + 音大生だった原点ストーリー |
+| 10 | FINAL CTA | 最後の一押し | 「音楽の、いちばん近くに。」 |
+| 11 | CONTACT | 接点確保 | Formspree フォーム（https://formspree.io/f/xyknanzy） |
+
+### アプリ一覧（LPリンク対応表）
+
+| フロントLP表示名 | リンク先 | バッジ |
+|----------------|---------|-------|
+| MASTER CHECK | /master-check-lp | — |
+| DSD CONVERTER | /dsd-lp | — |
+| DDP CHECKER | /ddp-checker-lp | — |
+| NORMALIZE | /normalize-lp | マイク購入者限定（ゴールド） |
+| NOISE REDUCTION | /noise-reduction | — |
+| EAR TRAINING | /ear-training-lp | — |
+| METRONOME | /metronome-lp | — |
+| CHORD QUIZ | /chord-quiz-lp | — |
+
+### 言語対応
+
+L5 型（`Partial<Record<Lang, string>> & { en: string }`）で5言語対応:
+ja / en / es / ko / pt
+
+### FAQ の将来対応方針
+
+- 「すべて無料ですか？」とは聞かない → 「無料で使えるアプリはありますか？」
+- 回答: 「多くのブラウザアプリは無料」+「一部プレミアム機能はサブスク」
+- Pro 限定アプリが追加されても LP を書き換える必要なし
+
+### マイク発送範囲
+
+- 「35カ国以上に発送実績」→「国際郵便が届くすべての国・地域に発送可能」
+- EMS / 国際小包で安全配送
+- Trust Bar: 「🌐 世界中に発送」
+
+---
+
+## 14. 実装ステータス（2026-04-21 更新）
+
+> ※ §14 を最新状態に更新（上書きではなく追加分のみ記載）
+
+### 新規追加ページ（2026-04-21）
+
+| ページ | パス | 状態 |
+|--------|------|------|
+| How it works: DSD | /how-it-works/dsd | 完成・本番稼働中 |
+| How it works: DDP | /how-it-works/ddp | 完成・本番稼働中 |
+| Google OAuth ログイン | /auth/login（Google ボタン） | 完成・本番稼働中 |
+| フロント LP | / | 全面リデザイン完了・本番稼働中 |
+
+### 更新ページ（2026-04-21）
+
+| ページ | パス | 変更内容 |
+|--------|------|---------|
+| DDP Checker | /ddp-checker | サマリーカード生成・X シェア・技術記事リンク・IQ180ナッジ追加 |
+| DSD Converter | /dsd | 変換後技術詳細・X シェア・技術記事リンク追加 |
+| フッター | footer.tsx | 「について」→「私たちについて」 |
+
+---
+
+## 22. 作業履歴（続き）
+
+### 未完了タスク（次回セッション向け）
+
+1. **RegistrationNudge 挙動確認** — 全画面ブロッキングモーダルが表示されている可能性あり。§29/§35 に準拠するソフトナッジに修正が必要
+2. **UPLOAD_SECRET の登録** — kuon-rnd-audio-worker にまだ未登録（§22 前回の未完了タスク参照）
+3. **kuon-rnd-audio-worker の再デプロイ** — アップロードエンドポイント追加分
+4. **GCP Cloud Run 環境構築** — KUON SEPARATOR（Demucs）を最初のサーバーアプリとしてデプロイ
+5. **Stripe サブスク決済実装** — Student ¥480/月・Pro ¥980/月のサブスクリプション
+6. **DSD コンバーター Wasm リビルド** — Mac で `wasm-pack build --target web --release`
+7. **Auth Worker に Google OAuth エンドポイント追加のデプロイ** — `cd kuon-rnd-auth-worker && npx wrangler deploy`
+8. **SIGHT READING アプリ全面リライト** — ドイツ語音名軸 + 3記譜法システム（作業中断中）

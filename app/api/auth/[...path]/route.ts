@@ -97,8 +97,8 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
   // ── Parse JSON response ──
   const data = await res.json() as Record<string, unknown>;
 
-  // ── Special: verify / google → set JWT cookie ──
-  if ((pathStr === 'verify' || pathStr === 'google') && method === 'POST' && res.ok && data.jwt) {
+  // ── Special: verify / google / refresh → set JWT cookie ──
+  if ((pathStr === 'verify' || pathStr === 'google' || pathStr === 'refresh') && method === 'POST' && res.ok && data.jwt) {
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: {
