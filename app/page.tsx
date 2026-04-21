@@ -1,1147 +1,499 @@
-"use client";
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
+import type { Lang } from '@/context/LangContext';
 
-// ─────────────────────────────────────────────
-// Typography
-// ─────────────────────────────────────────────
 const serif = '"Shippori Mincho", "Noto Serif JP", "Yu Mincho", "YuMincho", serif';
-const sans  = '"Helvetica Neue", Arial, sans-serif';
+const sans = '"Helvetica Neue", Arial, sans-serif';
 const ACCENT = '#0284c7';
 
-// ─────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────
-export default function Home() {
+type L5 = Partial<Record<Lang, string>> & { en: string };
+const t5 = (m: L5, lang: Lang): string => m[lang] ?? m.en;
+
+const HomePage: React.FC = () => {
   const { lang } = useLang();
-  const t = <T,>(ja: T, en: T, es: T, ko?: T): T =>
-    lang === 'ja' ? ja : lang === 'en' ? en : lang === 'es' ? es : ko ?? es;
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      q: {
+        ja: '無料で使えるアプリはありますか？',
+        en: 'Are there free apps?',
+        es: '¿Hay aplicaciones gratuitas?',
+        ko: '무료로 사용할 수 있는 앱이 있나요?',
+        pt: 'Existem aplicativos gratuitos?',
+      },
+      a: {
+        ja: 'はい。多くのブラウザアプリは無料で使用回数の制限なくお使いいただけます。一部のプレミアム機能やサーバー処理が必要なアプリにはサブスクリプションが必要です。',
+        en: 'Yes. Many browser-based apps are free with no usage limits. Some premium features and server-powered apps require a subscription.',
+        es: 'Sí. Muchas aplicaciones basadas en navegador son gratuitas sin límites de uso. Algunas funciones premium y aplicaciones de servidor requieren suscripción.',
+        ko: '네. 많은 브라우저 기반 앱은 사용 제한 없이 무료입니다. 일부 프리미엄 기능과 서버 앱은 구독이 필요합니다.',
+        pt: 'Sim. Muitos aplicativos baseados em navegador são gratuitos sem limites de uso. Algumas funcionalidades premium e aplicativos de servidor requerem assinatura.',
+      },
+    },
+    {
+      q: {
+        ja: 'アカウント登録は必要ですか？',
+        en: 'Do I need an account?',
+        es: '¿Necesito una cuenta?',
+        ko: '계정 등록이 필요한가요?',
+        pt: 'Preciso de uma conta?',
+      },
+      a: {
+        ja: 'アプリを使うだけなら不要です。設定の保存や処理履歴の確認にはアカウントが便利です。',
+        en: 'Not to use the apps. An account lets you save settings and view history.',
+        es: 'No para usar las aplicaciones. Una cuenta te permite guardar configuraciones y ver el historial.',
+        ko: '앱을 사용하는 데는 필요하지 않습니다. 계정은 설정 저장 및 기록 보기에 유용합니다.',
+        pt: 'Não para usar os aplicativos. Uma conta permite que você salve as configurações e visualize o histórico.',
+      },
+    },
+    {
+      q: {
+        ja: 'マイクはどこに届けてもらえますか？',
+        en: 'Where do you ship microphones?',
+        es: '¿A dónde envían los micrófonos?',
+        ko: '마이크는 어디로 배송되나요?',
+        pt: 'Para onde vocês enviam os microfones?',
+      },
+      a: {
+        ja: '日本国内はもちろん、国際郵便が届くすべての国・地域に発送可能です。EMS・国際小包で安全にお届けします。送料は地域により異なります。',
+        en: 'We ship anywhere international postal services reach — worldwide via EMS and international parcel post. Shipping costs vary by region.',
+        es: 'Enviamos a cualquier lugar al que lleguen los servicios postales internacionales, a través de EMS y correo internacional. Los costos varían por región.',
+        ko: '국제 우편이 닿는 모든 국가·지역으로 배송 가능합니다. EMS 및 국제 소포로 안전하게 배송합니다.',
+        pt: 'Enviamos para qualquer lugar que os serviços postais internacionais alcançam — via EMS e encomenda internacional.',
+      },
+    },
+    {
+      q: {
+        ja: 'サブスクリプションはいつでも解約できますか？',
+        en: 'Can I cancel my subscription anytime?',
+        es: '¿Puedo cancelar mi suscripción en cualquier momento?',
+        ko: '언제든지 구독을 취소할 수 있나요?',
+        pt: 'Posso cancelar minha assinatura a qualquer momento?',
+      },
+      a: {
+        ja: 'はい、いつでも解約できます。解約後も無料プランの機能は引き続き使えます。',
+        en: 'Yes, cancel anytime. Free plan features remain available after cancellation.',
+        es: 'Sí, cancela en cualquier momento. Las características del plan gratuito permanecen disponibles después de la cancelación.',
+        ko: '네, 언제든지 취소할 수 있습니다. 취소 후에도 무료 플랜 기능을 계속 사용할 수 있습니다.',
+        pt: 'Sim, cancele a qualquer momento. Os recursos do plano gratuito permanecem disponíveis após o cancelamento.',
+      },
+    },
+    {
+      q: {
+        ja: '対応ファイル形式は？',
+        en: 'What file formats are supported?',
+        es: '¿Qué formatos de archivo son compatibles?',
+        ko: '지원되는 파일 형식은?',
+        pt: 'Quais formatos de arquivo são suportados?',
+      },
+      a: {
+        ja: 'WAV、MP3、FLAC、DSD（DSF/DFF）、DDPなど幅広いフォーマットに対応しています。',
+        en: 'WAV, MP3, FLAC, DSD (DSF/DFF), DDP, and many more.',
+        es: 'WAV, MP3, FLAC, DSD (DSF/DFF), DDP y muchos más.',
+        ko: 'WAV, MP3, FLAC, DSD (DSF/DFF), DDP 등 다양한 형식을 지원합니다.',
+        pt: 'WAV, MP3, FLAC, DSD (DSF/DFF), DDP e muito mais.',
+      },
+    },
+    {
+      q: {
+        ja: '日本語以外にも対応していますか？',
+        en: 'Is it available in other languages?',
+        es: '¿Está disponible en otros idiomas?',
+        ko: '다른 언어로도 사용 가능한가요?',
+        pt: 'Está disponível em outros idiomas?',
+      },
+      a: {
+        ja: 'はい。日本語、英語、スペイン語、韓国語、ポルトガル語の5言語に対応しています。',
+        en: 'Yes. Available in Japanese, English, Spanish, Korean, and Portuguese.',
+        es: 'Sí. Disponible en japonés, inglés, español, coreano y portugués.',
+        ko: '네. 일본어, 영어, 스페인어, 한국어, 포르투갈어 5가지 언어로 제공됩니다.',
+        pt: 'Sim. Disponível em japonês, inglês, espanhol, coreano e português.',
+      },
+    },
+  ];
+
+  const apps: { emoji: string; name: string; desc: L5; href: string; badge?: L5 }[] = [
+    {
+      emoji: '🎚️',
+      name: 'MASTER CHECK',
+      desc: { ja: 'ラウドネス測定 + 自動調整', en: 'Loudness measurement + auto-adjust', es: 'Medición de volumen + ajuste automático', ko: '라우드니스 측정 + 자동 조정', pt: 'Medição de volume + ajuste automático' },
+      href: '/master-check-lp',
+    },
+    {
+      emoji: '🎼',
+      name: 'DSD CONVERTER',
+      desc: { ja: '世界初ブラウザDSD再生', en: 'World\'s first browser DSD player', es: 'Primer reproductor DSD de navegador del mundo', ko: '세계 최초 브라우저 DSD 플레이어', pt: 'Primeiro reprodutor DSD do navegador do mundo' },
+      href: '/dsd-lp',
+    },
+    {
+      emoji: '💿',
+      name: 'DDP CHECKER',
+      desc: { ja: 'DDPイメージ検証', en: 'DDP image verification', es: 'Verificación de imágenes DDP', ko: 'DDP 이미지 검증', pt: 'Verificação de imagem DDP' },
+      href: '/ddp-checker-lp',
+    },
+    {
+      emoji: '🎵',
+      name: 'NORMALIZE',
+      desc: { ja: 'ピーク・ラウドネス正規化', en: 'Peak & loudness normalization', es: 'Normalización de pico y volumen', ko: '피크 & 라우드니스 정규화', pt: 'Normalização de pico e volume' },
+      href: '/normalize-lp',
+      badge: { ja: 'マイク購入者限定', en: 'Mic Owners Only', es: 'Solo compradores', ko: '마이크 구매자 전용', pt: 'Apenas compradores' },
+    },
+    {
+      emoji: '🔇',
+      name: 'NOISE REDUCTION',
+      desc: { ja: 'スペクトルノイズ除去', en: 'Spectral noise reduction', es: 'Reducción de ruido espectral', ko: '스펙트럼 노이즈 제거', pt: 'Redução de ruído espectral' },
+      href: '/noise-reduction',
+    },
+    {
+      emoji: '🎹',
+      name: 'EAR TRAINING',
+      desc: { ja: '音感トレーニング', en: 'Ear training exercises', es: 'Ejercicios de entrenamiento auditivo', ko: '귀 훈련', pt: 'Exercícios de treinamento auditivo' },
+      href: '/ear-training-lp',
+    },
+    {
+      emoji: '🥁',
+      name: 'METRONOME',
+      desc: { ja: 'プロ仕様メトロノーム', en: 'Professional metronome', es: 'Metrónomo profesional', ko: '프로 메트로놈', pt: 'Metrônomo profissional' },
+      href: '/metronome-lp',
+    },
+    {
+      emoji: '🎸',
+      name: 'CHORD QUIZ',
+      desc: { ja: 'コード聴き取りクイズ', en: 'Chord recognition quiz', es: 'Quiz de reconocimiento de acordes', ko: '코드 인식 퀴즈', pt: 'Quiz de reconhecimento de acordes' },
+      href: '/chord-quiz-lp',
+    },
+  ];
+
+  const personas = [
+    {
+      emoji: '🎵',
+      title: { ja: '演奏家', en: 'Musicians', es: 'Músicos', ko: '연주자', pt: 'Músicos' },
+      desc: { ja: '練習の記録、ラウドネス調整、音源分離。プロの現場で使われるツールが、すべて無料。', en: 'Practice logs, loudness adjustment, stem separation. Professional-grade tools, all free.', es: 'Registros de práctica, ajuste de volumen, separación de stems. Herramientas de calidad profesional, todas gratis.', ko: '연습 기록, 라우드니스 조정, 스템 분리. 전문 수준의 도구, 모두 무료.', pt: 'Registros de prática, ajuste de volume, separação de stems. Ferramentas de qualidade profissional, todas grátis.' },
+    },
+    {
+      emoji: '🎓',
+      title: { ja: '音大生', en: 'Music Students', es: 'Estudiantes de Música', ko: '음악학생', pt: 'Estudantes de Música' },
+      desc: { ja: '和声分析、リズム訓練、聴音テスト。学割¥480/月で、音大4年間の成長を記録。', en: 'Harmony analysis, rhythm training, ear tests. Student plan ¥480/mo to track 4 years of growth.', es: 'Análisis de armonía, entrenamiento de ritmo, pruebas auditivas. Plan de estudiante ¥480/mes para registrar 4 años de crecimiento.', ko: '화성 분석, 리듬 훈련, 청음 테스트. 학생 플랜 ¥480/월로 4년간의 성장을 기록합니다.', pt: 'Análise de harmonia, treinamento de ritmo, testes auditivos. Plano de estudante ¥480/mês para rastrear 4 anos de crescimento.' },
+    },
+    {
+      emoji: '🎛️',
+      title: { ja: '録音エンジニア', en: 'Recording Engineers', es: 'Ingenieros de Grabación', ko: '녹음 엔지니어', pt: 'Engenheiros de Gravação' },
+      desc: { ja: 'DSD変換、DDPチェッカー、マスターチェック。他にないツールが、ブラウザで動く。', en: 'DSD converter, DDP checker, master check. Tools you can\'t find anywhere else, in your browser.', es: 'Convertidor DSD, verificador DDP, verificación maestra. Herramientas que no encontrarás en ningún otro lugar, en tu navegador.', ko: 'DSD 컨버터, DDP 체커, 마스터 체크. 다른 곳에서 찾을 수 없는 도구, 브라우저에서.', pt: 'Conversor DSD, verificador DDP, verificação mestre. Ferramentas que você não encontrará em nenhum outro lugar, no seu navegador.' },
+    },
+    {
+      emoji: '🎧',
+      title: { ja: '音楽ファン', en: 'Music Fans', es: 'Aficionados a la Música', ko: '음악 팬', pt: 'Fãs de Música' },
+      desc: { ja: '世界中のライブ情報、録音マップ、アーティスト発掘。音楽の新しい楽しみ方。', en: 'Live events worldwide, sound map, discover artists. A new way to enjoy music.', es: 'Eventos en vivo en todo el mundo, mapa de sonido, descubre artistas. Una nueva forma de disfrutar la música.', ko: '세계 라이브 이벤트, 사운드 맵, 아티스트 발견. 음악을 즐기는 새로운 방식.', pt: 'Eventos ao vivo em todo o mundo, mapa de som, descubra artistas. Uma nova maneira de desfrutar da música.' },
+    },
+  ];
 
   return (
-    <div style={{
-      fontFamily: serif,
-      color: '#1a1a1a',
-      backgroundColor: '#fafafa',
-      overflowX: 'hidden',
-    }}>
-
-      {/* ══════════════════════════════════════════
-          1. HERO — 欲望に直接語りかける
-      ══════════════════════════════════════════ */}
-      <section style={{
-        minHeight: '90vh',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        textAlign: 'center',
-        padding: 'clamp(6rem, 16vw, 12rem) clamp(1.5rem, 5vw, 3rem)',
-        position: 'relative',
-      }}>
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'radial-gradient(ellipse at center 20%, rgba(2,132,199,0.03) 0%, transparent 60%)',
-            pointerEvents: 'none',
-          }}
-        />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '820px' }}>
-          <p style={{
-            fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)',
-            fontWeight: 500, color: '#999',
-            letterSpacing: '0.4em', textTransform: 'uppercase',
-            marginBottom: 'clamp(1.5rem, 3vw, 2.5rem)', fontFamily: sans,
-          }}>
-            The Platform for Musicians
-          </p>
-
-          <h1 style={{
-            fontSize: 'clamp(1.8rem, 5.5vw, 3.6rem)',
-            fontWeight: 300,
-            letterSpacing: 'clamp(0.06em, 0.15em, 0.2em)',
-            lineHeight: 1.5,
-            margin: '0 0 clamp(1.5rem, 3vw, 2.5rem) 0',
-            color: '#0c0c0c',
-            wordBreak: 'keep-all',
-          }}>
-            {t('誰かが、あなたの音楽を\n探している。',
-               'Someone is looking\nfor your music.',
-               'Alguien está buscando\ntu música.',
-               '누군가가 당신의 음악을\n찾고 있습니다.')}
-          </h1>
-
-          <p style={{
-            color: '#777',
-            fontSize: 'clamp(0.88rem, 1.4vw, 1.05rem)',
-            lineHeight: 2.0,
-            letterSpacing: '0.03em',
-            fontFamily: sans,
-            margin: '0 0 clamp(2.5rem, 5vw, 4rem) 0',
-            maxWidth: '620px', marginLeft: 'auto', marginRight: 'auto',
-          }}>
-            {t('録音し、成長を記録し、世界に発信する。\n空音開発は、音楽家が音楽家であり続けるためのプラットフォームです。',
-               'Record. Track your growth. Reach the world.\nKuon R&D is the platform where musicians stay musicians.',
-               'Graba. Registra tu crecimiento. Llega al mundo.\nKuon R&D es la plataforma donde los músicos siguen siendo músicos.',
-               '녹음하세요. 성장을 기록하세요. 세계에 도달하세요.\n공음 R&D는 음악가가 음악가로 남을 수 있는 플랫폼입니다.')}
-          </p>
-
-          <div style={{
-            display: 'flex', gap: 'clamp(0.8rem, 2vw, 1.2rem)',
-            justifyContent: 'center', flexWrap: 'wrap',
-          }}>
-            <Link href="/audio-apps" style={{
-              padding: 'clamp(1rem, 1.6vw, 1.2rem) clamp(2.4rem, 4.5vw, 3.2rem)',
-              backgroundColor: '#0c0c0c', color: '#fff',
-              fontSize: 'clamp(0.82rem, 1.1vw, 0.9rem)',
-              letterSpacing: '0.1em', textDecoration: 'none',
-              borderRadius: '50px', fontFamily: sans,
-              transition: 'all 0.4s ease', border: 'none',
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = ACCENT; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px -6px rgba(2,132,199,0.35)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0c0c0c'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              {t('\u7121\u6599\u3067\u306f\u3058\u3081\u308b', 'Start Free', 'Empieza Gratis')}
-            </Link>
-            <Link href="/microphone" style={{
-              padding: 'clamp(1rem, 1.6vw, 1.2rem) clamp(2.4rem, 4.5vw, 3.2rem)',
-              backgroundColor: 'transparent', color: '#444',
-              fontSize: 'clamp(0.82rem, 1.1vw, 0.9rem)',
-              letterSpacing: '0.1em', textDecoration: 'none',
-              borderRadius: '50px', fontFamily: sans,
-              border: '1px solid #ccc', transition: 'all 0.4s ease',
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = ACCENT; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#ccc'; e.currentTarget.style.color = '#444'; }}
-            >
-              {t('\u30de\u30a4\u30af\u3092\u898b\u308b', 'View Microphones', 'Ver Micr\u00f3fonos')}
-            </Link>
-          </div>
+    <div style={{ fontFamily: sans, color: '#1f2937' }}>
+      {/* 1. HERO */}
+      <section style={{ minHeight: '90vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: 'clamp(2rem, 5%, 6rem) clamp(1rem, 3%, 4rem)', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' }}>
+        <div style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#64748b', marginBottom: '1.5rem' }}>THE PLATFORM FOR MUSICIANS</div>
+        <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 2rem 0', maxWidth: '1000px', whiteSpace: 'pre-line', wordBreak: 'keep-all', color: '#0f172a' }}>
+          {t5({ ja: 'あなたの音楽を、\n次のステージへ。', en: 'Take your music\nto the next stage.', es: 'Lleva tu música\nal siguiente nivel.', ko: '당신의 음악을\n다음 단계로.', pt: 'Leve sua música\npara o próximo nível.' }, lang)}
+        </h1>
+        <p style={{ fontFamily: sans, fontSize: 'clamp(1rem, 2.5vw, 1.125rem)', color: '#64748b', maxWidth: '800px', lineHeight: 1.6, margin: '0 0 3rem 0', whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
+          {t5({ ja: '15以上の無料ツール、ハンドメイドマイク、世界中の音楽家コミュニティ。\n空音開発は、音楽に生きるすべての人のためのプラットフォームです。', en: '15+ free tools, handmade microphones, a global musician community.\nKuon R&D is the platform for everyone who lives for music.', es: 'Más de 15 herramientas gratuitas, micrófonos artesanales, comunidad global.\nKuon R&D es la plataforma para quienes viven por la música.', ko: '15개 이상의 무료 도구, 핸드메이드 마이크, 글로벌 음악가 커뮤니티.\n공음개발은 음악으로 살아가는 모든 사람을 위한 플랫폼입니다.', pt: 'Mais de 15 ferramentas gratuitas, microfones artesanais, comunidade global.\nKuon R&D é a plataforma para quem vive pela música.' }, lang)}
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.875rem 2rem', background: '#0f172a', color: 'white', borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#0f172a'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            {t5({ ja: '無料ではじめる', en: 'Start Free', es: 'Comenzar Gratis', ko: '무료로 시작', pt: 'Comece Grátis' }, lang)}
+          </Link>
+          <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.875rem 2rem', border: `2px solid ${ACCENT}`, color: ACCENT, borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', background: 'white', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            {t5({ ja: 'アプリを体験する', en: 'Try the Apps', es: 'Probar las Aplicaciones', ko: '앱 시도', pt: 'Experimente os Aplicativos' }, lang)}
+          </Link>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          2. NUMBERS — 信頼の裏付け
-      ══════════════════════════════════════════ */}
-      <section style={{
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-        borderBottom: '1px solid rgba(0,0,0,0.04)',
-        padding: 'clamp(2rem, 4vw, 3rem) clamp(1.5rem, 5vw, 3rem)',
-      }}>
-        <div style={{
-          display: 'flex', flexWrap: 'wrap',
-          justifyContent: 'center', gap: 'clamp(2rem, 5vw, 4rem)',
-          maxWidth: '900px', margin: '0 auto',
-        }}>
-          {([
-            { num: '15+',  label: t('\u30aa\u30fc\u30c7\u30a3\u30aa\u30c4\u30fc\u30eb', 'Audio Tools', 'Herramientas') },
-            { num: '35',   label: t('\u30ab\u56fd\u306b\u767a\u9001', 'Countries', 'Pa\u00edses') },
-            { num: '3',    label: t('\u8a00\u8a9e\u5bfe\u5fdc', 'Languages', 'Idiomas') },
-            { num: '100%', label: t('\u30d6\u30e9\u30a6\u30b6\u5b8c\u7d50', 'Browser-based', 'En navegador') },
-          ] as const).map((item) => (
-            <div key={item.num} style={{ textAlign: 'center', minWidth: '100px' }}>
-              <p style={{
-                fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 200,
-                color: '#111', margin: '0 0 0.2rem', fontFamily: sans,
-                letterSpacing: '0.02em',
-              }}>{item.num}</p>
-              <p style={{
-                fontSize: 'clamp(0.7rem, 0.9vw, 0.78rem)', color: '#aaa',
-                fontFamily: sans, letterSpacing: '0.08em', margin: 0,
-              }}>{item.label}</p>
+      {/* 2. TRUST BAR */}
+      <section style={{ borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '2rem clamp(1rem, 3%, 4rem)', background: 'white' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>15+</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'オーディオツール', en: 'Audio Tools', es: 'Herramientas de Audio', ko: '오디오 도구', pt: 'Ferramentas de Áudio' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>🌐</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '世界中に発送', en: 'Ships Worldwide', es: 'Envío Mundial', ko: '전 세계 배송', pt: 'Envio Mundial' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>5</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '言語対応', en: 'Languages', es: 'Idiomas', ko: '언어', pt: 'Idiomas' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>100%</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'ブラウザ完結', en: 'Browser-Based', es: 'Basado en Navegador', ko: '브라우저 기반', pt: 'Baseado em Navegador' }, lang)}</div></div>
+        </div>
+      </section>
+
+      {/* 3. WHO IS THIS FOR */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
+          {t5({ ja: 'あなたのための場所', en: 'Built for you', es: 'Hecho para ti', ko: '당신을 위해 만들어졌습니다', pt: 'Feito para você' }, lang)}
+        </h2>
+        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem' }}>
+          {t5({ ja: '音楽に関わるすべての人が、自分のステージを持つことができます。', en: 'Everyone involved in music can have their own stage.', es: 'Todos los involucrados en la música pueden tener su propio escenario.', ko: '음악에 관련된 모든 사람이 자신의 무대를 가질 수 있습니다.', pt: 'Todos os envolvidos na música podem ter seu próprio palco.' }, lang)}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+          {personas.map((p, idx) => (
+            <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{p.emoji}</div>
+              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '1rem', color: '#0f172a' }}>{t5(p.title, lang)}</h3>
+              <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>{t5(p.desc, lang)}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          3. TENSION — 音楽家が直面する現実
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(6rem, 14vw, 10rem) clamp(1.5rem, 5vw, 3rem)',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontSize: 'clamp(1.1rem, 3vw, 2rem)',
-          fontWeight: 300,
-          lineHeight: 2.0,
-          letterSpacing: '0.06em',
-          color: '#444',
-          maxWidth: '700px', margin: '0 auto',
-          wordBreak: 'keep-all',
-        }}>
-          {t('\u300c\u826f\u3044\u30de\u30a4\u30af\u304c\u8cb7\u3048\u306a\u3044\u3002\u300d\n\u300c\u7df4\u7fd2\u306e\u8a18\u9332\u304c\u6b8b\u3089\u306a\u3044\u3002\u300d\n\u300c\u624d\u80fd\u304c\u3042\u3063\u3066\u3082\u3001\u898b\u3064\u3051\u3066\u3082\u3089\u3048\u306a\u3044\u3002\u300d',
-             '"I can\'t afford a good microphone."\n"My practice goes undocumented."\n"Even with talent, nobody finds me."',
-             '"No puedo comprar un buen micr\u00f3fono."\n"Mi pr\u00e1ctica no queda registrada."\n"Aunque tenga talento, nadie me encuentra."')}
+      {/* 4. APP SHOWCASE */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
+          {t5({ ja: 'プロが使うツールを、あなたの手に。', en: 'Professional tools, in your hands.', es: 'Herramientas profesionales, en tus manos.', ko: '프로가 사용하는 도구를 당신의 손에.', pt: 'Ferramentas profissionais, nas suas mãos.' }, lang)}
+        </h2>
+        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem', maxWidth: '700px', margin: '0 auto 3rem', wordBreak: 'keep-all' }}>
+          {t5({ ja: 'ブラウザだけで完結。ダウンロード不要で今すぐ使えます。', en: 'Everything runs in your browser. No downloads needed — start right now.', es: 'Todo se ejecuta en tu navegador. Sin descargas necesarias.', ko: '모든 것이 브라우저에서 실행됩니다. 다운로드 없이 바로 시작하세요.', pt: 'Tudo é executado no seu navegador. Sem downloads necessários.' }, lang)}
         </p>
-        <p style={{
-          marginTop: 'clamp(2.5rem, 5vw, 3.5rem)',
-          color: '#bbb',
-          fontSize: 'clamp(0.88rem, 1.2vw, 0.95rem)',
-          letterSpacing: '0.06em',
-          fontFamily: sans,
-        }}>
-          {t('\u2014\u2014 \u97f3\u697d\u5bb6\u3092\u53d6\u308a\u5dfb\u304f\u74b0\u5883\u306f\u3001\u4f55\u3082\u5909\u308f\u3063\u3066\u3044\u306a\u304b\u3063\u305f\u3002',
-             '\u2014 The world hasn\'t changed for musicians. Until now.',
-             '\u2014 El mundo no hab\u00eda cambiado para los m\u00fasicos. Hasta ahora.')}
-        </p>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          4. FOUNDER STORY — 原点
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-      }}>
-        <div style={{
-          display: 'flex', flexWrap: 'wrap',
-          gap: 'clamp(3rem, 6vw, 6rem)',
-          alignItems: 'center', justifyContent: 'center',
-          maxWidth: '950px', margin: '0 auto',
-        }}>
-          <div style={{ flex: '0 0 auto', textAlign: 'center' }}>
-            <div style={{
-              padding: '6px', border: '1px solid rgba(0,0,0,0.06)',
-              borderRadius: '50%', display: 'inline-block',
-            }}>
-              <Image
-                src="/kotaro.jpeg" alt="Kotaro Asahina"
-                width={200} height={200} unoptimized
-                style={{
-                  borderRadius: '50%', objectFit: 'cover',
-                  width: 'clamp(140px, 18vw, 190px)',
-                  height: 'clamp(140px, 18vw, 190px)',
-                  display: 'block',
-                  filter: 'grayscale(15%) contrast(1.05)',
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ flex: '1 1 350px', minWidth: 'min(100%, 300px)' }}>
-            <p style={{
-              fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)',
-              fontWeight: 500, color: ACCENT,
-              letterSpacing: '0.3em', textTransform: 'uppercase',
-              marginBottom: '1rem', fontFamily: sans,
-            }}>
-              Origin Story
-            </p>
-            <h2 style={{
-              fontSize: 'clamp(1.3rem, 3vw, 2rem)',
-              fontWeight: 300, letterSpacing: '0.1em',
-              lineHeight: 1.7, margin: '0 0 clamp(1.5rem, 3vw, 2rem) 0',
-              color: '#111',
-            }}>
-              {t('\u8cb7\u3048\u306a\u304b\u3063\u305f\u304b\u3089\u3001\u4f5c\u3063\u305f\u3002',
-                 'I couldn\'t afford one.\nSo I built it.',
-                 'No pod\u00eda comprarlo.\nAs\u00ed que lo constru\u00ed.')}
-            </h2>
-            <div style={{
-              color: '#555', fontSize: 'clamp(0.88rem, 1.2vw, 0.95rem)',
-              lineHeight: 2.2, fontFamily: sans,
-            }}>
-              {t(<>音大生だった頃、自分の演奏を録音したかった。<br />でも、良いマイクは数十万円。学生には手が届かない。<br /><br />だったら自分で作ろう。<br /><br />そうして生まれたのが P-86S。&yen;16,900。<br />数十万円のマイクと同等以上の音質を、手はんだで一本一本。<br /><br />でも、マイクだけでは足りなかった。<br />練習を記録するツール、レッスンを書き起こすAI、<br />和声を解析するエンジン、才能を発見する場所——<br /><br />音楽家に必要なものを、全部作ることにした。</>,
-                 <>When I was a music student, I wanted to record my performances.<br />But a good microphone cost thousands. Far beyond a student&apos;s reach.<br /><br />So I built my own.<br /><br />That&apos;s the P-86S. $99. Hand-soldered, one at a time.<br />Sound rivaling microphones ten times the price.<br /><br />But a microphone wasn&apos;t enough.<br />Tools for practice, AI for lesson transcription,<br />harmony analysis engines, a place to be discovered&mdash;<br /><br />I decided to build everything a musician needs.</>,
-                 <>Cuando era estudiante de m&uacute;sica, quer&iacute;a grabar mis interpretaciones.<br />Pero un buen micr&oacute;fono costaba miles. Imposible para un estudiante.<br /><br />As&iacute; que constru&iacute; el m&iacute;o.<br /><br />As&iacute; naci&oacute; el P-86S. &euro;92. Soldado a mano, uno por uno.<br />Calidad comparable a micr&oacute;fonos diez veces m&aacute;s caros.<br /><br />Pero un micr&oacute;fono no era suficiente.<br />Herramientas para la pr&aacute;ctica, IA para transcripciones,<br />motores de an&aacute;lisis arm&oacute;nico, un lugar para ser descubierto&mdash;<br /><br />Decid&iacute; construir todo lo que un m&uacute;sico necesita.</>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
+          {apps.map((app, idx) => (
+            <Link key={idx} href={app.href} style={{ display: 'block', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', textDecoration: 'none', color: 'inherit', transition: 'all 0.3s ease', position: 'relative' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.boxShadow = `0 4px 12px rgba(2, 132, 199, 0.1)`; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}>
+              {app.badge && (
+                <span style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', fontSize: '0.65rem', fontWeight: 600, padding: '0.25rem 0.6rem', borderRadius: '999px', letterSpacing: '0.02em' }}>{t5(app.badge, lang)}</span>
               )}
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{app.emoji}</div>
+              <h3 style={{ fontFamily: sans, fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{app.name}</h3>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem', wordBreak: 'keep-all' }}>{t5(app.desc, lang)}</p>
+              <span style={{ color: ACCENT, fontSize: '0.875rem', fontWeight: 500 }}>→</span>
+            </Link>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+          <Link href="/audio-apps" style={{ color: ACCENT, textDecoration: 'none', fontSize: '1rem', fontWeight: 500 }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
+            {t5({ ja: 'すべてのアプリを見る →', en: 'See all apps →', es: 'Ver todas las aplicaciones →', ko: '모든 앱 보기 →', pt: 'Ver todos os aplicativos →' }, lang)}
+          </Link>
+        </div>
+      </section>
+
+      {/* 5. MICROPHONE */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
+          {t5({ ja: 'ソフトウェアだけじゃない。', en: 'Not just software.', es: 'No solo software.', ko: '소프트웨어만이 아닙니다.', pt: 'Não é apenas software.' }, lang)}
+        </h2>
+        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '0.95rem', maxWidth: '800px', margin: '0 auto 3rem', wordBreak: 'keep-all' }}>
+          {t5({ ja: '音大生だった創業者が、自分のために作ったマイク。数十万円の高級マイクと同等以上のクオリティを、手が届く価格で。', en: 'Microphones built by our founder, who was once a music student. Studio-quality at an accessible price.', es: 'Micrófonos construidos por nuestro fundador, que fue estudiante de música. Calidad de estudio a un precio accesible.', ko: '음대생이었던 우리의 창립자가 만든 마이크. 저렴한 가격에 스튜디오 품질.', pt: 'Microfones construídos pelo nosso fundador, que foi estudante de música. Qualidade de estúdio a um preço acessível.' }, lang)}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+            <div style={{ position: 'relative', height: '280px', background: '#e2e8f0' }}>
+              <Image src="/mic01.jpeg" alt="P-86S" fill style={{ objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: '#0284c7', color: 'white', padding: '0.5rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>BESTSELLER</div>
             </div>
-            <p style={{
-              marginTop: 'clamp(1.5rem, 3vw, 2rem)',
-              color: '#888', fontSize: 'clamp(0.82rem, 1.05vw, 0.88rem)',
-              fontFamily: sans, letterSpacing: '0.05em',
-            }}>
-              &mdash; {t('\u671d\u6bd4\u5948 \u5e78\u592a\u90ce / \u7a7a\u97f3\u958b\u767a \u4ee3\u8868', 'Kotaro Asahina / Founder, Kuon R&D', 'Kotaro Asahina / Fundador, Kuon R&D')}
-            </p>
-            <Link href="/profile" style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
-              marginTop: '1.2rem',
-              color: ACCENT, fontSize: 'clamp(0.8rem, 1.05vw, 0.88rem)',
-              letterSpacing: '0.08em', textDecoration: 'none', fontFamily: sans,
-            }}>
-              {t('\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u8a73\u7d30', 'Full Profile', 'Perfil Completo')} &rarr;
+            <div style={{ padding: '2rem' }}>
+              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'P-86S ステレオマイクロフォン', en: 'P-86S Stereo Microphone', es: 'Micrófono Estéreo P-86S', ko: 'P-86S 스테레오 마이크로폰', pt: 'Microfone Estéreo P-86S' }, lang)}</h3>
+              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥16,900</div>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'プラグインパワー対応', en: 'Plug-in power compatible', es: 'Compatible con alimentación plug-in', ko: '플러그인 전원 호환', pt: 'Compatível com alimentação plug-in' }, lang)}</li>
+                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '1本でABステレオ', en: 'Single-body AB stereo', es: 'Estéreo AB de un solo cuerpo', ko: '단일 바디 AB 스테레오', pt: 'Estéreo AB de corpo único' }, lang)}</li>
+                <li>• {t5({ ja: '手はんだ製作', en: 'Hand-soldered', es: 'Soldada a mano', ko: '손납', pt: 'Soldado à mão' }, lang)}</li>
+              </ul>
+              <Link href="/microphone" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                {t5({ ja: '詳しく見る →', en: 'Learn more →', es: 'Aprende más →', ko: '자세히 보기 →', pt: 'Saiba mais →' }, lang)}
+              </Link>
+            </div>
+          </div>
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', opacity: 0.7, transition: 'all 0.3s ease', position: 'relative' }}>
+            <div style={{ position: 'relative', height: '280px', background: '#e2e8f0' }}>
+              <Image src="/mic03.jpeg" alt="X-86S" fill style={{ objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: '#64748b', color: 'white', padding: '0.5rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>PRO</div>
+            </div>
+            <div style={{ padding: '2rem' }}>
+              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'X-86S プロフェッショナル', en: 'X-86S Professional', es: 'X-86S Profesional', ko: 'X-86S 프로페셔널', pt: 'X-86S Profissional' }, lang)}</h3>
+              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥39,600</div>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'ミニXLR端子', en: 'Mini XLR connector', es: 'Conector XLR mini', ko: '미니 XLR 커넥터', pt: 'Conector XLR mini' }, lang)}</li>
+                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '48Vファンタム電源', en: '48V phantom power', es: 'Alimentación fantasma 48V', ko: '48V 팬텀 전원', pt: 'Alimentação fantasma 48V' }, lang)}</li>
+                <li>• {t5({ ja: 'スタジオ品質', en: 'Studio quality', es: 'Calidad de estudio', ko: '스튜디오 품질', pt: 'Qualidade de estúdio' }, lang)}</li>
+              </ul>
+              <button style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#cbd5e1', color: '#64748b', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, border: 'none', cursor: 'not-allowed' }} disabled>
+                {t5({ ja: 'Coming Soon', en: 'Coming Soon', es: 'Próximamente', ko: '곧 출시', pt: 'Em breve' }, lang)}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. DISCOVER */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '1400px', margin: '0 auto', width: '100%' }} id="discover">
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
+          {t5({ ja: 'スカウト', en: 'Discover', es: 'Descubrir', ko: '발견', pt: 'Descobrir' }, lang)}
+        </h2>
+        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem' }}>
+          {t5({ ja: '世界中の音楽、音風景、アーティストを探索する。', en: 'Explore music, soundscapes, and artists around the world.', es: 'Explora música, paisajes sonoros y artistas de todo el mundo.', ko: '세계의 음악, 음풍경, 아티스트를 탐색합니다.', pt: 'Explore música, paisagens sonoras e artistas em todo o mundo.' }, lang)}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+          <Link href="/soundmap" style={{ display: 'block', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', textDecoration: 'none', color: 'inherit', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌍</div>
+            <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: '地球の音マップ', en: 'Sound Map', es: 'Mapa de Sonido', ko: '사운드 맵', pt: 'Mapa de Som' }, lang)}</h3>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', wordBreak: 'keep-all' }}>{t5({ ja: '世界中の音風景を探索', en: 'Explore soundscapes worldwide', es: 'Explora paisajes sonoros en todo el mundo', ko: '세계의 음풍경 탐색', pt: 'Explore paisagens sonoras em todo o mundo' }, lang)}</p>
+          </Link>
+          <Link href="/events-lp" style={{ display: 'block', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', textDecoration: 'none', color: 'inherit', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎪</div>
+            <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'ライブ情報', en: 'Live Events', es: 'Eventos en Vivo', ko: '라이브 이벤트', pt: 'Eventos ao Vivo' }, lang)}</h3>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', wordBreak: 'keep-all' }}>{t5({ ja: '近くのコンサートを見つける', en: 'Find concerts near you', es: 'Encuentra conciertos cerca de ti', ko: '근처 콘서트 찾기', pt: 'Encontre concertos perto de você' }, lang)}</p>
+          </Link>
+        </div>
+      </section>
+
+      {/* 7. PRICING */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
+          {t5({ ja: 'はじめ方', en: 'Choose your plan', es: 'Elige tu plan', ko: '계획 선택', pt: 'Escolha seu plano' }, lang)}
+        </h2>
+        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem', wordBreak: 'keep-all' }}>
+          {t5({ ja: 'まずは無料で。もっと使いたくなったらプランを選べます。', en: 'Start free. Upgrade when you want more.', es: 'Empieza gratis. Actualiza cuando quieras más.', ko: '무료로 시작하세요. 더 필요하면 업그레이드하세요.', pt: 'Comece grátis. Atualize quando quiser mais.' }, lang)}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+          <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Free', en: 'Free', es: 'Gratis', ko: '무료', pt: 'Gratuito' }, lang)}</h3>
+            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥0</div>
+            <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados' }, lang)}</li>
+              <li>✓ {t5({ ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ahora, sin registro', ko: '지금 사용, 가입 불필요', pt: 'Use agora, sem inscrição' }, lang)}</li>
+            </ul>
+            <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+              {t5({ ja: '登録なしで今すぐ使う', en: 'Use Now — No Signup', es: 'Usar Ahora — Sin Registro', ko: '가입 없이 지금 사용', pt: 'Usar Agora — Sem Inscrição' }, lang)}
+            </Link>
+          </div>
+          <div style={{ background: 'white', border: `2px solid ${ACCENT}`, borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: ACCENT, color: 'white', padding: '0.375rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>
+              {t5({ ja: 'おすすめ', en: 'POPULAR', es: 'POPULAR', ko: '인기', pt: 'POPULAR' }, lang)}
+            </div>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Student', en: 'Student', es: 'Estudiante', ko: '학생', pt: 'Estudante' }, lang)}</h3>
+            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>¥480</div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>{t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês' }, lang)}</div>
+            <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'サーバーアプリ無制限', en: 'Unlimited server apps', es: 'Aplicaciones de servidor ilimitadas', ko: '무제한 서버 앱', pt: 'Aplicativos de servidor ilimitados' }, lang)}</li>
+              <li>✓ {t5({ ja: '練習ログ記録', en: 'Practice logs', es: 'Registros de práctica', ko: '연습 기록', pt: 'Registros de prática' }, lang)}</li>
+            </ul>
+            <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
+              {t5({ ja: '登録する', en: 'Sign Up', es: 'Registrarse', ko: '가입', pt: 'Inscrever-se' }, lang)}
+            </Link>
+          </div>
+          <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Pro', en: 'Pro', es: 'Pro', ko: '프로', pt: 'Pro' }, lang)}</h3>
+            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>¥980</div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>{t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês' }, lang)}</div>
+            <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全機能アクセス', en: 'Full access', es: 'Acceso completo', ko: '전체 액세스', pt: 'Acesso completo' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ライブ投稿', en: 'Post live events', es: 'Publicar eventos en vivo', ko: '라이브 포스팅', pt: 'Postar eventos ao vivo' }, lang)}</li>
+              <li>✓ {t5({ ja: '優先サポート', en: 'Priority support', es: 'Soporte prioritario', ko: '우선 지원', pt: 'Suporte prioritário' }, lang)}</li>
+            </ul>
+            <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+              {t5({ ja: '登録する', en: 'Sign Up', es: 'Registrarse', ko: '가입', pt: 'Inscrever-se' }, lang)}
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          5. THREE PILLARS — Record / Grow / Be Discovered
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)',
-          fontWeight: 500, color: '#999',
-          letterSpacing: '0.4em', textTransform: 'uppercase',
-          marginBottom: 'clamp(1rem, 2vw, 1.5rem)', fontFamily: sans,
-        }}>
-          Platform
-        </p>
-        <h2 style={{
-          fontSize: 'clamp(1.4rem, 3.8vw, 2.4rem)',
-          fontWeight: 300, letterSpacing: '0.1em',
-          lineHeight: 1.6, margin: '0 0 clamp(4rem, 8vw, 6rem)', color: '#111',
-          wordBreak: 'keep-all',
-        }}>
-          {t('\u9332\u97f3\u3059\u308b\u3002\u6210\u9577\u3059\u308b\u3002\u898b\u3064\u304b\u308b\u3002',
-             'Record. Grow. Be discovered.',
-             'Graba. Crece. S\u00e9 descubierto.')}
+      {/* 8. FAQ */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '3rem', color: '#0f172a' }}>
+          {t5({ ja: 'よくある質問', en: 'FAQ', es: 'Preguntas Frecuentes', ko: '자주 묻는 질문', pt: 'Perguntas Frequentes' }, lang)}
         </h2>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-          gap: 'clamp(2rem, 4vw, 3rem)',
-          maxWidth: '1050px', margin: '0 auto', textAlign: 'left',
-        }}>
-          {([
-            {
-              num: '01',
-              title: t('\u9332\u97f3\u3059\u308b', 'Record', 'Graba'),
-              body: t(
-                '\u624b\u306f\u3093\u3060\u306e\u30de\u30a4\u30af\u304b\u3089\u3001\u30d6\u30e9\u30a6\u30b6\u5b8c\u7d50\u306e\u97f3\u58f0\u51e6\u7406\u307e\u3067\u300215\u672c\u4ee5\u4e0a\u306e\u30d7\u30ed\u30d5\u30a7\u30c3\u30b7\u30e7\u30ca\u30eb\u30c4\u30fc\u30eb\u3002\u97f3\u6e90\u5206\u96e2\u3001\u30e9\u30a6\u30c9\u30cd\u30b9\u89e3\u6790\u3001\u30ce\u30a4\u30ba\u9664\u53bb\u3002\u3059\u3079\u3066\u304c\u3001\u3042\u306a\u305f\u306e\u97f3\u697d\u306e\u51fa\u767a\u70b9\u3002',
-                'From hand-soldered microphones to browser-based audio processing. 15+ professional tools: source separation, loudness analysis, noise reduction. Everything starts with capturing your sound.',
-                'Desde micr\u00f3fonos soldados a mano hasta procesamiento de audio en el navegador. 15+ herramientas profesionales: separaci\u00f3n de fuentes, an\u00e1lisis de volumen, reducci\u00f3n de ruido. Todo empieza capturando tu sonido.'
-              ),
-            },
-            {
-              num: '02',
-              title: t('\u6210\u9577\u3059\u308b', 'Grow', 'Crece'),
-              body: t(
-                '\u30ec\u30c3\u30b9\u30f3\u306e\u66f8\u304d\u8d77\u3053\u3057\u3001\u548c\u58f0\u89e3\u6790\u3001\u30d4\u30c3\u30c1\u7cbe\u5ea6\u306e\u8ffd\u8de1\u3001\u7df4\u7fd2\u30ed\u30b0\u3002\u3042\u306a\u305f\u306e\u6210\u9577\u306f\u3001\u3059\u3079\u3066\u30c7\u30fc\u30bf\u306b\u306a\u308b\u3002\u53bb\u5e74\u306e\u81ea\u5206\u3068\u4eca\u306e\u81ea\u5206\u3092\u3001\u5ba2\u89b3\u7684\u306b\u6bd4\u3079\u3089\u308c\u308b\u3002',
-                'Lesson transcription, harmony analysis, pitch tracking, practice logs. Your growth becomes data. Compare yourself today with yourself a year ago \u2014 objectively.',
-                'Transcripci\u00f3n de lecciones, an\u00e1lisis arm\u00f3nico, seguimiento de afinaci\u00f3n, registros de pr\u00e1ctica. Tu crecimiento se convierte en datos. Comp\u00e1rate hoy con hace un a\u00f1o \u2014 objetivamente.'
-              ),
-            },
-            {
-              num: '03',
-              title: t('\u898b\u3064\u304b\u308b', 'Be Discovered', 'S\u00e9 Descubierto'),
-              body: t(
-                '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u3092\u516c\u958b\u3057\u3001\u6f14\u594f\u3092\u5171\u6709\u3057\u3001\u4e16\u754c\u4e2d\u306e\u97f3\u697d\u5bb6\u3068\u3064\u306a\u304c\u308b\u3002\u5171\u6f14\u76f8\u624b\u306e\u767a\u898b\u3001\u30b9\u30ab\u30a6\u30c8\u6a5f\u80fd\u3001\u591a\u8a00\u8a9e\u5bfe\u5fdc\u3002\u624d\u80fd\u304c\u6b63\u5f53\u306b\u8a55\u4fa1\u3055\u308c\u308b\u5834\u6240\u3092\u3002',
-                'Publish your profile, share performances, connect with musicians worldwide. Find collaborators, get scouted, communicate across languages. A place where talent gets the recognition it deserves.',
-                'Publica tu perfil, comparte actuaciones, con\u00e9ctate con m\u00fasicos de todo el mundo. Encuentra colaboradores, s\u00e9 descubierto, comun\u00edcate en varios idiomas. Un lugar donde el talento recibe el reconocimiento que merece.'
-              ),
-            },
-          ] as const).map((pillar) => (
-            <div key={pillar.num} style={{
-              padding: 'clamp(2rem, 4vw, 3rem)',
-              backgroundColor: '#fff',
-              border: '1px solid rgba(0,0,0,0.04)',
-              transition: 'box-shadow 0.4s ease',
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 30px -8px rgba(0,0,0,0.06)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <span style={{
-                fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 200,
-                color: 'rgba(2,132,199,0.12)', display: 'block',
-                marginBottom: '0.3rem', fontFamily: sans, lineHeight: 1,
-              }}>
-                {pillar.num}
-              </span>
-              <h3 style={{
-                fontSize: 'clamp(1.1rem, 1.8vw, 1.3rem)', fontWeight: 400,
-                letterSpacing: '0.1em', margin: '0 0 1.2rem', color: '#111',
-              }}>
-                {pillar.title}
-              </h3>
-              <p style={{
-                color: '#666', fontSize: 'clamp(0.83rem, 1.1vw, 0.9rem)',
-                lineHeight: 2.1, fontFamily: sans, margin: 0,
-              }}>
-                {pillar.body}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          6. APPS — Membership + Free
-      ══════════════════════════════════════════ */}
-      <section id="technology" style={{
-        padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 'clamp(3rem, 6vw, 5rem)' }}>
-          <p style={{
-            fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)', fontWeight: 500, color: '#999',
-            letterSpacing: '0.4em', textTransform: 'uppercase',
-            marginBottom: 'clamp(1rem, 2vw, 1.5rem)', fontFamily: sans,
-          }}>Apps</p>
-          <h2 style={{
-            fontSize: 'clamp(1.4rem, 3.8vw, 2.4rem)', fontWeight: 300,
-            letterSpacing: '0.1em', lineHeight: 1.5, margin: 0, color: '#111',
-          }}>
-            {t('\u3042\u306a\u305f\u306e\u6b66\u5668\u5eab\u3002',
-               'Your arsenal.',
-               'Tu arsenal.')}
-          </h2>
-        </div>
-
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          {/* Pro tier */}
-          <div style={{
-            marginBottom: 'clamp(2rem, 4vw, 3rem)',
-            padding: 'clamp(2rem, 4vw, 3rem)',
-            background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #0c4a6e 100%)',
-            color: '#fff', borderRadius: '6px',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{
-              position: 'absolute', top: 0, right: 0, width: '40%', height: '100%',
-              background: 'radial-gradient(circle at 80% 20%, rgba(2,132,199,0.15) 0%, transparent 60%)',
-              pointerEvents: 'none',
-            }} />
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: 'clamp(1rem, 2vw, 1.5rem)', flexWrap: 'wrap' }}>
-                <span style={{
-                  fontSize: '0.62rem', fontWeight: 700,
-                  backgroundColor: 'rgba(255,255,255,0.12)',
-                  padding: '0.3rem 1rem', borderRadius: '50px',
-                  letterSpacing: '0.15em', fontFamily: sans,
-                }}>PRO MEMBERSHIP</span>
-                <span style={{
-                  fontSize: '0.62rem', fontWeight: 700,
-                  background: 'linear-gradient(135deg, #f59e0b, #f97316)',
-                  color: '#000', padding: '0.3rem 1rem', borderRadius: '50px',
-                  letterSpacing: '0.12em', fontFamily: sans,
-                }}>COMING SOON</span>
-              </div>
-              <p style={{
-                fontSize: 'clamp(0.88rem, 1.2vw, 0.95rem)',
-                color: 'rgba(255,255,255,0.6)', fontFamily: sans,
-                lineHeight: 1.8, margin: '0 0 clamp(1.5rem, 3vw, 2rem)',
-                maxWidth: '600px',
-              }}>
-                {t('AI\u99c6\u52d5\u306e\u30b5\u30fc\u30d0\u30fc\u51e6\u7406\u30a2\u30d7\u30ea\u3002\u97f3\u6e90\u5206\u96e2\u3001\u66f8\u304d\u8d77\u3053\u3057\u3001\u548c\u58f0\u89e3\u6790\u3002\u30d7\u30ed\u30e1\u30f3\u30d0\u30fc\u306f\u7121\u5236\u9650\u3002',
-                   'AI-powered server apps. Source separation, transcription, harmony analysis. Unlimited for Pro members.',
-                   'Apps de servidor impulsadas por IA. Separaci\u00f3n de fuentes, transcripci\u00f3n, an\u00e1lisis arm\u00f3nico. Ilimitado para miembros Pro.')}
-              </p>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-                gap: 'clamp(1rem, 2vw, 1.5rem)',
-              }}>
-                {([
-                  { name: 'KUON SEPARATOR',  desc: t('\u697d\u66f2\u3092\u30dc\u30fc\u30ab\u30eb\u30fb\u30c9\u30e9\u30e0\u30fb\u30d9\u30fc\u30b9\u30fb\u305d\u306e\u4ed6\u306b\u81ea\u52d5\u5206\u96e2', 'Auto-separate songs into vocals, drums, bass & more', 'Separa canciones en voces, bater\u00eda, bajo y m\u00e1s') },
-                  { name: 'KUON SUBTITLE',   desc: t('\u6f14\u594f\u52d5\u753b\u306b\u591a\u8a00\u8a9e\u5b57\u5e55\u3092\u81ea\u52d5\u751f\u6210', 'Auto-generate multilingual subtitles for videos', 'Genera subt\u00edtulos multiling\u00fces autom\u00e1ticamente') },
-                  { name: 'KUON HARMONY',    desc: t('\u30b3\u30fc\u30c9\u9032\u884c\u3092\u30ed\u30fc\u30de\u6570\u5b57\u3067\u81ea\u52d5\u89e3\u6790', 'Automatic chord analysis in Roman numerals', 'An\u00e1lisis arm\u00f3nico autom\u00e1tico en n\u00fameros romanos') },
-                  { name: 'KUON TRANSCRIPT', desc: t('\u30ec\u30c3\u30b9\u30f3\u306e\u9332\u97f3\u3092AI\u304c\u66f8\u304d\u8d77\u3053\u3057', 'AI-powered lesson transcription', 'Transcripci\u00f3n de lecciones con IA') },
-                  { name: 'KUON KARAOKE',    desc: t('\u30dc\u30fc\u30ab\u30eb\u9664\u53bb\u3067\u4f34\u594f\u30c8\u30e9\u30c3\u30af\u3092\u751f\u6210', 'Remove vocals to create accompaniment tracks', 'Elimina voces para crear pistas de acompa\u00f1amiento') },
-                  { name: 'KUON EXERCISE',   desc: t('\u548c\u58f0\u8ab2\u984c\u3092\u81ea\u52d5\u751f\u6210\u30fb\u81ea\u52d5\u63a1\u70b9', 'Auto-generate & auto-grade harmony exercises', 'Genera y califica ejercicios de armon\u00eda') },
-                ] as const).map((app) => (
-                  <div key={app.name} style={{
-                    padding: 'clamp(1rem, 2vw, 1.5rem)',
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)',
-                  }}>
-                    <h4 style={{
-                      fontSize: 'clamp(0.8rem, 1vw, 0.88rem)',
-                      fontWeight: 600, letterSpacing: '0.06em',
-                      margin: '0 0 0.4rem', fontFamily: sans,
-                    }}>
-                      {app.name}
-                    </h4>
-                    <p style={{
-                      margin: 0, color: 'rgba(255,255,255,0.5)',
-                      fontSize: 'clamp(0.75rem, 0.95vw, 0.82rem)',
-                      lineHeight: 1.7, fontFamily: sans,
-                    }}>
-                      {app.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Free tools */}
-          <p style={{
-            fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)', fontWeight: 500, color: '#999',
-            letterSpacing: '0.3em', textTransform: 'uppercase',
-            marginBottom: '1rem', fontFamily: sans,
-          }}>
-            {t('\u7121\u6599\u30c4\u30fc\u30eb \u2014 \u30d6\u30e9\u30a6\u30b6\u3067\u3001\u3059\u3050\u306b\u3002', 'Free Tools \u2014 In your browser, instantly.', 'Herramientas Gratuitas \u2014 En tu navegador.')}
-          </p>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
-            gap: '1px', backgroundColor: 'rgba(0,0,0,0.04)',
-            border: '1px solid rgba(0,0,0,0.04)',
-          }}>
-            {([
-              { name: 'NORMALIZE',    desc: t('\u30e9\u30a6\u30c9\u30cd\u30b9\u6b63\u898f\u5316', 'Loudness normalization', 'Normalizaci\u00f3n'), href: '/normalize-lp' },
-              { name: 'MASTER CHECK', desc: t('\u30e9\u30a6\u30c9\u30cd\u30b9\u89e3\u6790', 'Loudness analysis', 'An\u00e1lisis'), href: '/master-check-lp' },
-              { name: 'DSD PLAYER',   desc: t('DSD\u518d\u751f\u30fb\u5909\u63db', 'DSD playback', 'Reproductor DSD'), href: '/dsd-lp' },
-              { name: 'PLAYER',       desc: t('24h MP3\u5171\u6709', '24h MP3 sharing', 'Compartir MP3'), href: '/player-lp' },
-              { name: 'DECLIPPER',    desc: t('\u30af\u30ea\u30c3\u30d4\u30f3\u30b0\u4fee\u5fa9', 'Clipping repair', 'Reparaci\u00f3n'), href: '/declipper' },
-              { name: 'CONVERTER',    desc: t('WAV\u2192MP3', 'WAV to MP3', 'WAV a MP3'), href: '/converter' },
-              { name: 'RESAMPLER',    desc: t('\u30b5\u30f3\u30d7\u30eb\u30ec\u30fc\u30c8\u5909\u63db', 'Sample rate', 'Remuestreo'), href: '/resampler' },
-              { name: 'NOISE REDUCE', desc: t('\u30ce\u30a4\u30ba\u9664\u53bb', 'Noise reduction', 'Reducci\u00f3n'), href: '/noise-reduction' },
-            ] as const).map((tool) => (
-              <Link key={tool.name} href={tool.href} style={{
-                padding: 'clamp(0.9rem, 1.8vw, 1.3rem) clamp(1rem, 2vw, 1.5rem)',
-                backgroundColor: '#fff', textDecoration: 'none', display: 'block',
-                transition: 'background-color 0.2s',
-              }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0f9ff'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; }}
-              >
-                <span style={{ fontSize: 'clamp(0.78rem, 1vw, 0.85rem)', fontWeight: 600, color: '#222', fontFamily: sans, letterSpacing: '0.04em' }}>
-                  {tool.name}
-                </span>
-                <span style={{ display: 'block', fontSize: 'clamp(0.72rem, 0.9vw, 0.78rem)', color: '#aaa', fontFamily: sans, marginTop: '0.2rem' }}>
-                  {tool.desc}
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: 'clamp(2rem, 4vw, 3rem)' }}>
-            <Link href="/audio-apps" style={{
-              color: ACCENT, fontSize: 'clamp(0.82rem, 1.05vw, 0.88rem)',
-              letterSpacing: '0.08em', textDecoration: 'none', fontFamily: sans,
-            }}>
-              {t('\u3059\u3079\u3066\u306e\u30a2\u30d7\u30ea\u3092\u898b\u308b', 'View All Apps', 'Ver Todas las Apps')} &rarr;
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          7. MICROPHONE — 物理プロダクト
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)', fontWeight: 500, color: '#999',
-          letterSpacing: '0.4em', textTransform: 'uppercase',
-          marginBottom: 'clamp(1rem, 2vw, 1.5rem)', fontFamily: sans,
-        }}>Microphone</p>
-        <h2 style={{
-          fontSize: 'clamp(1.4rem, 3.8vw, 2.4rem)', fontWeight: 300,
-          letterSpacing: '0.1em', lineHeight: 1.6, margin: '0 0 1rem', color: '#111',
-        }}>
-          {t('\u3042\u306a\u305f\u306e\u97f3\u3092\u3001\u4e16\u754c\u306b\u3002',
-             'Your sound, to the world.',
-             'Tu sonido, al mundo.')}
-        </h2>
-        <p style={{
-          color: '#888', fontSize: 'clamp(0.85rem, 1.2vw, 0.95rem)',
-          fontFamily: sans, lineHeight: 1.8, maxWidth: '480px', margin: '0 auto clamp(3rem, 6vw, 5rem)',
-        }}>
-          {t('\u4e00\u672c\u4e00\u672c\u3001\u624b\u306f\u3093\u3060\u3067\u3002\u6570\u5341\u4e07\u5186\u306e\u30de\u30a4\u30af\u3068\u540c\u7b49\u4ee5\u4e0a\u306e\u97f3\u8cea\u3092\u3001\u624b\u306e\u5c4a\u304f\u4fa1\u683c\u3067\u3002',
-             'Hand-soldered, one by one. Sound rivaling microphones costing thousands, at a price you can reach.',
-             'Soldados a mano, uno por uno. Sonido comparable a micr\u00f3fonos de miles, a un precio accesible.')}
-        </p>
-
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: 'clamp(2rem, 4vw, 3rem)',
-          justifyContent: 'center', maxWidth: '900px', margin: '0 auto',
-        }}>
-          {([
-            {
-              name: 'P-86S', badge: 'BESTSELLER', badgeColor: '#f59e0b',
-              sub: t('\u30b9\u30c6\u30ec\u30aa\u30de\u30a4\u30af\u30ed\u30d5\u30a9\u30f3', 'Stereo Microphone', 'Micr\u00f3fono Est\u00e9reo'),
-              price: t('\u00a516,900', '$99', '\u20ac92'),
-              currency: t('\u7a0e\u8fbc', 'USD', 'EUR'),
-              image: '/IMG_20260211_080312.png',
-              desc: t('\u30d7\u30e9\u30b0\u30a4\u30f3\u30d1\u30ef\u30fc\u5bfe\u5fdc\u3002\u30b9\u30de\u30db\u306b\u633f\u3059\u3060\u3051\u3067\u3001\u30d7\u30ed\u306e\u9332\u97f3\u3092\u3002', 'Plug-in power. Just plug into your phone for pro recording.', 'Alimentaci\u00f3n plug-in. Solo con\u00e9ctalo a tu tel\u00e9fono.'),
-            },
-            {
-              name: 'X-86S', badge: 'PRO', badgeColor: '#111',
-              sub: t('\u30d7\u30ed\u30d5\u30a7\u30c3\u30b7\u30e7\u30ca\u30eb\u30b9\u30c6\u30ec\u30aa\u30de\u30a4\u30af\u30ed\u30d5\u30a9\u30f3', 'Professional Stereo Microphone', 'Micr\u00f3fono Est\u00e9reo Profesional'),
-              price: t('\u00a539,600', '$279', '\u20ac259'),
-              currency: t('\u7a0e\u8fbc', 'USD', 'EUR'),
-              image: '/mic02.jpeg',
-              desc: t('48V\u30d5\u30a1\u30f3\u30bf\u30e0\u96fb\u6e90\u3002\u30b9\u30bf\u30b8\u30aa\u54c1\u8cea\u3092\u30d5\u30a3\u30fc\u30eb\u30c9\u3067\u3002', '48V phantom power. Studio quality in the field.', 'Phantom 48V. Calidad de estudio en el campo.'),
-            },
-          ] as const).map((mic) => (
-            <div key={mic.name} style={{
-              flex: '1 1 340px', maxWidth: '420px',
-              backgroundColor: '#fff', border: '1px solid rgba(0,0,0,0.05)',
-              padding: 'clamp(2.5rem, 5vw, 3.5rem) clamp(2rem, 4vw, 3rem)',
-              textAlign: 'center',
-              transition: 'transform 0.4s ease, box-shadow 0.4s ease',
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0,0,0,0.08)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <span style={{
-                display: 'inline-block', fontSize: '0.6rem', fontWeight: 700, color: '#fff',
-                backgroundColor: mic.badgeColor, padding: '0.2rem 0.8rem',
-                borderRadius: '50px', letterSpacing: '0.12em', fontFamily: sans,
-                marginBottom: '1.5rem',
-              }}>{mic.badge}</span>
-              <div style={{ position: 'relative', width: '100%', height: 'clamp(180px, 28vw, 260px)', marginBottom: '1.5rem' }}>
-                <Image src={mic.image} alt={mic.name} fill style={{ objectFit: 'contain' }} unoptimized sizes="400px" />
-              </div>
-              <h3 style={{ fontSize: 'clamp(1.3rem, 2.2vw, 1.6rem)', fontWeight: 300, letterSpacing: '0.15em', margin: '0 0 0.3rem', color: '#111' }}>
-                {mic.name}
-              </h3>
-              <p style={{ color: '#999', fontSize: 'clamp(0.72rem, 0.9vw, 0.78rem)', fontFamily: sans, margin: '0 0 1rem' }}>
-                {mic.sub}
-              </p>
-              <p style={{ color: '#666', fontSize: 'clamp(0.82rem, 1.05vw, 0.88rem)', fontFamily: sans, lineHeight: 1.7, margin: '0 0 1.5rem' }}>
-                {mic.desc}
-              </p>
-              <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 300, color: '#111', letterSpacing: '0.06em', margin: '0 0 0.2rem' }}>
-                {mic.price}
-              </p>
-              <p style={{ color: '#bbb', fontSize: '0.72rem', fontFamily: sans, margin: '0 0 1.5rem' }}>
-                {mic.currency}
-              </p>
-              <Link href="/microphone" style={{
-                display: 'inline-block', padding: '0.85rem 2.2rem',
-                border: '1px solid #222', color: '#222', fontSize: '0.8rem',
-                letterSpacing: '0.1em', textDecoration: 'none', fontFamily: sans,
-                borderRadius: '50px', transition: 'all 0.3s ease',
-              }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#222'; e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#222'; }}
-              >
-                {t('\u8a66\u8074\u3059\u308b', 'Listen', 'Escuchar')}
-              </Link>
-            </div>
-          ))}
-        </div>
-
-        <p style={{
-          marginTop: 'clamp(2.5rem, 5vw, 3.5rem)',
-          color: '#bbb', fontSize: 'clamp(0.78rem, 1vw, 0.85rem)',
-          fontFamily: sans, letterSpacing: '0.04em',
-        }}>
-          {t('\u30de\u30a4\u30af\u8cfc\u5165\u8005\u306f\u30e1\u30f3\u30d0\u30fc\u30b7\u30c3\u30d73\u30f6\u6708\u7121\u6599\u3002',
-             'Microphone buyers get 3 months free membership.',
-             'Compradores de micr\u00f3fonos: 3 meses de membres\u00eda gratis.')}
-        </p>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          8. DISCOVER — スカウト・バッジ・承認
-      ══════════════════════════════════════════ */}
-      <section id="discover" style={{
-        padding: 'clamp(6rem, 14vw, 10rem) clamp(1.5rem, 5vw, 3rem)',
-        background: 'linear-gradient(180deg, #0c0c0c 0%, #111827 100%)',
-        color: '#fff', textAlign: 'center',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)',
-          width: '600px', height: '600px',
-          background: 'radial-gradient(circle, rgba(2,132,199,0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '750px', margin: '0 auto' }}>
-          <p style={{
-            fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)',
-            fontWeight: 500, color: 'rgba(255,255,255,0.4)',
-            letterSpacing: '0.4em', textTransform: 'uppercase',
-            marginBottom: 'clamp(1.5rem, 3vw, 2rem)', fontFamily: sans,
-          }}>
-            Discover
-          </p>
-          <h2 style={{
-            fontSize: 'clamp(1.4rem, 4vw, 2.6rem)',
-            fontWeight: 300, letterSpacing: '0.12em',
-            lineHeight: 1.6, margin: '0 0 clamp(1.5rem, 3vw, 2rem)',
-          }}>
-            {t('\u805e\u304b\u308c\u308b\u5834\u6240\u304c\u3001\n\u3042\u306a\u305f\u3092\u5909\u3048\u308b\u3002',
-               'Being heard\nchanges everything.',
-               'Ser escuchado\nlo cambia todo.')}
-          </h2>
-          <p style={{
-            color: 'rgba(255,255,255,0.5)',
-            fontSize: 'clamp(0.88rem, 1.3vw, 1rem)',
-            fontFamily: sans, lineHeight: 2.0,
-            margin: '0 0 clamp(3rem, 6vw, 5rem)',
-          }}>
-            {t('\u7a7a\u97f3\u958b\u767a\u306e\u30d7\u30ed\u30e1\u30f3\u30d0\u30fc\u306f\u3001\u305f\u3060\u30c4\u30fc\u30eb\u3092\u4f7f\u3046\u3060\u3051\u3067\u306f\u306a\u3044\u3002\n\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u3092\u516c\u958b\u3057\u3001\u6f14\u594f\u3092\u5171\u6709\u3057\u3001\u30b9\u30ab\u30a6\u30c8\u306e\u76ee\u306b\u7559\u307e\u308b\u3002\n\u624d\u80fd\u3092\u6301\u3063\u305f\u97f3\u697d\u5bb6\u304c\u3001\u6b63\u5f53\u306b\u8a55\u4fa1\u3055\u308c\u308b\u4ed5\u7d44\u307f\u3002',
-               'Pro members don\u2019t just use tools.\nPublish your profile, share performances, and catch the eye of scouts.\nA system where talented musicians get the recognition they deserve.',
-               'Los miembros Pro no solo usan herramientas.\nPublica tu perfil, comparte actuaciones y capta la atenci\u00f3n de scouts.\nUn sistema donde los m\u00fasicos talentosos reciben el reconocimiento que merecen.')}
-          </p>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
-            gap: 'clamp(1.5rem, 3vw, 2rem)',
-            textAlign: 'center',
-          }}>
-            {([
-              {
-                icon: '\u2605',
-                title: t('\u30d7\u30ed\u30d0\u30c3\u30b8', 'Pro Badge', 'Insignia Pro'),
-                desc: t('\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u306b\u8a8d\u5b9a\u30d0\u30c3\u30b8\u3002\n\u300c\u3053\u306e\u4eba\u306f\u672c\u6c17\u3060\u300d\u3068\u3044\u3046\u8a3c\u660e\u3002', 'A verified badge on your profile.\nProof that you\u2019re serious.', 'Una insignia verificada en tu perfil.\nPrueba de que vas en serio.'),
-              },
-              {
-                icon: '\u{1F50D}',
-                title: t('\u30b9\u30ab\u30a6\u30c8\u6a5f\u80fd', 'Scout Search', 'B\u00fasqueda Scout'),
-                desc: t('\u697d\u5668\u30fb\u5730\u57df\u30fb\u30b9\u30bf\u30a4\u30eb\u3067\u691c\u7d22\u3002\n\u5171\u6f14\u76f8\u624b\u3082\u3001\u30c1\u30e3\u30f3\u30b9\u3082\u898b\u3064\u304b\u308b\u3002', 'Search by instrument, region, style.\nFind collaborators and opportunities.', 'Busca por instrumento, regi\u00f3n, estilo.\nEncuentra colaboradores y oportunidades.'),
-              },
-              {
-                icon: '\u{1F310}',
-                title: t('\u30b0\u30ed\u30fc\u30d0\u30eb\u5bfe\u5fdc', 'Global Reach', 'Alcance Global'),
-                desc: t('\u591a\u8a00\u8a9e\u5b57\u5e55\u3001\u81ea\u52d5\u7ffb\u8a33\u3002\n\u8a00\u8449\u306e\u58c1\u3092\u8d8a\u3048\u3066\u3001\u97f3\u697d\u3067\u3064\u306a\u304c\u308b\u3002', 'Multilingual subtitles, auto-translation.\nConnect through music, beyond language.', 'Subt\u00edtulos multiling\u00fces, traducci\u00f3n autom\u00e1tica.\nCon\u00e9ctate a trav\u00e9s de la m\u00fasica.'),
-              },
-            ] as const).map((item) => (
-              <div key={item.title} style={{ padding: 'clamp(1.5rem, 3vw, 2rem)' }}>
-                <div style={{ fontSize: 'clamp(1.5rem, 2.5vw, 2rem)', marginBottom: '0.8rem' }}>
-                  {item.icon}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {faqs.map((faq, idx) => (
+            <div key={idx} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+              <button onClick={() => setFaqOpen(faqOpen === idx ? null : idx)} style={{ width: '100%', padding: '1.5rem', background: 'white', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; }}>
+                <span style={{ fontWeight: 500, color: '#0f172a', fontSize: '1rem' }}>{t5(faq.q, lang)}</span>
+                <span style={{ color: ACCENT, fontSize: '1.2rem', transition: 'all 0.3s ease', transform: faqOpen === idx ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+              </button>
+              {faqOpen === idx && (
+                <div style={{ padding: '0 1.5rem 1.5rem 1.5rem', color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, borderTop: '1px solid #e2e8f0', wordBreak: 'keep-all' }}>
+                  {t5(faq.a, lang)}
                 </div>
-                <h4 style={{
-                  fontSize: 'clamp(0.88rem, 1.1vw, 0.95rem)',
-                  fontWeight: 500, letterSpacing: '0.08em',
-                  margin: '0 0 0.6rem', fontFamily: sans,
-                }}>
-                  {item.title}
-                </h4>
-                <p style={{
-                  color: 'rgba(255,255,255,0.45)',
-                  fontSize: 'clamp(0.78rem, 1vw, 0.85rem)',
-                  lineHeight: 1.8, fontFamily: sans, margin: 0,
-                }}>
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          9. PRICING — 3 tiers
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 5vw, 3rem)',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)', fontWeight: 500, color: '#999',
-          letterSpacing: '0.4em', textTransform: 'uppercase',
-          marginBottom: 'clamp(1rem, 2vw, 1.5rem)', fontFamily: sans,
-        }}>Membership</p>
-        <h2 style={{
-          fontSize: 'clamp(1.4rem, 3.8vw, 2.4rem)', fontWeight: 300,
-          letterSpacing: '0.1em', lineHeight: 1.6, margin: '0 0 clamp(3.5rem, 7vw, 5rem)', color: '#111',
-        }}>
-          {t('\u7121\u6599\u3067\u59cb\u3081\u3066\u3001\n\u672c\u6c17\u306b\u306a\u3063\u305f\u3089\u4e0a\u3092\u76ee\u6307\u305d\u3046\u3002',
-             'Start free.\nLevel up when you\u2019re ready.',
-             'Empieza gratis.\nSube de nivel cuando est\u00e9s listo.')}
-        </h2>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
-          gap: 'clamp(1rem, 2.5vw, 1.5rem)',
-          maxWidth: '1050px', margin: '0 auto',
-          alignItems: 'start',
-        }}>
-          {/* Free */}
-          <div style={{
-            padding: 'clamp(2rem, 4vw, 3rem) clamp(1.5rem, 3vw, 2rem)',
-            border: '1px solid rgba(0,0,0,0.08)', backgroundColor: '#fff', textAlign: 'left',
-          }}>
-            <h4 style={{ fontSize: '0.88rem', fontWeight: 600, letterSpacing: '0.15em', margin: '0 0 0.3rem', color: '#111', fontFamily: sans }}>FREE</h4>
-            <p style={{ fontSize: 'clamp(2rem, 4vw, 2.5rem)', fontWeight: 200, color: '#111', margin: '0.5rem 0 1.8rem', fontFamily: sans }}>&yen;0</p>
-            {([
-              t('\u30d6\u30e9\u30a6\u30b6\u30c4\u30fc\u30eb\u5168\u3066\u7121\u5236\u9650', 'All browser tools \u2014 unlimited', 'Herramientas navegador \u2014 ilimitado'),
-              t('\u30b5\u30fc\u30d0\u30fc\u30a2\u30d7\u30ea \u6708\u00d73', 'Server apps \u2014 3/month', 'Apps servidor \u2014 3/mes'),
-              t('\u30ae\u30e3\u30e9\u30ea\u30fc\u95b2\u89a7', 'Gallery access', 'Acceso a galer\u00eda'),
-            ] as const).map((item, i) => (
-              <p key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', margin: '0 0 0.7rem', fontSize: 'clamp(0.8rem, 1vw, 0.86rem)', color: '#666', fontFamily: sans, lineHeight: 1.6 }}>
-                <span style={{ color: '#ddd', flexShrink: 0 }}>&mdash;</span> {item}
-              </p>
-            ))}
-          </div>
-
-          {/* Student */}
-          <div style={{
-            padding: 'clamp(2rem, 4vw, 3rem) clamp(1.5rem, 3vw, 2rem)',
-            border: '2px solid ' + ACCENT, backgroundColor: '#fff', textAlign: 'left',
-            position: 'relative',
-          }}>
-            <div style={{
-              position: 'absolute', top: 0, right: 'clamp(1rem, 2vw, 1.5rem)',
-              backgroundColor: ACCENT, color: '#fff',
-              padding: '0.3rem 0.9rem', fontSize: '0.58rem',
-              fontWeight: 700, letterSpacing: '0.12em', fontFamily: sans,
-            }}>
-              {t('\u304a\u3059\u3059\u3081', 'POPULAR', 'POPULAR')}
-            </div>
-            <h4 style={{ fontSize: '0.88rem', fontWeight: 600, letterSpacing: '0.15em', margin: '0 0 0.3rem', color: '#111', fontFamily: sans }}>STUDENT</h4>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', margin: '0.5rem 0 0.3rem' }}>
-              <span style={{ fontSize: 'clamp(2rem, 4vw, 2.5rem)', fontWeight: 200, color: '#111', fontFamily: sans }}>{t('\u00a5480', '$4', '\u20ac4')}</span>
-              <span style={{ fontSize: '0.85rem', color: '#888', fontFamily: sans }}>{t('/\u6708', '/mo', '/mes')}</span>
-            </div>
-            <p style={{ fontSize: '0.75rem', color: ACCENT, fontFamily: sans, margin: '0 0 1.8rem' }}>
-              {t('\u5e74\u6255\u3044\u00a54,800\uff082\u30f6\u6708\u7121\u6599\uff09', 'Annual \u00a54,800 (2 months free)', 'Anual \u00a54,800 (2 meses gratis)')}
-            </p>
-            {([
-              { text: t('Free\u306e\u5168\u6a5f\u80fd', 'Everything in Free', 'Todo lo de Free'), bold: false },
-              { text: t('\u30b5\u30fc\u30d0\u30fc\u30a2\u30d7\u30ea \u7121\u5236\u9650', 'Server apps \u2014 unlimited', 'Apps servidor \u2014 ilimitado'), bold: true },
-              { text: t('\u7df4\u7fd2\u30ed\u30b0\u30fb\u6210\u9577\u30c7\u30fc\u30bf', 'Practice log & growth data', 'Registro y datos de crecimiento'), bold: true },
-              { text: t('\u30ec\u30c3\u30b9\u30f3\u30ce\u30fc\u30c8\u4fdd\u5b58', 'Lesson note archive', 'Archivo de notas'), bold: true },
-              { text: t('\u30b3\u30df\u30e5\u30cb\u30c6\u30a3\u30fbSNS\u6a5f\u80fd', 'Community & social features', 'Comunidad y funciones sociales'), bold: true },
-              { text: t('\u6708\u00d71 \u30aa\u30f3\u30e9\u30a4\u30f3\u30af\u30ea\u30cb\u30c3\u30af', 'Monthly online clinic', 'Cl\u00ednica mensual'), bold: true },
-            ] as const).map((item, i) => (
-              <p key={i} style={{
-                display: 'flex', alignItems: 'flex-start', gap: '0.6rem', margin: '0 0 0.7rem',
-                fontSize: 'clamp(0.8rem, 1vw, 0.86rem)',
-                color: item.bold ? '#222' : '#999',
-                fontWeight: item.bold ? 500 : 400,
-                fontFamily: sans, lineHeight: 1.6,
-              }}>
-                <span style={{ color: ACCENT, flexShrink: 0 }}>+</span> {item.text}
-              </p>
-            ))}
-          </div>
-
-          {/* Pro */}
-          <div style={{
-            padding: 'clamp(2rem, 4vw, 3rem) clamp(1.5rem, 3vw, 2rem)',
-            background: 'linear-gradient(180deg, #0c0c0c 0%, #1a1a2e 100%)',
-            color: '#fff', textAlign: 'left',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{
-              position: 'absolute', top: 0, right: 'clamp(1rem, 2vw, 1.5rem)',
-              background: 'linear-gradient(135deg, #f59e0b, #f97316)',
-              color: '#000', padding: '0.3rem 0.9rem', fontSize: '0.58rem',
-              fontWeight: 700, letterSpacing: '0.12em', fontFamily: sans,
-            }}>PRO</div>
-            <h4 style={{ fontSize: '0.88rem', fontWeight: 600, letterSpacing: '0.15em', margin: '0 0 0.3rem', fontFamily: sans }}>PRO</h4>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', margin: '0.5rem 0 0.3rem' }}>
-              <span style={{ fontSize: 'clamp(2rem, 4vw, 2.5rem)', fontWeight: 200, fontFamily: sans }}>{t('\u00a52,980', '$22', '\u20ac20')}</span>
-              <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', fontFamily: sans }}>{t('/\u6708', '/mo', '/mes')}</span>
-            </div>
-            <p style={{ fontSize: '0.75rem', color: '#f59e0b', fontFamily: sans, margin: '0 0 1.8rem' }}>
-              {t('\u5e74\u6255\u3044\u00a529,800\uff082\u30f6\u6708\u7121\u6599\uff09', 'Annual \u00a529,800 (2 months free)', 'Anual \u00a529,800 (2 meses gratis)')}
-            </p>
-            {([
-              { text: t('Student\u306e\u5168\u6a5f\u80fd', 'Everything in Student', 'Todo lo de Student'), bold: false },
-              { text: t('\u30d7\u30ed\u30d0\u30c3\u30b8\uff08\u8a8d\u5b9a\u30de\u30fc\u30af\uff09', 'Pro Badge (verified mark)', 'Insignia Pro (marca verificada)'), bold: true },
-              { text: t('\u30b9\u30ab\u30a6\u30c8\u691c\u7d22\u3067\u512a\u5148\u8868\u793a', 'Priority in scout search', 'Prioridad en b\u00fasqueda scout'), bold: true },
-              { text: t('\u30ae\u30e3\u30e9\u30ea\u30fc\u512a\u5148\u63b2\u8f09', 'Priority gallery listing', 'Listado prioritario en galer\u00eda'), bold: true },
-              { text: t('\u30b9\u30b1\u30b8\u30e5\u30fc\u30eb\u7ba1\u7406', 'Schedule management', 'Gesti\u00f3n de agenda'), bold: true },
-              { text: t('\u6f14\u594f\u30d5\u30a3\u30fc\u30c9\u30d0\u30c3\u30af\u512a\u5148\u5bfe\u5fdc', 'Priority performance feedback', 'Retroalimentaci\u00f3n prioritaria'), bold: true },
-              { text: t('\u300c\u7a7a\u97f3\u958b\u767a\u8a8d\u5b9a\u30a2\u30fc\u30c6\u30a3\u30b9\u30c8\u300d\u30ed\u30b4\u4f7f\u7528\u6a29', '"Kuon Certified Artist" logo usage', 'Uso del logo "Artista Certificado Kuon"'), bold: true },
-            ] as const).map((item, i) => (
-              <p key={i} style={{
-                display: 'flex', alignItems: 'flex-start', gap: '0.6rem', margin: '0 0 0.7rem',
-                fontSize: 'clamp(0.8rem, 1vw, 0.86rem)',
-                color: item.bold ? '#fff' : 'rgba(255,255,255,0.45)',
-                fontWeight: item.bold ? 500 : 400,
-                fontFamily: sans, lineHeight: 1.6,
-              }}>
-                <span style={{ color: '#f59e0b', flexShrink: 0 }}>+</span> {item.text}
-              </p>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          10. JOURNEY — ライフサイクル（タイムライン風）
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)', fontWeight: 500, color: '#999',
-          letterSpacing: '0.4em', textTransform: 'uppercase',
-          marginBottom: 'clamp(1rem, 2vw, 1.5rem)', fontFamily: sans,
-        }}>
-          Your Journey
-        </p>
-        <h2 style={{
-          fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', fontWeight: 300,
-          letterSpacing: '0.1em', lineHeight: 1.6, margin: '0 0 clamp(3.5rem, 7vw, 5rem)', color: '#111',
-          wordBreak: 'keep-all',
-        }}>
-          {t('\u97f3\u697d\u5bb6\u306e\u4eba\u751f\u3001\u3059\u3079\u3066\u306e\u30d5\u30a7\u30fc\u30ba\u3067\u3002',
-             'For every phase of a musician\u2019s life.',
-             'Para cada fase de la vida de un m\u00fasico.')}
-        </h2>
-
-        <div style={{
-          maxWidth: '700px', margin: '0 auto', textAlign: 'left',
-        }}>
-          {([
-            {
-              phase: t('\u97f3\u697d\u3092\u5fd7\u3059', 'Aspiring', 'Aspirante'),
-              who: t('\u97f3\u697d\u9ad8\u6821\u751f\u30fb\u97f3\u5927\u53d7\u9a13\u751f\u30fb\u5439\u594f\u697d\u90e8\u54e1', 'Music high schoolers, conservatory applicants, wind ensemble members', 'Estudiantes de secundaria, aspirantes al conservatorio'),
-              desc: t('\u548c\u58f0\u8ab2\u984c\u306e\u81ea\u52d5\u751f\u6210\u3067\u7121\u9650\u306b\u7df4\u7fd2\u3002\u5408\u594f\u304b\u3089\u81ea\u5206\u306e\u30d1\u30fc\u30c8\u3060\u3051\u62bd\u51fa\u3002',
-                     'Practice harmony endlessly with auto-generated exercises. Extract your part from ensemble recordings.',
-                     'Practica armon\u00eda sin fin con ejercicios autogenerados. Extrae tu parte de grabaciones de conjunto.'),
-            },
-            {
-              phase: t('\u97f3\u697d\u3092\u5b66\u3076', 'Studying', 'Estudiando'),
-              who: t('\u97f3\u5927\u751f\u30fb\u97f3\u697d\u5b66\u90e8\u751f', 'University music students', 'Estudiantes universitarios de m\u00fasica'),
-              desc: t('\u30ec\u30c3\u30b9\u30f3\u3092\u66f8\u304d\u8d77\u3053\u3057\u3001\u30d4\u30c3\u30c1\u7cbe\u5ea6\u3092\u8ffd\u8de1\u3057\u3001\u6210\u9577\u3092\u30c7\u30fc\u30bf\u3067\u8a3c\u660e\u3059\u308b\u3002',
-                     'Transcribe lessons, track pitch accuracy, prove your growth with data.',
-                     'Transcribe lecciones, sigue la afinaci\u00f3n, demuestra tu crecimiento con datos.'),
-            },
-            {
-              phase: t('\u97f3\u697d\u3067\u751f\u304d\u308b', 'Performing', 'Interpretando'),
-              who: t('\u82e5\u624b\u6f14\u594f\u5bb6\u30fb\u30d5\u30ea\u30fc\u30e9\u30f3\u30b9\u97f3\u697d\u5bb6', 'Young professionals, freelance musicians', 'J\u00f3venes profesionales, m\u00fasicos freelance'),
-              desc: t('\u30d7\u30ed\u30d0\u30c3\u30b8\u3067\u4fe1\u983c\u3092\u7372\u5f97\u3002\u30b9\u30b1\u30b8\u30e5\u30fc\u30eb\u7ba1\u7406\u3001\u5171\u6f14\u8005\u691c\u7d22\u3001\u591a\u8a00\u8a9e\u3067\u306e\u56fd\u969b\u4ea4\u6d41\u3002',
-                     'Earn trust with a Pro badge. Manage schedules, find collaborators, connect globally.',
-                     'Gana confianza con la insignia Pro. Gestiona horarios, encuentra colaboradores, con\u00e9ctate globalmente.'),
-            },
-            {
-              phase: t('\u97f3\u697d\u3092\u4f1d\u3048\u308b', 'Teaching', 'Ense\u00f1ando'),
-              who: t('\u8b1b\u5e2b\u30fb\u6559\u6388\u30fb\u97f3\u697d\u6559\u5ba4\u4e3b\u5bb0', 'Professors, private instructors, studio owners', 'Profesores, instructores privados'),
-              desc: t('\u751f\u5f92\u306e\u6210\u9577\u30c7\u30fc\u30bf\u3092\u78ba\u8a8d\u3002\u548c\u58f0\u8ab2\u984c\u3092\u81ea\u52d5\u751f\u6210\u3057\u3066\u5bbf\u984c\u306b\u3002\u30ec\u30c3\u30b9\u30f3\u3092\u66f8\u304d\u8d77\u3053\u3057\u3066\u5171\u6709\u3002',
-                     'Track student growth. Auto-generate harmony homework. Share lesson transcripts.',
-                     'Sigue el crecimiento de estudiantes. Genera tareas de armon\u00eda. Comparte transcripciones de lecciones.'),
-            },
-          ] as const).map((stage, i) => (
-            <div key={i} style={{
-              display: 'flex', gap: 'clamp(1.5rem, 3vw, 2.5rem)',
-              padding: 'clamp(1.5rem, 3vw, 2.5rem) 0',
-              borderBottom: i < 3 ? '1px solid rgba(0,0,0,0.06)' : 'none',
-              alignItems: 'flex-start',
-            }}>
-              <div style={{ flexShrink: 0, width: 'clamp(90px, 14vw, 130px)', textAlign: 'right' }}>
-                <p style={{
-                  fontSize: 'clamp(0.9rem, 1.4vw, 1.1rem)', fontWeight: 400,
-                  color: '#111', margin: '0 0 0.3rem', letterSpacing: '0.06em',
-                }}>
-                  {stage.phase}
-                </p>
-                <p style={{
-                  fontSize: 'clamp(0.68rem, 0.85vw, 0.75rem)',
-                  color: '#bbb', fontFamily: sans, margin: 0, lineHeight: 1.5,
-                }}>
-                  {stage.who}
-                </p>
-              </div>
-              <p style={{
-                flex: 1,
-                fontSize: 'clamp(0.85rem, 1.1vw, 0.92rem)',
-                color: '#555', fontFamily: sans, lineHeight: 2.0, margin: 0,
-              }}>
-                {stage.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          11. R&D — GPS
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(4rem, 8vw, 6rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)', fontWeight: 500, color: '#bbb',
-          letterSpacing: '0.4em', textTransform: 'uppercase',
-          marginBottom: '1rem', fontFamily: sans,
-        }}>R&amp;D</p>
-        <p style={{
-          fontSize: 'clamp(0.88rem, 1.3vw, 0.98rem)', color: '#777', fontFamily: sans,
-          lineHeight: 2.0, maxWidth: '580px', margin: '0 auto 1.5rem',
-        }}>
-          {t('\u7a7a\u97f3\u958b\u767a\u306f\u97f3\u97ff\u6280\u8853\u306b\u52a0\u3048\u3001GPS/RTK\u6e2c\u4f4d\u30a2\u30eb\u30b4\u30ea\u30ba\u30e0\u306e\u7814\u7a76\u958b\u767a\u3082\u884c\u3063\u3066\u3044\u307e\u3059\u3002\n\u300c\u7a7a\u300d\u3068\u300c\u97f3\u300d\u2014\u2014 \u7a7a\u304b\u3089\u306e\u4fe1\u53f7\u3068\u3001\u97f3\u306e\u6ce2\u3002\u4e8c\u3064\u306e\u898b\u3048\u306a\u3044\u529b\u3092\u3001\u6280\u8853\u3067\u6355\u3089\u3048\u308b\u3002',
-             'Beyond audio, Kuon R&D develops GPS/RTK positioning algorithms.\n"Ku" (sky) and "On" (sound) \u2014 capturing two invisible forces through technology.',
-             'Adem\u00e1s del audio, Kuon R&D desarrolla algoritmos GPS/RTK.\n"Ku" (cielo) y "On" (sonido) \u2014 capturando dos fuerzas invisibles.')}
-        </p>
-        <Link href="/gps" style={{
-          color: ACCENT, fontSize: 'clamp(0.8rem, 1vw, 0.85rem)',
-          letterSpacing: '0.08em', textDecoration: 'none', fontFamily: sans,
-        }}>
-          {t('GPS\u30c6\u30af\u30ce\u30ed\u30b8\u30fc', 'GPS Technology', 'Tecnolog\u00eda GPS')} &rarr;
-        </Link>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          12. FAQ
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 'clamp(3rem, 6vw, 5rem)' }}>
-          <h2 style={{
-            fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)', fontWeight: 300,
-            letterSpacing: '0.15em', color: '#111',
-          }}>FAQ</h2>
-        </div>
-        <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-          {([
-            {
-              q: t('\u672c\u5f53\u306b\u7121\u6599\u3067\u4f7f\u3048\u307e\u3059\u304b\uff1f', 'Is it really free?', '\u00bfEs realmente gratis?'),
-              a: t('\u306f\u3044\u3002\u30d6\u30e9\u30a6\u30b6\u5b8c\u7d50\u30c4\u30fc\u30eb\uff08NORMALIZE\u3001DECLIPPER\u3001DSD PLAYER\u306a\u3069\uff09\u306f\u3059\u3079\u3066\u7121\u6599\u30fb\u7121\u5236\u9650\u3067\u3059\u3002AI\u99c6\u52d5\u306e\u30b5\u30fc\u30d0\u30fc\u51e6\u7406\u30a2\u30d7\u30ea\u3082\u6708\u00d73\u307e\u3067\u7121\u6599\u3067\u304a\u4f7f\u3044\u3044\u305f\u3060\u3051\u307e\u3059\u3002', 'Yes. All browser tools (NORMALIZE, DECLIPPER, DSD PLAYER, etc.) are free and unlimited. AI-powered server apps are free up to 3 times per month.', 'S\u00ed. Todas las herramientas del navegador son gratuitas e ilimitadas. Las apps con IA son gratuitas hasta 3 veces al mes.'),
-            },
-            {
-              q: t('\u30de\u30a4\u30af\u306f\u3069\u306e\u697d\u5668\u306b\u5411\u3044\u3066\u3044\u307e\u3059\u304b\uff1f', 'What instruments are the microphones for?', '\u00bfPara qu\u00e9 instrumentos son los micr\u00f3fonos?'),
-              a: t('\u30a2\u30b3\u30fc\u30b9\u30c6\u30a3\u30c3\u30af\u697d\u5668\u5168\u822c\u306b\u5bfe\u5fdc\u3002\u30d4\u30a2\u30ce\u3001\u30d0\u30a4\u30aa\u30ea\u30f3\u3001\u30c1\u30a7\u30ed\u3001\u30d5\u30eb\u30fc\u30c8\u3001\u30ae\u30bf\u30fc\u306a\u3069\u3002AB\u65b9\u5f0f\u30b9\u30c6\u30ec\u30aa\u9332\u97f3\u3067\u7a7a\u9593\u306e\u97ff\u304d\u3092\u7f8e\u3057\u304f\u53ce\u9332\u3057\u307e\u3059\u3002', 'All acoustic instruments \u2014 piano, violin, cello, flute, guitar, etc. AB stereo recording captures beautiful spatial acoustics.', 'Todos los instrumentos ac\u00fasticos \u2014 piano, viol\u00edn, flauta, guitarra, etc. La grabaci\u00f3n est\u00e9reo AB captura la ac\u00fastica espacial.'),
-            },
-            {
-              q: t('Student\u3068Pro\u306e\u9055\u3044\u306f\uff1f', 'What\u2019s the difference between Student and Pro?', '\u00bfCu\u00e1l es la diferencia entre Student y Pro?'),
-              a: t('Student\u306f\u300c\u4f7f\u3048\u308b\u300d\u3002Pro\u306f\u300c\u898b\u3064\u304b\u308b\u300d\u3002Pro\u30e1\u30f3\u30d0\u30fc\u306f\u8a8d\u5b9a\u30d0\u30c3\u30b8\u3001\u30b9\u30ab\u30a6\u30c8\u691c\u7d22\u3067\u306e\u512a\u5148\u8868\u793a\u3001\u30b9\u30b1\u30b8\u30e5\u30fc\u30eb\u7ba1\u7406\u3001\u300c\u7a7a\u97f3\u958b\u767a\u8a8d\u5b9a\u30a2\u30fc\u30c6\u30a3\u30b9\u30c8\u300d\u30ed\u30b4\u306e\u4f7f\u7528\u6a29\u304c\u4ed8\u304d\u307e\u3059\u3002\u300c\u805e\u304b\u308c\u308b\u300d\u74b0\u5883\u3092\u624b\u306b\u5165\u308c\u305f\u3044\u65b9\u306b\u3002', 'Student means "use tools." Pro means "be discovered." Pro members get a verified badge, priority in scout search, schedule management, and the right to use the "Kuon Certified Artist" logo. For those who want to be heard.', 'Student significa "usar herramientas". Pro significa "ser descubierto". Los miembros Pro obtienen insignia verificada, prioridad en b\u00fasqueda scout, gesti\u00f3n de agenda y el logo "Artista Certificado Kuon".'),
-            },
-            {
-              q: t('\u6d77\u5916\u304b\u3089\u3082\u8cfc\u5165\u30fb\u5229\u7528\u3067\u304d\u307e\u3059\u304b\uff1f', 'Can I buy/use from outside Japan?', '\u00bfPuedo comprar desde fuera de Jap\u00f3n?'),
-              a: t('\u306f\u3044\u3002\u30b5\u30a4\u30c8\u306f\u65e5\u672c\u8a9e\u30fb\u82f1\u8a9e\u30fb\u30b9\u30da\u30a4\u30f3\u8a9e\u306b\u5bfe\u5fdc\u3002\u30de\u30a4\u30af\u306f35\u30ab\u56fd\u3078\u767a\u9001\u53ef\u80fd\uff08USD/EUR/GBP\u5bfe\u5fdc\uff09\u3002\u30a2\u30d7\u30ea\u306f\u30d6\u30e9\u30a6\u30b6\u304c\u3042\u308c\u3070\u4e16\u754c\u4e2d\u3069\u3053\u304b\u3089\u3067\u3082\u3002', 'Yes. The site supports Japanese, English, and Spanish. Microphones ship to 35 countries (USD/EUR/GBP). Apps work from anywhere with a browser.', 'S\u00ed. El sitio est\u00e1 en japon\u00e9s, ingl\u00e9s y espa\u00f1ol. Micr\u00f3fonos a 35 pa\u00edses (USD/EUR/GBP). Las apps funcionan desde cualquier lugar.'),
-            },
-          ] as const).map((faq, i) => (
-            <div key={i} style={{
-              padding: 'clamp(1.5rem, 3vw, 2rem) 0',
-              borderBottom: '1px solid rgba(0,0,0,0.06)',
-            }}>
-              <h4 style={{
-                fontSize: 'clamp(0.9rem, 1.2vw, 1rem)', fontWeight: 400,
-                color: '#222', margin: '0 0 0.8rem', letterSpacing: '0.04em',
-              }}>
-                {faq.q}
-              </h4>
-              <p style={{
-                color: '#777', fontSize: 'clamp(0.83rem, 1.08vw, 0.9rem)',
-                fontFamily: sans, lineHeight: 2.0, margin: 0,
-              }}>
-                {faq.a}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          13. FINAL CTA
-      ══════════════════════════════════════════ */}
-      <section style={{
-        padding: 'clamp(6rem, 14vw, 10rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-        textAlign: 'center',
-      }}>
-        <h2 style={{
-          fontSize: 'clamp(1.4rem, 4.5vw, 2.8rem)', fontWeight: 300,
-          letterSpacing: '0.1em', lineHeight: 1.6, margin: '0 0 clamp(1rem, 2vw, 1.5rem)', color: '#111',
-          wordBreak: 'keep-all',
-        }}>
-          {t('\u3042\u306a\u305f\u306e\u97f3\u697d\u306f\u3001\n\u3082\u3063\u3068\u9060\u304f\u307e\u3067\u5c4a\u304f\u3002',
-             'Your music can reach\nfarther than you think.',
-             'Tu m\u00fasica puede llegar\nm\u00e1s lejos de lo que crees.')}
-        </h2>
-        <p style={{
-          color: '#999', fontSize: 'clamp(0.88rem, 1.2vw, 0.95rem)',
-          fontFamily: sans, margin: '0 0 clamp(2.5rem, 5vw, 3.5rem)',
-        }}>
-          {t('\u30a2\u30ab\u30a6\u30f3\u30c8\u4e0d\u8981\u3002\u4eca\u3059\u3050\u7121\u6599\u3067\u4f7f\u3048\u307e\u3059\u3002',
-             'No account needed. Start free, right now.',
-             'Sin cuenta. Empieza gratis, ahora.')}
-        </p>
-        <Link href="/audio-apps" style={{
-          padding: 'clamp(1.1rem, 1.8vw, 1.3rem) clamp(3rem, 6vw, 4rem)',
-          backgroundColor: '#0c0c0c', color: '#fff',
-          fontSize: 'clamp(0.85rem, 1.1vw, 0.92rem)',
-          letterSpacing: '0.12em', textDecoration: 'none',
-          borderRadius: '50px', fontFamily: sans,
-          transition: 'all 0.4s ease', display: 'inline-block',
-        }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = ACCENT; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px -6px rgba(2,132,199,0.35)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0c0c0c'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-        >
-          {t('\u7121\u6599\u3067\u306f\u3058\u3081\u308b', 'Start Free', 'Empieza Gratis')}
-        </Link>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          14. CONTACT
-      ══════════════════════════════════════════ */}
-      <section id="contact" style={{
-        padding: 'clamp(5rem, 12vw, 9rem) clamp(1.5rem, 5vw, 3rem)',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontSize: 'clamp(0.65rem, 0.9vw, 0.72rem)', fontWeight: 500, color: '#999',
-          letterSpacing: '0.4em', textTransform: 'uppercase',
-          marginBottom: '1.2rem', fontFamily: sans,
-        }}>Contact</p>
-        <h2 style={{
-          fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)', fontWeight: 300,
-          letterSpacing: '0.15em', margin: '0 0 1.5rem', color: '#222',
-        }}>
-          {t('\u304a\u6c17\u8efd\u306b\u3069\u3046\u305e', 'Get in Touch', 'Cont\u00e1ctanos')}
-        </h2>
-        <p style={{
-          color: '#888', fontSize: 'clamp(0.85rem, 1.2vw, 0.95rem)',
-          fontFamily: sans, margin: '0 auto clamp(3rem, 6vw, 4rem)', maxWidth: '500px',
-        }}>
-          {t('\u30de\u30a4\u30af\u306e\u3053\u3068\u3001\u30a2\u30d7\u30ea\u306e\u3053\u3068\u3001\u9332\u97f3\u306e\u3053\u3068\u3002\u4f55\u3067\u3082\u304a\u6c17\u8efd\u306b\u3054\u9023\u7d61\u304f\u3060\u3055\u3044\u3002',
-             'Questions about microphones, apps, or recording \u2014 feel free to reach out.',
-             'Preguntas sobre micr\u00f3fonos, apps o grabaci\u00f3n \u2014 cont\u00e1ctanos.')}
-        </p>
-
-        <form action="https://formspree.io/f/xyknanzy" method="POST" style={{
-          maxWidth: '500px', width: '100%', margin: '0 auto',
-          display: 'flex', flexDirection: 'column',
-          gap: 'clamp(1.5rem, 3vw, 2rem)', textAlign: 'left', fontFamily: sans,
-        }}>
-          {([
-            { id: 'name', label: t('\u304a\u540d\u524d', 'Name', 'Nombre'), type: 'text' as const },
-            { id: 'email', label: t('\u30e1\u30fc\u30eb\u30a2\u30c9\u30ec\u30b9', 'Email', 'Correo'), type: 'email' as const },
-            { id: 'message', label: t('\u30e1\u30c3\u30bb\u30fc\u30b8', 'Message', 'Mensaje'), type: 'textarea' as const },
-          ]).map((field) => (
-            <div key={field.id}>
-              <label htmlFor={field.id} style={{
-                display: 'block', marginBottom: '0.5rem', color: '#999',
-                fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase',
-              }}>{field.label}</label>
-              {field.type === 'textarea' ? (
-                <textarea id={field.id} name={field.id} rows={4} required style={{
-                  width: '100%', padding: '0.8rem 0', border: 'none',
-                  borderBottom: '1px solid #ddd', background: 'transparent',
-                  color: '#222', fontSize: '0.95rem', outline: 'none',
-                  resize: 'vertical', lineHeight: 1.7, transition: 'border-color 0.3s', fontFamily: 'inherit',
-                }}
-                  onFocus={(e) => (e.target.style.borderBottomColor = ACCENT)}
-                  onBlur={(e) => (e.target.style.borderBottomColor = '#ddd')}
-                />
-              ) : (
-                <input type={field.type} id={field.id} name={field.id} required style={{
-                  width: '100%', padding: '0.8rem 0', border: 'none',
-                  borderBottom: '1px solid #ddd', background: 'transparent',
-                  color: '#222', fontSize: '0.95rem', outline: 'none',
-                  transition: 'border-color 0.3s', fontFamily: 'inherit',
-                }}
-                  onFocus={(e) => (e.target.style.borderBottomColor = ACCENT)}
-                  onBlur={(e) => (e.target.style.borderBottomColor = '#ddd')}
-                />
               )}
             </div>
           ))}
-          <button type="submit" style={{
-            marginTop: '1rem', padding: 'clamp(0.9rem, 1.5vw, 1.1rem) clamp(2.5rem, 5vw, 3.5rem)',
-            alignSelf: 'center', cursor: 'pointer', background: 'transparent',
-            color: ACCENT, border: '1px solid ' + ACCENT,
-            fontSize: 'clamp(0.78rem, 1vw, 0.85rem)', letterSpacing: '0.12em',
-            textTransform: 'uppercase', transition: 'all 0.3s ease', borderRadius: '50px',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = ACCENT; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = ACCENT; }}
-          >
-            {t('\u9001\u4fe1\u3059\u308b', 'Send', 'Enviar')}
+        </div>
+      </section>
+
+      {/* 9. FOUNDER */}
+      <section style={{ padding: 'clamp(5rem, 10%, 8rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '900px', margin: '0 auto', width: '100%', textAlign: 'center' }}>
+        <p style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#64748b', marginBottom: '1rem', textTransform: 'uppercase' }}>Founder</p>
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 400, marginBottom: '2.5rem', color: '#0f172a' }}>
+          {t5({ ja: '創業者の想い', en: 'The Vision Behind Kuon R&D', es: 'La visión detrás de Kuon R&D', ko: '창립자의 비전', pt: 'A visão por trás da Kuon R&D' }, lang)}
+        </h2>
+        <div style={{ marginBottom: '2rem' }}>
+          <Image src="/kotaro.jpeg" alt="Kotaro Asahina" width={140} height={140} style={{ borderRadius: '50%', margin: '0 auto', display: 'block', border: '3px solid #e2e8f0' }} />
+        </div>
+        <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.3rem', color: '#0f172a' }}>
+          {t5({ ja: '朝比奈 幸太郎', en: 'Kotaro Asahina', es: 'Kotaro Asahina', ko: '아사히나 코타로', pt: 'Kotaro Asahina' }, lang)}
+        </h3>
+        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '2rem', letterSpacing: '0.05em' }}>
+          {t5({ ja: '音響エンジニア / マイク設計者 / 音楽プロデューサー', en: 'Audio Engineer / Microphone Designer / Music Producer', es: 'Ingeniero de Audio / Diseñador de Micrófonos / Productor Musical', ko: '오디오 엔지니어 / 마이크 설계자 / 음악 프로듀서', pt: 'Engenheiro de Áudio / Designer de Microfones / Produtor Musical' }, lang)}
+        </p>
+        <blockquote style={{ fontFamily: serif, fontSize: 'clamp(1rem, 2vw, 1.15rem)', lineHeight: 2.0, color: '#334155', maxWidth: '700px', margin: '0 auto 2rem', padding: '1.5rem 2rem', background: '#f8fafc', borderRadius: '12px', borderLeft: `4px solid ${ACCENT}`, textAlign: 'left', wordBreak: 'keep-all', fontStyle: 'normal' }}>
+          {t5({
+            ja: '世界の音楽文化が発展し、音楽家がより創造性に集中できる世界を。エンジニアがより表現に専念できるように。音楽家同士が国境を越えて繋がり、世界のあらゆる場所で文化と表現、そして何より芸術が芽を出すような世界にしたい。——その想いで空音開発を立ち上げました。',
+            en: 'I want a world where musical culture thrives, where musicians can focus purely on creativity, where engineers can dedicate themselves to expression, and where artists connect across borders — so that culture, expression, and above all, art can flourish everywhere. That is why I founded Kuon R&D.',
+            es: 'Quiero un mundo donde la cultura musical prospere, donde los músicos puedan concentrarse puramente en la creatividad, donde los ingenieros puedan dedicarse a la expresión, y donde los artistas se conecten más allá de las fronteras. Por eso fundé Kuon R&D.',
+            ko: '음악 문화가 발전하고 음악가가 창의성에만 집중할 수 있는 세상, 엔지니어가 표현에 전념할 수 있는 세상, 국경을 넘어 음악가들이 연결되어 전 세계에서 문화와 예술이 싹틔는 세상을 만들고 싶었습니다. 그래서 공음개발을 설립했습니다.',
+            pt: 'Quero um mundo onde a cultura musical prospere, onde os músicos possam focar puramente na criatividade, onde os engenheiros possam se dedicar à expressão, e onde os artistas se conectem além das fronteiras. Por isso fundei a Kuon R&D.',
+          }, lang)}
+        </blockquote>
+        <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.8, maxWidth: '650px', margin: '0 auto 2.5rem', wordBreak: 'keep-all' }}>
+          {t5({
+            ja: '音大生時代、自分の演奏を録音するために独学でマイクを作り始めました。数十万円する高級マイクと同等以上のものを、学生でも買える価格で。すべてのマイクは、今も一本一本手はんだで製作しています。',
+            en: 'As a music student, I started building microphones to record my own performances. Studio-quality at a price students can afford. Every microphone is still hand-soldered, one at a time.',
+            es: 'Como estudiante de música, empecé a construir micrófonos para grabar mis actuaciones. Calidad de estudio a un precio accesible. Cada micrófono sigue siendo soldado a mano.',
+            ko: '음대생 시절, 자신의 연주를 녹음하기 위해 독학으로 마이크를 만들기 시작했습니다. 모든 마이크는 지금도 하나씩 손으로 납땜되고 있습니다.',
+            pt: 'Como estudante de música, comecei a construir microfones para gravar minhas apresentações. Qualidade de estúdio a um preço acessível. Cada microfone ainda é soldado à mão.',
+          }, lang)}
+        </p>
+        <Link href="/profile" style={{ display: 'inline-block', padding: '0.875rem 2.5rem', border: `2px solid ${ACCENT}`, color: ACCENT, borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', background: 'white', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(2,132,199,0.2)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+          {t5({ ja: 'プロフィールを見る', en: 'View Full Profile', es: 'Ver Perfil Completo', ko: '프로필 보기', pt: 'Ver Perfil Completo' }, lang)}
+        </Link>
+      </section>
+
+      {/* 10. FINAL CTA */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', textAlign: 'center', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, marginBottom: '2rem', color: '#0f172a', wordBreak: 'keep-all' }}>
+          {t5({ ja: '音楽の、いちばん近くに。', en: 'Closer to music than ever.', es: 'Más cerca de la música que nunca.', ko: '음악과 더 가깝게.', pt: 'Mais perto da música do que nunca.' }, lang)}
+        </h2>
+        <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.875rem 2rem', background: '#0f172a', color: 'white', borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#0f172a'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+          {t5({ ja: '無料ではじめる', en: 'Start Free', es: 'Comenzar Gratis', ko: '무료로 시작', pt: 'Comece Grátis' }, lang)}
+        </Link>
+      </section>
+
+      {/* 11. CONTACT */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '900px', margin: '0 auto', width: '100%' }} id="contact">
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 400, textAlign: 'center', marginBottom: '2rem', color: '#0f172a' }}>
+          {t5({ ja: 'お問い合わせ', en: 'Contact', es: 'Contacto', ko: '문의', pt: 'Contato' }, lang)}
+        </h2>
+        <form action="https://formspree.io/f/xyknanzy" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#0f172a', fontWeight: 500, fontSize: '0.95rem' }}>
+              {t5({ ja: 'お名前', en: 'Name', es: 'Nombre', ko: '이름', pt: 'Nome' }, lang)}
+            </label>
+            <input type="text" name="name" required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#0f172a', fontWeight: 500, fontSize: '0.95rem' }}>
+              {t5({ ja: 'メールアドレス', en: 'Email', es: 'Correo Electrónico', ko: '이메일', pt: 'E-mail' }, lang)}
+            </label>
+            <input type="email" name="email" required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#0f172a', fontWeight: 500, fontSize: '0.95rem' }}>
+              {t5({ ja: 'メッセージ', en: 'Message', es: 'Mensaje', ko: '메시지', pt: 'Mensagem' }, lang)}
+            </label>
+            <textarea name="message" required rows={5} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.95rem', boxSizing: 'border-box', fontFamily: sans }} />
+          </div>
+          <button type="submit" style={{ padding: '0.875rem 2rem', background: ACCENT, color: 'white', borderRadius: '6px', border: 'none', fontWeight: 500, fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            {t5({ ja: '送信', en: 'Send', es: 'Enviar', ko: '전송', pt: 'Enviar' }, lang)}
           </button>
         </form>
       </section>
+
+      <div style={{ height: '2rem' }} />
     </div>
   );
-}
+};
+
+export default HomePage;

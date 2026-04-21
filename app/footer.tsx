@@ -268,7 +268,7 @@ export function Footer() {
                 textTransform: 'uppercase',
               }}
             >
-              {t3({ ja: 'について', en: 'About', ko: '정보', pt: 'Sobre', es: 'Acerca de' }, lang)}
+              {t3({ ja: '私たちについて', en: 'About Us', ko: '소개', pt: 'Sobre Nós', es: 'Sobre Nosotros' }, lang)}
             </h3>
             <ul
               style={{
