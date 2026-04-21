@@ -9,6 +9,7 @@ interface Env {
   SESSIONS: KVNamespace;
   AUTH_SECRET: string;
   RESEND_API_KEY: string;
+  GOOGLE_CLIENT_ID: string;
   ENVIRONMENT: string;
 }
 
@@ -320,6 +321,106 @@ app.post('/api/auth/verify', async (c) => {
   const now = Math.floor(Date.now() / 1000);
   const jwt = await createJWT(
     { email: session.email, plan: userData.plan, iat: now, exp: now + 30 * 24 * 3600 },
+    c.env.AUTH_SECRET
+  );
+
+  return c.json({ ok: true, jwt, user: { email: userData.email, name: userData.name, plan: userData.plan, instrument: userData.instrument, badges: userData.badges } });
+});
+
+// ─────────────────────────────────────────────
+// POST /api/auth/google — Google OAuth login
+// Receives Google ID token (credential), verifies
+// with Google's public keys, creates/updates user,
+// returns JWT (same as magic link flow).
+// ─────────────────────────────────────────────
+app.post('/api/auth/google', async (c) => {
+  const { credential } = await c.req.json<{ credential: string }>();
+  if (!credential) return c.json({ error: 'Missing credential' }, 400);
+
+  // Verify Google ID token via Google's tokeninfo endpoint
+  // This is the simplest Edge-compatible approach (no jsonwebtoken library needed)
+  const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
+  if (!googleRes.ok) {
+    return c.json({ error: 'Invalid Google token' }, 401);
+  }
+
+  const googlePayload = await googleRes.json<{
+    email: string;
+    email_verified: string;
+    name: string;
+    picture: string;
+    aud: string;
+  }>();
+
+  // Verify the token was issued for our app (check audience = our client ID)
+  const expectedClientId = c.env.GOOGLE_CLIENT_ID || '';
+  if (expectedClientId && googlePayload.aud !== expectedClientId) {
+    return c.json({ error: 'Token audience mismatch' }, 401);
+  }
+
+  if (googlePayload.email_verified !== 'true') {
+    return c.json({ error: 'Email not verified by Google' }, 401);
+  }
+
+  const normalizedEmail = googlePayload.email.toLowerCase().trim();
+  const cfCountry = c.req.header('X-CF-Country') || '';
+  const cfCity = c.req.header('X-CF-City') || '';
+
+  // Get or create user (identical logic to magic link verify)
+  const userKey = `user:${normalizedEmail}`;
+  let userData: UserData;
+  const existing = await c.env.USERS.get(userKey);
+
+  if (existing) {
+    userData = JSON.parse(existing);
+    userData.lastLoginAt = new Date().toISOString();
+    if (cfCountry) userData.country = cfCountry;
+    if (cfCity) userData.city = cfCity;
+    // Fill in name from Google if user hasn't set one
+    if (!userData.name && googlePayload.name) {
+      userData.name = googlePayload.name;
+    }
+  } else {
+    userData = {
+      email: normalizedEmail,
+      name: googlePayload.name || '',
+      instrument: '',
+      region: '',
+      bio: '',
+      plan: 'free',
+      stripeCustomerId: '',
+      badges: [],
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      appUsage: {},
+      appUsageMonth: currentMonth(),
+      country: cfCountry,
+      city: cfCity,
+      role: '',
+      roleCategory: '',
+      customRoleName: '',
+      birthDate: '',
+      showBirthDate: false,
+      basedIn: '',
+      mobility: '',
+      avatarKey: '',
+      snsYoutube: '',
+      snsInstagram: '',
+      snsX: '',
+      snsSoundcloud: '',
+      snsWebsite: '',
+      availableForWork: false,
+      experienceLevel: '',
+      spokenLanguages: '',
+    };
+  }
+
+  await c.env.USERS.put(userKey, JSON.stringify(userData));
+
+  // Issue JWT (30-day expiry)
+  const now = Math.floor(Date.now() / 1000);
+  const jwt = await createJWT(
+    { email: normalizedEmail, plan: userData.plan, iat: now, exp: now + 30 * 24 * 3600 },
     c.env.AUTH_SECRET
   );
 

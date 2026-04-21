@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ============================================================================
 // TYPES
@@ -551,6 +552,7 @@ const T: Record<string, L5> = {
 export default function MetronomePage() {
   const { lang } = useLang();
   const t = (k: string) => T[k]?.[lang] ?? T[k]?.en ?? k;
+  const { guardAction, showNudge, setShowNudge } = useRegistrationNudge();
 
   // ── Core state ──
   const [bpm, setBpm] = useState(120);
@@ -993,6 +995,13 @@ export default function MetronomePage() {
     return () => window.removeEventListener('keydown', h);
   }, [togglePlay]);
 
+  // ── Handle metric modulation enable with nudge ──
+  const handleModEnable = useCallback((checked: boolean) => {
+    if (checked && guardAction()) return; // Show nudge if user not logged in
+    setModEnabled(checked);
+    if (isPlaying) stopPlay();
+  }, [guardAction, isPlaying, stopPlay]);
+
   // ── Time sig change ──
   function changeTsIdx(idx: number) {
     setTsIdx(idx);
@@ -1102,6 +1111,8 @@ export default function MetronomePage() {
 
   // ── Render ──
   return (
+    <>
+    <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="advanced" />
     <main style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: sans, color: '#1e293b' }}>
       <div style={{ maxWidth: 600, margin: '0 auto', padding: 'clamp(20px,5vw,40px) clamp(14px,4vw,24px)' }}>
 
@@ -1434,7 +1445,7 @@ export default function MetronomePage() {
               <div style={{ ...card, marginTop: 4, borderColor: '#fbbf24', borderWidth: '1.5px' }}>
                 <p style={{ fontSize: 12, color: '#64748b', marginBottom: 14 }}>{t('pModDesc')}</p>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={modEnabled} onChange={e => { setModEnabled(e.target.checked); if (isPlaying) stopPlay(); }} style={{ accentColor: JAZZ_AMBER }} />
+                  <input type="checkbox" checked={modEnabled} onChange={e => handleModEnable(e.target.checked)} style={{ accentColor: JAZZ_AMBER }} />
                   <span style={{ fontSize: 14, fontWeight: 600 }}>ON</span>
                 </label>
                 {/* Preset selector */}
@@ -1661,5 +1672,6 @@ export default function MetronomePage() {
         </div>
       </div>
     </main>
+    </>
   );
 }

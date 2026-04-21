@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ============================================================================
 // TYPES
@@ -289,6 +290,8 @@ function speedLabel(ms: number, lang: Lang): string {
 
 export default function IntervalSpeedPage() {
   const { lang } = useLang();
+  const { guardAction, showNudge, setShowNudge } = useRegistrationNudge();
+  const nudgeShownRef = useRef(false);
 
   const [stats, setStats] = useState<UserStats>(defaultStats);
   const [statsLoaded, setStatsLoaded] = useState(false);
@@ -314,12 +317,20 @@ export default function IntervalSpeedPage() {
 
   // Generate next question
   const nextRound = useCallback((g: GameState): GameState => {
+    // Check if nudge should be shown (after 3rd round)
+    if (g.rounds.length >= 2 && !nudgeShownRef.current) {
+      nudgeShownRef.current = true;
+      if (guardAction()) {
+        return g; // Return unchanged state if nudge was shown
+      }
+    }
+
     const pool = getIntervalPool(g.difficulty);
     const interval = pool[randInt(0, pool.length - 1)];
     const root = randInt(48, 72);
     const notes = [root, root + interval.semitones];
     return { ...g, currentInterval: interval, currentNotes: notes, questionTime: Date.now(), answered: false, selectedKey: null };
-  }, []);
+  }, [guardAction, nudgeShownRef]);
 
   const startGame = useCallback(() => {
     const g: GameState = {
@@ -433,6 +444,8 @@ export default function IntervalSpeedPage() {
   const currentBest = stats.bestRecords[difficulty];
 
   return (
+    <>
+    <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="history" />
     <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: sans, paddingBottom: 80 }}>
       {/* Header */}
       <div style={{ textAlign: 'center', padding: '28px 16px 12px' }}>
@@ -761,6 +774,7 @@ export default function IntervalSpeedPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }
 

@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { AuthGate } from '@/components/AuthGate';
+import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ─────────────────────────────────────────────
 // Types
@@ -217,6 +218,7 @@ function readWavBitDepth(arrayBuffer: ArrayBuffer): number {
 export default function ConverterPage() {
   const { lang } = useLang();
   const t = (obj: L3) => obj[lang] || obj.en;
+  const { guardAction, showNudge, setShowNudge } = useRegistrationNudge();
 
   // State
   const [status, setStatus] = useState<ConvertStatus>('idle');
@@ -287,6 +289,7 @@ export default function ConverterPage() {
 
   // ─── Conversion ────────────────────────────
   const convert = useCallback(async () => {
+    if (guardAction()) return;
     if (!selectedFile || !rawArrayBufferRef.current) return;
 
     setStatus('decoding');
@@ -502,6 +505,7 @@ export default function ConverterPage() {
   // ─── Render ────────────────────────────────
   return (
     <AuthGate appName="converter">
+    <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="download" />
     <div style={pageStyle}>
       {/* Hero */}
       <div style={heroStyle}>

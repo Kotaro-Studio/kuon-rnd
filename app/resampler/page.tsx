@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { AuthGate } from '@/components/AuthGate';
+import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WasmModule = any;
@@ -385,6 +386,7 @@ async function loadWasm(): Promise<WasmModule | null> {
 // ─────────────────────────────────────────────
 export default function ResamplerPage() {
   const { lang } = useLang();
+  const { guardAction, showNudge, setShowNudge } = useRegistrationNudge();
 
   const [status, setStatus] = useState<AppStatus>('idle');
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
@@ -480,6 +482,7 @@ export default function ResamplerPage() {
 
   // ─── Resample ───
   const handleConvert = useCallback(async () => {
+    if (guardAction()) return;
     const audioBuffer = audioBufferRef.current;
     if (!audioBuffer || !fileInfo) return;
 
@@ -577,6 +580,7 @@ export default function ResamplerPage() {
 
   return (
     <AuthGate appName="resampler">
+    <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="download" />
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(160deg, #f0fdfa 0%, #ecfeff 30%, #f0f9ff 60%, #f8fafc 100%)',

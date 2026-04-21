@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ─── Design Tokens ───
 const serif = '"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif';
@@ -245,6 +246,7 @@ const sectionTitle = (lang: Lang): React.CSSProperties => ({
 export default function TransposerPage() {
   const { lang } = useLang();
   const t = (k: string) => T[k]?.[lang] ?? T[k]?.en ?? '';
+  const { guardAction, showNudge, setShowNudge } = useRegistrationNudge();
 
   const [fromId, setFromId] = useState('bb-clarinet');
   const [toId, setToId]     = useState('concert');
@@ -310,6 +312,11 @@ export default function TransposerPage() {
 
   const swap = () => { setFromId(toId); setToId(fromId); };
 
+  const handleSaveSettings = () => {
+    if (guardAction()) return;
+    // If not logged in, the nudge is shown by guardAction
+  };
+
   // ─── Instrument selector grouped by family ───
   const InstSelect = ({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) => (
     <div style={{ flex: 1, minWidth: 200 }}>
@@ -334,6 +341,8 @@ export default function TransposerPage() {
   );
 
   return (
+    <>
+    <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="presets" />
     <main style={{ background: BG, minHeight: '100vh', fontFamily: sans, color: '#1e293b' }}>
       {/* ─── Hero ─── */}
       <section style={{ textAlign: 'center', padding: 'clamp(40px,8vw,80px) clamp(16px,4vw,32px) clamp(20px,4vw,40px)' }}>
@@ -434,6 +443,9 @@ export default function TransposerPage() {
             <button onClick={() => setInput('')} style={{ padding: '10px 14px', borderRadius: 10, border: '2px solid #e2e8f0', background: '#f8fafc', color: '#94a3b8', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
               {t('clear')}
             </button>
+            <button onClick={handleSaveSettings} title={lang === 'ja' ? 'この設定を保存する' : 'Save these settings'} style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#f3f4f6', color: '#6b7280', fontWeight: 500, fontSize: 13, cursor: 'pointer' }}>
+              {lang === 'ja' ? '💾 保存' : '💾 Save'}
+            </button>
           </div>
 
           {transposed.length > 0 && (
@@ -517,5 +529,6 @@ export default function TransposerPage() {
 
       </div>
     </main>
+    </>
   );
 }

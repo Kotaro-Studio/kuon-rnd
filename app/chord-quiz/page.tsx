@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -511,6 +512,8 @@ function MiniKeyboard({ highlightNotes, show }: { highlightNotes: number[]; show
 
 export default function ChordQuizPage() {
   const { lang } = useLang();
+  const { guardAction, showNudge, setShowNudge } = useRegistrationNudge();
+  const nudgeShownRef = useRef(false);
 
   const [stats, setStats] = useState<UserStats>(defaultStats);
   const [statsLoaded, setStatsLoaded] = useState(false);
@@ -609,10 +612,16 @@ export default function ChordQuizPage() {
   }, [showResult, question, session, getCtx]);
 
   const nextQuestion = useCallback(() => {
+    // Check if nudge should be shown (after 3rd round)
+    if (session.total >= 2 && !nudgeShownRef.current) {
+      nudgeShownRef.current = true;
+      if (guardAction()) return;
+    }
+
     const q = generateQuestion(mode, stats.level);
     setQuestion(q); setSelected(null); setShowResult(false); setXpGained(0);
     setTimeout(() => playQ(q), 300);
-  }, [mode, stats.level, playQ]);
+  }, [mode, stats.level, playQ, session.total, guardAction]);
 
   const endSession = useCallback(() => {
     if (session.total > 0) {
@@ -636,6 +645,8 @@ export default function ChordQuizPage() {
   };
 
   return (
+    <>
+    <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="history" />
     <div style={{
       minHeight: '100vh',
       background: '#f8fafc',
@@ -955,6 +966,7 @@ export default function ChordQuizPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }
 

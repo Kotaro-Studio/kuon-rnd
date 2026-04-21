@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { AuthGate } from '@/components/AuthGate';
+import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ─────────────────────────────────────────────
 // Types
@@ -639,6 +640,7 @@ const STATUS_COLORS: Record<CheckStatus, { bg: string; color: string; border: st
 export default function MasterCheckPage() {
   const { lang } = useLang();
   const t = (l3: L3) => l3[lang] || l3.en;
+  const { guardAction, showNudge, setShowNudge } = useRegistrationNudge();
 
   const [status, setStatus] = useState<AppStatus>('idle');
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -701,6 +703,7 @@ export default function MasterCheckPage() {
 
   // ─── Platform adjust handler ───
   const handleAdjust = useCallback(async (platformName: string, deltaDb: number) => {
+    if (guardAction()) return;
     const buf = audioBufferRef.current;
     if (!buf || !result) return;
 
@@ -835,6 +838,7 @@ export default function MasterCheckPage() {
   // ─── Render ───
   return (
     <AuthGate appName="master-check">
+    <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="download" />
     <div style={containerStyle}>
       {/* Hero */}
       <div className="hero-enter-1" style={{ textAlign: 'center', marginBottom: 'clamp(32px, 6vw, 56px)' }}>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -450,6 +451,8 @@ function updateDailyStreak(stats: UserStats): UserStats {
 
 export default function EarTrainingPage() {
   const { lang } = useLang();
+  const { guardAction, showNudge, setShowNudge } = useRegistrationNudge();
+  const nudgeShownRef = useRef(false);
 
   // User persistent stats
   const [stats, setStats] = useState<UserStats>(defaultStats);
@@ -620,13 +623,19 @@ export default function EarTrainingPage() {
 
   // Next question
   const nextQuestion = useCallback(() => {
+    // Check if nudge should be shown (after 3rd round)
+    if (session.total >= 2 && !nudgeShownRef.current) {
+      nudgeShownRef.current = true;
+      if (guardAction()) return;
+    }
+
     const q = generateQuestion(mode, stats.level);
     setQuestion(q);
     setSelected(null);
     setShowResult(false);
     setXpGained(0);
     setTimeout(() => playQuestion(q), 300);
-  }, [mode, stats.level, playQuestion]);
+  }, [mode, stats.level, playQuestion, session.total, guardAction]);
 
   // End session
   const endSession = useCallback(() => {
@@ -659,6 +668,8 @@ export default function EarTrainingPage() {
   const xpPercent = Math.min((stats.xp / xpNeeded) * 100, 100);
 
   return (
+    <>
+    <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="history" />
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
@@ -1132,6 +1143,7 @@ export default function EarTrainingPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }
 

@@ -46,7 +46,7 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
   if (pathStr === 'change-email') {
     headers['X-Origin'] = request.headers.get('Origin') || 'https://kuon-rnd.com';
   }
-  if (pathStr === 'verify') {
+  if (pathStr === 'verify' || pathStr === 'google') {
     headers['X-CF-Country'] = request.headers.get('CF-IPCountry') || '';
     headers['X-CF-City'] = request.headers.get('CF-Visitor-City') || request.headers.get('CF-IPCity') || '';
   }
@@ -97,8 +97,8 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
   // ── Parse JSON response ──
   const data = await res.json() as Record<string, unknown>;
 
-  // ── Special: verify → set JWT cookie ──
-  if (pathStr === 'verify' && method === 'POST' && res.ok && data.jwt) {
+  // ── Special: verify / google → set JWT cookie ──
+  if ((pathStr === 'verify' || pathStr === 'google') && method === 'POST' && res.ok && data.jwt) {
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: {
