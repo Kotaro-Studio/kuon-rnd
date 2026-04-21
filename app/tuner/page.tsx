@@ -167,52 +167,69 @@ function frequencyToNote(freq: number, refA4: number): { name: string; octave: n
   };
 }
 
-function detectPitchYIN(buffer: any, sampleRate: number, refA4: number): number | null {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function detectPitchYIN(buffer: any, sampleRate: number): number | null {
   const bufLen = buffer.length;
   if (bufLen < 200) return null;
 
-  const maxLag = Math.min(4096, Math.floor(bufLen / 2));
-  const difference = new Array<number>(maxLag).fill(0);
-  let sum = 0;
+  // Check if there's enough signal (avoid processing silence)
+  let rms = 0;
+  for (let i = 0; i < bufLen; i++) {
+    rms += buffer[i] * buffer[i];
+  }
+  rms = Math.sqrt(rms / bufLen);
+  if (rms < 0.005) return null; // Too quiet — skip
 
-  // Compute difference function
+  // Limit maxLag: min detectable frequency = sampleRate / maxLag
+  // maxLag = sampleRate / 50 gives us 50Hz minimum (enough for bass instruments)
+  const maxLag = Math.min(Math.floor(sampleRate / 50), Math.floor(bufLen / 2));
+  const difference = new Float32Array(maxLag);
+
+  // Step 1: Compute difference function
   for (let lag = 1; lag < maxLag; lag++) {
+    let sum = 0;
     for (let i = 0; i < maxLag; i++) {
-      const delta = buffer[i] - (buffer[i + lag] ?? 0);
-      difference[lag] += delta * delta;
+      const delta = buffer[i] - buffer[i + lag];
+      sum += delta * delta;
     }
+    difference[lag] = sum;
   }
 
-  // Cumulative mean normalized difference
-  sum = 0;
+  // Step 2: Cumulative mean normalized difference
+  let cumulativeSum = 0;
+  difference[0] = 1;
   for (let lag = 1; lag < maxLag; lag++) {
-    sum += difference[lag];
-    difference[lag] = lag * difference[lag] / (sum || 1);
+    cumulativeSum += difference[lag];
+    difference[lag] = difference[lag] * lag / (cumulativeSum || 1);
   }
 
-  // Find first lag with difference < threshold
-  let foundLag = null;
+  // Step 3: Find first lag below threshold (absolute threshold)
+  let foundLag = -1;
   for (let lag = 2; lag < maxLag; lag++) {
     if (difference[lag] < YIN_THRESHOLD) {
+      // Find the minimum in this dip
+      while (lag + 1 < maxLag && difference[lag + 1] < difference[lag]) {
+        lag++;
+      }
       foundLag = lag;
       break;
     }
   }
 
-  if (foundLag === null) return null;
+  if (foundLag === -1) return null;
 
-  // Parabolic interpolation for better accuracy
+  // Step 4: Parabolic interpolation for sub-sample accuracy
   const lag = foundLag;
   const x0 = lag > 0 ? difference[lag - 1] : difference[lag];
   const x1 = difference[lag];
   const x2 = lag < maxLag - 1 ? difference[lag + 1] : difference[lag];
 
-  const a = (x2 - x1) - (x1 - x0);
-  const b = (x1 - x0) - a;
-  const shift = b / (2 * a + 0.0001);
+  const denom = 2 * (2 * x1 - x2 - x0);
+  const shift = denom !== 0 ? (x0 - x2) / denom : 0;
   const adjustedLag = lag + shift;
 
-  return (sampleRate / adjustedLag);
+  if (adjustedLag <= 0) return null;
+  return sampleRate / adjustedLag;
 }
 
 // ============================================================================
@@ -248,10 +265,12 @@ export default function TunerPage() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dataArrayRef = useRef<any>(null);
   const sessionStartRef = useRef<number | null>(null);
   const lastNoteTimeRef = useRef<number>(0);
   const lastPerfectTimeRef = useRef<number>(0);
+  const isListeningRef = useRef(false);
 
   // Load localStorage data on mount
   useEffect(() => {
@@ -350,26 +369,31 @@ export default function TunerPage() {
     }
   }, [achievements]);
 
-  // Pitch detection loop
+  // Refs for latest values (avoids stale closure in rAF loop)
+  const refA4Ref = useRef(refA4);
+  const instrumentRef = useRef(instrument);
+  useEffect(() => { refA4Ref.current = refA4; }, [refA4]);
+  useEffect(() => { instrumentRef.current = instrument; }, [instrument]);
+
+  // Pitch detection loop — uses refs to avoid stale closure issues
   const detectPitch = useCallback(() => {
+    if (!isListeningRef.current) return;
     if (!analyserRef.current || !dataArrayRef.current) return;
 
-    // @ts-ignore - Float32Array buffer type compatibility
     analyserRef.current.getFloatTimeDomainData(dataArrayRef.current);
 
-    // @ts-ignore - Float32Array buffer type compatibility
-    const detectedFreq = detectPitchYIN(dataArrayRef.current, audioContextRef.current?.sampleRate ?? 44100, refA4);
+    const sampleRate = audioContextRef.current?.sampleRate ?? 44100;
+    const detectedFreq = detectPitchYIN(dataArrayRef.current, sampleRate);
 
     if (detectedFreq && detectedFreq > 50 && detectedFreq < 2000) {
       const now = Date.now();
-      if (now - lastNoteTimeRef.current > 100) {
-        // Throttle detection to avoid duplicates
+      if (now - lastNoteTimeRef.current > 80) {
         lastNoteTimeRef.current = now;
 
-        // Calculate note with transposition
-        const transpositionSemitones = TRANSPOSITION_MAP[instrument];
+        const currentRefA4 = refA4Ref.current;
+        const transpositionSemitones = TRANSPOSITION_MAP[instrumentRef.current];
         const transposedFreq = detectedFreq * Math.pow(2, transpositionSemitones / 12);
-        const noteInfo = frequencyToNote(transposedFreq, refA4);
+        const noteInfo = frequencyToNote(transposedFreq, currentRefA4);
 
         const note: Note = {
           name: noteInfo.name,
@@ -381,7 +405,6 @@ export default function TunerPage() {
 
         setCurrentNote(note);
 
-        // Update session stats
         setSessionStats(prev => {
           const newStats = {
             ...prev,
@@ -389,8 +412,8 @@ export default function TunerPage() {
             sessionNotes: [...prev.sessionNotes, note],
           };
 
-          const isInTune = Math.abs(noteInfo.cents) <= 5;
-          if (isInTune) {
+          const inTune = Math.abs(noteInfo.cents) <= 5;
+          if (inTune) {
             newStats.inTuneCount += 1;
             setCurrentStreak(s => {
               const newStreak = s + 1;
@@ -398,7 +421,6 @@ export default function TunerPage() {
               return newStreak;
             });
 
-            // Track minute of perfection
             if (Math.abs(noteInfo.cents) <= 3) {
               if (lastPerfectTimeRef.current === 0) {
                 lastPerfectTimeRef.current = now;
@@ -409,7 +431,7 @@ export default function TunerPage() {
             lastPerfectTimeRef.current = 0;
           }
 
-          checkAchievements(newStats.sessionNotes, currentStreak, newStats);
+          checkAchievements(newStats.sessionNotes, newStats.bestStreak, newStats);
           return newStats;
         });
 
@@ -420,27 +442,36 @@ export default function TunerPage() {
       }
     }
 
-    if (isListening) {
+    // Schedule next frame — uses ref, not state
+    if (isListeningRef.current) {
       animationFrameRef.current = requestAnimationFrame(detectPitch);
     }
-  }, [isListening, refA4, instrument, currentStreak, checkAchievements]);
+  }, [checkAchievements]);
 
   // Start microphone
   const startMicrophone = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
       streamRef.current = stream;
 
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Close previous context if it exists (e.g., from reference tone)
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        await audioContextRef.current.close();
       }
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
 
       const audioContext = audioContextRef.current;
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
 
-      analyser.fftSize = 8192;
-      analyser.smoothingTimeConstant = 0.85;
+      analyser.fftSize = 4096;
+      analyser.smoothingTimeConstant = 0;
 
       source.connect(analyser);
       analyserRef.current = analyser;
@@ -450,6 +481,8 @@ export default function TunerPage() {
       lastNoteTimeRef.current = 0;
       lastPerfectTimeRef.current = 0;
 
+      // Set ref BEFORE state so the rAF loop starts immediately
+      isListeningRef.current = true;
       setIsListening(true);
       setSessionStats({
         duration: 0,
@@ -459,8 +492,10 @@ export default function TunerPage() {
         sessionNotes: [],
       });
       setCurrentStreak(0);
+      setCurrentNote(null);
       setNoteHistory([]);
 
+      // Kick off the detection loop
       animationFrameRef.current = requestAnimationFrame(detectPitch);
     } catch (err) {
       console.error('Microphone access denied:', err);
@@ -470,18 +505,26 @@ export default function TunerPage() {
 
   // Stop microphone
   const stopMicrophone = useCallback(() => {
+    // Stop the rAF loop immediately via ref
+    isListeningRef.current = false;
+
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
 
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
+
+    analyserRef.current = null;
+    dataArrayRef.current = null;
 
     setIsListening(false);
 
@@ -516,13 +559,9 @@ export default function TunerPage() {
     return () => clearInterval(interval);
   }, [isListening]);
 
-  // Play reference tone
+  // Play reference tone (uses a separate AudioContext so it doesn't interfere with mic)
   const playReferenceTone = useCallback(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-
-    const ctx = audioContextRef.current;
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -536,6 +575,9 @@ export default function TunerPage() {
 
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 2);
+
+    // Clean up after playback
+    osc.onended = () => ctx.close();
   }, [refA4]);
 
   // Format time
