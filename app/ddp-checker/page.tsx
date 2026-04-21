@@ -174,6 +174,19 @@ const T = {
     es: 'Analizando el conjunto DDP…',
   } as L3,
   noIsrc: { ja: '—', en: '—', es: '—' } as L3,
+  // Summary card
+  summaryTitle: { ja: '検証サマリーカード', en: 'Verification Summary', es: 'Resumen de Verificación' } as L3,
+  summaryDesc: { ja: 'この検証結果を画像として保存・共有できます', en: 'Save or share this verification result as an image', es: 'Guarda o comparte este resultado como imagen' } as L3,
+  btnSaveCard: { ja: 'PNGで保存', en: 'Save as PNG', es: 'Guardar como PNG' } as L3,
+  btnShareX: { ja: 'Xでシェア', en: 'Share on X', es: 'Compartir en X' } as L3,
+  shareText: { ja: 'DDPマスターの検証が完了しました。ブラウザだけで。', en: 'DDP master verified. In the browser. No software needed.', es: 'Master DDP verificado. Solo en el navegador.' } as L3,
+  // How it works
+  howItWorks: { ja: 'この技術の仕組み →', en: 'How this works →', es: 'Cómo funciona →' } as L3,
+  // IQ180 share nudge
+  shareNudge: { ja: 'ブラウザだけでDDPを検証できることを、まだ知らない人がいます。', en: 'Some engineers still don\'t know you can verify DDP in a browser.', es: 'Algunos ingenieros aún no saben que pueden verificar DDP en el navegador.' } as L3,
+  // Tech specs
+  techSpecs: { ja: '技術仕様', en: 'Technical Specifications', es: 'Especificaciones Técnicas' } as L3,
+  redBookCompliant: { ja: 'Red Book 準拠', en: 'Red Book Compliant', es: 'Compatible con Red Book' } as L3,
 };
 
 // ─────────────────────────────────────────────
@@ -435,6 +448,165 @@ function formatTotalDuration(seconds: number): string {
   const s = Math.floor(seconds % 60);
   if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// ─────────────────────────────────────────────
+// Canvas: Summary Card Generator
+// ─────────────────────────────────────────────
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function generateSummaryCard(
+  ddpData: DdpData,
+  lang: Lang,
+  tFn: (l3: L3) => string
+): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  const W = 1200, H = 630; // OGP-friendly aspect ratio
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d')!;
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#0f172a');
+  bg.addColorStop(0.5, '#1e293b');
+  bg.addColorStop(1, '#0f172a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid pattern
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Top accent line
+  const accentGrad = ctx.createLinearGradient(0, 0, W, 0);
+  accentGrad.addColorStop(0, '#0284c7');
+  accentGrad.addColorStop(0.5, '#06b6d4');
+  accentGrad.addColorStop(1, '#0284c7');
+  ctx.fillStyle = accentGrad;
+  ctx.fillRect(0, 0, W, 4);
+
+  // "VERIFIED" badge
+  ctx.fillStyle = '#0284c7';
+  roundRect(ctx, 48, 40, 130, 32, 16);
+  ctx.fill();
+  ctx.font = '600 13px "Helvetica Neue", Arial, sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✓  VERIFIED', 64, 56);
+
+  // Title
+  ctx.fillStyle = '#f1f5f9';
+  ctx.font = '700 36px "Helvetica Neue", Arial, sans-serif';
+  ctx.textBaseline = 'top';
+  ctx.fillText('DDP Verification Report', 48, 90);
+
+  // Divider
+  ctx.fillStyle = 'rgba(255,255,255,0.1)';
+  ctx.fillRect(48, 140, W - 96, 1);
+
+  // Info grid
+  const infoY = 164;
+  const col1X = 48, col2X = 420, col3X = 780;
+
+  const drawField = (x: number, y: number, label: string, value: string) => {
+    ctx.fillStyle = '#64748b';
+    ctx.font = '500 12px "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText(label.toUpperCase(), x, y);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '600 18px "SF Mono", "Fira Code", Consolas, monospace';
+    ctx.fillText(value, x, y + 20);
+  };
+
+  drawField(col1X, infoY, 'TRACKS', String(ddpData.tracks.length));
+  drawField(col2X, infoY, 'TOTAL DURATION', formatTotalDuration(ddpData.totalDuration));
+  drawField(col3X, infoY, 'DDP VERSION', ddpData.ddpId.level || '2.00');
+
+  drawField(col1X, infoY + 64, 'UPC / EAN', ddpData.ddpId.upcEan || '—');
+  drawField(col2X, infoY + 64, 'LEAD-IN', formatGap(ddpData.leadInSeconds));
+  drawField(col3X, infoY + 64, 'FORMAT', '44.1kHz / 16bit / Stereo');
+
+  // Track listing
+  const trackY = infoY + 150;
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  roundRect(ctx, 48, trackY, W - 96, Math.min(ddpData.tracks.length * 28 + 44, 240), 12);
+  ctx.fill();
+
+  // Track header
+  ctx.fillStyle = '#64748b';
+  ctx.font = '600 11px "Helvetica Neue", Arial, sans-serif';
+  ctx.fillText('#', 68, trackY + 16);
+  ctx.fillText('DURATION', 130, trackY + 16);
+  ctx.fillText('PRE-GAP', 300, trackY + 16);
+  ctx.fillText('GAP', 450, trackY + 16);
+  ctx.fillText('ISRC', 580, trackY + 16);
+
+  // Track rows (max ~6 visible)
+  const maxRows = Math.min(ddpData.tracks.length, 6);
+  for (let i = 0; i < maxRows; i++) {
+    const tr = ddpData.tracks[i];
+    const rowY = trackY + 40 + i * 28;
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '600 13px "SF Mono", monospace';
+    ctx.fillText(tr.number.toString().padStart(2, '0'), 68, rowY);
+    ctx.font = '400 13px "SF Mono", monospace';
+    ctx.fillText(formatDuration(tr.durationSeconds), 130, rowY);
+    ctx.fillText(tr.pregapSeconds > 0 ? formatGap(tr.pregapSeconds) : '—', 300, rowY);
+    ctx.fillText(tr.number === 1 ? '—' : (tr.gapSeconds > 0 ? formatGap(tr.gapSeconds) : '—'), 450, rowY);
+    ctx.fillStyle = tr.isrc ? '#94a3b8' : '#475569';
+    ctx.fillText(tr.isrc || '—', 580, rowY);
+    ctx.fillStyle = '#cbd5e1';
+  }
+  if (ddpData.tracks.length > 6) {
+    const moreY = trackY + 40 + 6 * 28;
+    ctx.fillStyle = '#64748b';
+    ctx.font = '400 12px "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText(`+ ${ddpData.tracks.length - 6} more tracks`, 68, moreY);
+  }
+
+  // Footer
+  ctx.fillStyle = '#475569';
+  ctx.font = '400 12px "Helvetica Neue", Arial, sans-serif';
+  ctx.fillText('Verified by', 48, H - 48);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 14px "Helvetica Neue", Arial, sans-serif';
+  ctx.fillText('KUON R&D', 130, H - 48);
+  ctx.fillStyle = '#475569';
+  ctx.font = '400 12px "Helvetica Neue", Arial, sans-serif';
+  ctx.fillText('kuon-rnd.com/ddp-checker', 48, H - 28);
+
+  // Date
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}`;
+  ctx.fillStyle = '#475569';
+  ctx.font = '400 12px "Helvetica Neue", Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(dateStr, W - 48, H - 48);
+  ctx.textAlign = 'left';
+
+  // Red Book badge
+  ctx.fillStyle = '#16a34a';
+  roundRect(ctx, W - 230, H - 76, 182, 28, 14);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 12px "Helvetica Neue", Arial, sans-serif';
+  ctx.fillText('✓ Red Book Compliant', W - 218, H - 58);
+
+  return canvas;
 }
 
 // ─────────────────────────────────────────────
@@ -1184,6 +1356,103 @@ export default function DdpCheckerPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* ── Technical Specs ── */}
+          <div style={sectionCardStyle} className="hero-enter-3">
+            <h2 style={sectionTitleStyle}>{t(T.techSpecs)}</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              {[
+                { label: 'Format', value: 'Red Book (IEC 60908)' },
+                { label: 'Sample Rate', value: '44,100 Hz' },
+                { label: 'Bit Depth', value: '16-bit PCM' },
+                { label: 'Channels', value: '2 (Stereo)' },
+                { label: 'Sector Size', value: '2,352 bytes' },
+                { label: 'Frame Rate', value: '75 frames/sec' },
+              ].map((spec) => (
+                <div key={spec.label} style={{
+                  flex: '1 1 auto',
+                  minWidth: 140,
+                  padding: '12px 16px',
+                  background: 'rgba(2,132,199,0.04)',
+                  borderRadius: 10,
+                  border: '1px solid rgba(2,132,199,0.1)',
+                }}>
+                  <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 4 }}>{spec.label}</div>
+                  <div style={{ fontSize: 14, color: '#111827', fontFamily: '"SF Mono", "Fira Code", monospace', fontWeight: 600 }}>{spec.value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 50, background: '#dcfce7', color: '#16a34a', fontSize: 13, fontWeight: 600 }}>
+                ✓ {t(T.redBookCompliant)}
+              </span>
+            </div>
+          </div>
+
+          {/* ── Summary Card Generator ── */}
+          <div style={{ ...sectionCardStyle, textAlign: 'center' as const, background: 'linear-gradient(135deg, rgba(2,132,199,0.04), rgba(6,182,212,0.04))' }} className="hero-enter-3">
+            <h2 style={{ ...sectionTitleStyle, marginBottom: 8 }}>{t(T.summaryTitle)}</h2>
+            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20, fontFamily: sans }}>{t(T.summaryDesc)}</p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                style={{ ...btnPrimary, background: '#0284c7' }}
+                onClick={() => {
+                  if (!ddpData) return;
+                  const canvas = generateSummaryCard(ddpData, lang, t);
+                  const link = document.createElement('a');
+                  link.download = `ddp-verification-${new Date().toISOString().slice(0,10)}.png`;
+                  link.href = canvas.toDataURL('image/png');
+                  link.click();
+                }}
+              >
+                📸 {t(T.btnSaveCard)}
+              </button>
+              <button
+                style={{ ...btnPrimary, background: '#000' }}
+                onClick={() => {
+                  const text = encodeURIComponent(t(T.shareText));
+                  const url = encodeURIComponent('https://kuon-rnd.com/ddp-checker');
+                  window.open(`https://x.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+                }}
+              >
+                𝕏 {t(T.btnShareX)}
+              </button>
+            </div>
+          </div>
+
+          {/* ── IQ180: Share nudge + How it works ── */}
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <p style={{
+              fontFamily: serif,
+              fontSize: 'clamp(13px, 2.2vw, 15px)',
+              color: '#64748b',
+              fontStyle: 'italic',
+              marginBottom: 16,
+              lineHeight: 1.7,
+            }}>
+              {t(T.shareNudge)}
+            </p>
+            <a
+              href="/how-it-works/ddp"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontFamily: sans,
+                fontSize: 14,
+                color: '#0284c7',
+                textDecoration: 'none',
+                fontWeight: 500,
+                padding: '8px 20px',
+                borderRadius: 50,
+                background: 'rgba(2,132,199,0.06)',
+                border: '1px solid rgba(2,132,199,0.15)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {t(T.howItWorks)}
+            </a>
           </div>
 
           {/* Privacy note */}

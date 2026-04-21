@@ -143,6 +143,12 @@ const T = {
     en: 'Processing',
     es: 'Procesando',
   } as L3,
+  // How it works + share
+  howItWorks: { ja: 'この技術の仕組み →', en: 'How this works →', es: 'Cómo funciona →' } as L3,
+  shareNudge: { ja: 'ブラウザでDSDを再生できることを、まだ知らない人がいます。', en: 'Some audiophiles still don\'t know you can play DSD in a browser.', es: 'Algunos audiófilos aún no saben que pueden reproducir DSD en el navegador.' } as L3,
+  btnShareX: { ja: 'Xでシェア', en: 'Share on X', es: 'Compartir en X' } as L3,
+  shareText: { ja: 'DSDファイルをブラウザで再生・変換。世界初。Rust WebAssembly搭載。', en: 'Playing DSD files in the browser. World\'s first. Powered by Rust WebAssembly.', es: 'Reproduciendo archivos DSD en el navegador. Primero en el mundo. Powered by Rust WebAssembly.' } as L3,
+  techDetail: { ja: '処理詳細', en: 'Processing Details', es: 'Detalles del procesamiento' } as L3,
 };
 
 // ─────────────────────────────────────────────
@@ -986,6 +992,40 @@ export default function DsdPage() {
                         {t(T.convertAnother)}
                       </button>
                     </div>
+
+                    {/* ── IQ180: Tech details display ── */}
+                    {fileInfo && (
+                      <div style={{
+                        marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0',
+                        background: '#f8fafc', borderRadius: 8, padding: '1rem',
+                      }}>
+                        <p style={{ ...labelStyle, margin: '0 0 0.75rem' }}>{t(T.techDetail)}</p>
+                        <div style={{
+                          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem 1rem',
+                        }}>
+                          <div>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.1em' }}>Input Format</span>
+                            <p style={{ fontSize: '0.85rem', fontFamily: mono, fontWeight: 600, color: '#334155', margin: '0.25rem 0 0' }}>{fileInfo.format}</p>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.1em' }}>DSD Type</span>
+                            <p style={{ fontSize: '0.85rem', fontFamily: mono, fontWeight: 600, color: '#334155', margin: '0.25rem 0 0' }}>{fileInfo.dsdType}</p>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.1em' }}>Output</span>
+                            <p style={{ fontSize: '0.85rem', fontFamily: mono, fontWeight: 600, color: '#334155', margin: '0.25rem 0 0' }}>{targetRate >= 1000 ? (targetRate / 1000).toFixed(1) : targetRate}k 24-bit PCM</p>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.1em' }}>Engine</span>
+                            <p style={{ fontSize: '0.85rem', fontFamily: mono, fontWeight: 600, color: ACCENT, margin: '0.25rem 0 0' }}>Rust Wasm</p>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.1em' }}>Filter</span>
+                            <p style={{ fontSize: '0.85rem', fontFamily: mono, fontWeight: 600, color: '#334155', margin: '0.25rem 0 0' }}>Blackman-sinc</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button
@@ -1001,10 +1041,56 @@ export default function DsdPage() {
           </>
         )}
 
+        {/* ── IQ180: Share nudge + How it works ── */}
+        <div style={{ textAlign: 'center', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
+          <p style={{
+            fontFamily: serif,
+            fontSize: 'clamp(0.8rem, 2.2vw, 0.92rem)',
+            color: '#64748b',
+            fontStyle: 'italic',
+            marginBottom: '1rem',
+            lineHeight: 1.7,
+          }}>
+            {t(T.shareNudge)}
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+            <button
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 20px', borderRadius: 50, border: 'none',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                color: '#fff', background: '#000',
+                transition: 'all 0.2s ease',
+              }}
+              onClick={() => {
+                const text = encodeURIComponent(t(T.shareText));
+                const url = encodeURIComponent('https://kuon-rnd.com/dsd');
+                window.open(`https://x.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+              }}
+            >
+              𝕏 {t(T.btnShareX)}
+            </button>
+            <a
+              href="/how-it-works/dsd"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontFamily: sans, fontSize: 14, color: ACCENT,
+                textDecoration: 'none', fontWeight: 500,
+                padding: '8px 20px', borderRadius: 50,
+                background: 'rgba(124,58,237,0.06)',
+                border: '1px solid rgba(124,58,237,0.15)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {t(T.howItWorks)}
+            </a>
+          </div>
+        </div>
+
         {/* Privacy */}
         <p style={{
           textAlign: 'center', fontSize: '0.75rem', color: '#94a3b8',
-          marginTop: '2.5rem', padding: '1rem', borderTop: '1px solid #f1f5f9', lineHeight: 1.6,
+          marginTop: '1rem', padding: '1rem', borderTop: '1px solid #f1f5f9', lineHeight: 1.6,
         }}>
           {t(T.privacy)}
         </p>
