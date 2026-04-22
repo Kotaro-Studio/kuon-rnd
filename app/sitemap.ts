@@ -63,6 +63,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.5,
   }));
 
+  // ── Analog tools (hub + 5 calculators) ──
+  const analogToolsPages: MetadataRoute.Sitemap = [
+    { url: `${base}/analog-tools`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/analog-tools/tape-remaining`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/analog-tools/tape-time`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/analog-tools/speed-cal`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/analog-tools/jazz-time`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/analog-tools/dbu-volt`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+  ];
+
   // ── Legal & manuals ──
   const legalPages: MetadataRoute.Sitemap = [
     { url: `${base}/legal/tokushoho`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
@@ -78,6 +88,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...lpPages,
     ...communityPages,
     ...gpsPages,
+    ...analogToolsPages,
     ...legalPages,
   ];
 }

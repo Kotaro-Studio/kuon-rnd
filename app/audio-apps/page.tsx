@@ -515,6 +515,25 @@ const apps: AppEntry[] = [
     href: '/ddp-checker-lp', accent: '#0284c7',
   },
   {
+    id: 'analog-tools', personas: ['engineer'], tier: 'open',
+    badge: 'ANALOG', name: 'KUON ANALOG TOOLS',
+    tagline: {
+      ja: 'オープンリールと、ヴィンテージ機材のための5つの計算機。',
+      en: 'Five calculators for open-reel tape and vintage analog gear.',
+      ko: '오픈 릴과 빈티지 장비를 위한 5가지 계산기.',
+      pt: 'Cinco calculadoras para fita de rolo e equipamento vintage.',
+      es: 'Cinco calculadoras para cinta de carrete y equipo vintage.',
+    },
+    desc: {
+      ja: 'リール残量・テープ録音時間・Revox/Studer/Otari/Tascamの速度校正・演奏時間・電圧⇔dB変換。感覚ではなく数値で判断する、アナログ現場のための精密ツール群。',
+      en: 'Reel remaining, tape time, Revox/Studer/Otari/Tascam speed calibration, performance time, voltage⇔dB conversion. Precision tools for the analog workflow — numbers, not guesswork.',
+      ko: '릴 잔량·테이프 시간·Revox/Studer/Otari/Tascam 속도 교정·연주 시간·전압⇔dB 변환. 감각이 아닌 수치로 판단하는 아날로그 현장의 정밀 도구.',
+      pt: 'Fita restante, tempo, calibração Revox/Studer/Otari/Tascam, tempo de performance, conversão tensão⇔dB. Ferramentas de precisão para o workflow analógico.',
+      es: 'Cinta restante, tiempo, calibración Revox/Studer/Otari/Tascam, tiempo de actuación, conversión voltaje⇔dB. Herramientas de precisión para el flujo analógico.',
+    },
+    href: '/analog-tools', accent: '#d97706', isNew: true,
+  },
+  {
     id: 'dsd', personas: ['engineer'], tier: 'open',
     badge: 'DSD', name: 'KUON DSD',
     tagline: {
