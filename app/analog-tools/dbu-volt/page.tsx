@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -105,7 +105,7 @@ function formatDisplay(u: Unit, value: number): string {
 
 export default function DbuVolt() {
   const { lang } = useLang();
-  const t = (k: keyof typeof T) => T[k][lang];
+  const t = (k: keyof typeof T): string => T[k][lang] ?? T[k].en;
 
   const [vrms, setVrms] = useState<number>(0.7746);
   const [zOhm, setZOhm] = useState<number>(600);

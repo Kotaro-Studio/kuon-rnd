@@ -12,7 +12,7 @@ const ACCENT = '#8b5cf6';
 const GREEN = '#22c55e';
 const RED = '#ef4444';
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 const t = (m: L5, lang: Lang) => m[lang] ?? m.en;
 
 export default function SightReadingLP() {

@@ -9,7 +9,7 @@ import { RegistrationNudge, useRegistrationNudge } from '@/components/Registrati
 // TYPES
 // ============================================================================
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 interface Preset {
   name: string;

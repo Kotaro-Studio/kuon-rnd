@@ -11,6 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/microphone`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${base}/profile`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/gallery`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/certification`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/for-schools`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
   ];
 
   // ── Apps (tool pages) — high SEO value ──

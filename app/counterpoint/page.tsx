@@ -8,7 +8,7 @@ import type { Lang } from '@/context/LangContext';
 // TYPES
 // ============================================================================
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 interface HNote {
   letter: number;     // 0=C..6=B
@@ -75,7 +75,8 @@ function intervalName(semi: number, lang: Lang): string {
     10:{ ja:'短7度', en:'m7', ko:'단7도', pt:'7ªm', es:'7ªm' },
     11:{ ja:'長7度', en:'M7', ko:'장7도', pt:'7ªM', es:'7ªM' },
   };
-  return (names[s] || names[0])[lang];
+  const name = names[s] || names[0];
+  return (name as Record<string, string>)[lang] ?? name.en;
 }
 
 // ============================================================================
@@ -565,7 +566,7 @@ const errPanel: React.CSSProperties = { background: '#fff', border: '1px solid #
 
 export default function CounterpointPage() {
   const { lang } = useLang();
-  const t = (m: L5) => m[lang];
+  const t = (m: L5) => m[lang] ?? m.en;
 
   const [species, setSpecies] = useState<Species>(1);
   const [cfPos, setCfPos] = useState<CFPosition>('lower');
@@ -859,7 +860,7 @@ export default function CounterpointPage() {
           ].map((r, i) => (
             <div key={i}>
               <span style={{ fontWeight: 600, color: ACCENT, marginRight: 6 }}>{i+1}.</span>
-              {r[lang]}
+              {(r as Record<string, string>)[lang] ?? r.en}
             </div>
           ))}
         </div>

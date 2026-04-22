@@ -7,7 +7,7 @@ import type { Lang } from '@/context/LangContext';
 // ─────────────────────────────────────────────
 // Typography / Colors
 // ─────────────────────────────────────────────
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans  = '"Helvetica Neue", Arial, sans-serif';
 const ACCENT = '#059669';       // emerald-600
@@ -71,7 +71,7 @@ const T = {
 // ─────────────────────────────────────────────
 export default function PlayerUploadPage() {
   const { lang } = useLang();
-  const t = (obj: L3) => obj[lang];
+  const t = (obj: L3) => obj[lang] ?? obj.en;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);

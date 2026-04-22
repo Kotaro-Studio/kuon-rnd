@@ -12,7 +12,7 @@ const mono  = '"SF Mono","Fira Code",Consolas,monospace';
 const ACCENT = '#ea580c';
 const BG     = '#fffbf7';
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 const t5 = (m: Partial<Record<Lang,string>> & {en:string}, lang: Lang) => m[lang] ?? m.en;
 
 // ─── Music Theory Constants ───

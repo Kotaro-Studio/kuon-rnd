@@ -9,7 +9,7 @@ import type { Lang } from '@/context/LangContext';
 // Design Tokens
 // ─────────────────────────────────────────────
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans  = '"Helvetica Neue", Arial, sans-serif';
@@ -369,7 +369,7 @@ export default function MetronomeLPPage() {
                   {s.num}
                 </div>
                 <div style={{ fontSize: 'clamp(11px,2vw,13px)', color: '#64748b', marginTop: 6, fontWeight: 600 }}>
-                  {s.label[lang] ?? s.label.en}
+                  {(s.label as Record<string, string>)[lang] ?? s.label.en}
                 </div>
               </div>
             ))}

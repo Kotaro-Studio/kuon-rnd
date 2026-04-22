@@ -9,7 +9,7 @@ import { RegistrationNudge, useRegistrationNudge } from '@/components/Registrati
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 type CheckStatus = 'pass' | 'warn' | 'fail';
 

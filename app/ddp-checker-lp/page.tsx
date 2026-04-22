@@ -8,7 +8,7 @@ import type { Lang } from '@/context/LangContext';
 // ─────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 const ACCENT = '#0284c7';
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';

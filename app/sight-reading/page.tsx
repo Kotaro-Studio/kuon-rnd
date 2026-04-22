@@ -8,7 +8,7 @@ import type { Lang } from '@/context/LangContext';
 // TYPES
 // ============================================================================
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 type Mode = 'note' | 'keysig' | 'clef' | 'convert';
 type ClefType = 'treble' | 'bass' | 'alto' | 'tenor';
 // 4 notation systems:

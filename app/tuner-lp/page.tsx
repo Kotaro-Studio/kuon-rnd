@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans  = '"Helvetica Neue", Arial, sans-serif';
@@ -366,7 +366,7 @@ function GaugeMockup() {
 // ─────────────────────────────────────────────
 export default function TunerLpPage() {
   const { lang } = useLang();
-  const t = (obj: L5) => obj[lang];
+  const t = (obj: L5) => obj[lang] ?? obj.en;
 
   return (
     <div style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1a2a4a 50%, #0f172a 100%)', color: '#e5e7eb', minHeight: '100vh' }}>

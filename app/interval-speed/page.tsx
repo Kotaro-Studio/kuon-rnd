@@ -9,7 +9,7 @@ import { RegistrationNudge, useRegistrationNudge } from '@/components/Registrati
 // TYPES
 // ============================================================================
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Direction = 'ascending' | 'descending' | 'harmonic';
 
@@ -278,10 +278,11 @@ function formatMs(ms: number): string {
 
 function speedLabel(ms: number, lang: Lang): string {
   const sec = ms / 1000;
-  if (sec < 1) return { ja: '⚡ 超速', en: '⚡ Lightning', ko: '⚡ 초속', pt: '⚡ Relâmpago', es: '⚡ Relámpago' }[lang];
-  if (sec < 2) return { ja: '🔥 速い', en: '🔥 Fast', ko: '🔥 빠름', pt: '🔥 Rápido', es: '🔥 Rápido' }[lang];
-  if (sec < 3) return { ja: '👍 良い', en: '👍 Good', ko: '👍 좋음', pt: '👍 Bom', es: '👍 Bien' }[lang];
-  return { ja: '🐢 ゆっくり', en: '🐢 Slow', ko: '🐢 느림', pt: '🐢 Lento', es: '🐢 Lento' }[lang];
+  const pick = (o: Record<string, string>) => o[lang] ?? o.en;
+  if (sec < 1) return pick({ ja: '⚡ 超速', en: '⚡ Lightning', ko: '⚡ 초속', pt: '⚡ Relâmpago', es: '⚡ Relámpago', de: '⚡ Blitz' });
+  if (sec < 2) return pick({ ja: '🔥 速い', en: '🔥 Fast', ko: '🔥 빠름', pt: '🔥 Rápido', es: '🔥 Rápido', de: '🔥 Schnell' });
+  if (sec < 3) return pick({ ja: '👍 良い', en: '👍 Good', ko: '👍 좋음', pt: '👍 Bom', es: '👍 Bien', de: '👍 Gut' });
+  return pick({ ja: '🐢 ゆっくり', en: '🐢 Slow', ko: '🐢 느림', pt: '🐢 Lento', es: '🐢 Lento', de: '🐢 Langsam' });
 }
 
 // ============================================================================

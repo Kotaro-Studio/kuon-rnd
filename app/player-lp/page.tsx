@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans  = '"Helvetica Neue", Arial, sans-serif';
@@ -203,7 +203,7 @@ const T = {
 // ─────────────────────────────────────────────
 export default function PlayerLpPage() {
   const { lang } = useLang();
-  const t = (obj: L3) => obj[lang];
+  const t = (obj: L3) => obj[lang] ?? obj.en;
 
   return (
     <div style={{ background: '#fafaf9', color: '#1a1a1a', minHeight: '100vh' }}>

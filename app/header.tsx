@@ -19,17 +19,18 @@ type L3 = Partial<Record<Lang, string>> & { en: string };
 type MenuItem = { href: string; label: L3 };
 
 const MENU: MenuItem[] = [
-  { href: '/',                  label: { ja: 'トップ',           en: 'Top',        ko: '홈',        pt: 'Início',     es: 'Inicio'     } },
-  { href: '/audio-apps',        label: { ja: 'アプリ',           en: 'Apps',       ko: '앱',        pt: 'Apps',       es: 'Apps'       } },
-  { href: '/microphone',        label: { ja: 'マイク',           en: 'Microphone', ko: '마이크',    pt: 'Microfone',  es: 'Micrófono'  } },
-  { href: '/soundmap',          label: { ja: '地球音マップ',     en: 'Sound Map',  ko: '지구의 소리', pt: 'Sons da Terra', es: 'Sonidos' } },
-  { href: '/events-lp',         label: { ja: 'ライブ情報',       en: "Today's Live", ko: '공연 정보', pt: 'Ao Vivo',   es: 'En Vivo'   } },
-  { href: '/#discover',         label: { ja: 'スカウト',         en: 'Discover',   ko: '디스커버',  pt: 'Descobrir',  es: 'Descubrir'  } },
+  { href: '/',                  label: { ja: 'トップ',           en: 'Top',        ko: '홈',        pt: 'Início',     es: 'Inicio',     de: 'Start'      } },
+  { href: '/audio-apps',        label: { ja: 'アプリ',           en: 'Apps',       ko: '앱',        pt: 'Apps',       es: 'Apps',       de: 'Apps'       } },
+  { href: '/microphone',        label: { ja: 'マイク',           en: 'Microphone', ko: '마이크',    pt: 'Microfone',  es: 'Micrófono',  de: 'Mikrofon'   } },
+  { href: '/soundmap',          label: { ja: '地球音マップ',     en: 'Sound Map',  ko: '지구의 소리', pt: 'Sons da Terra', es: 'Sonidos',  de: 'Klangkarte' } },
+  { href: '/events-lp',         label: { ja: 'ライブ情報',       en: "Today's Live", ko: '공연 정보', pt: 'Ao Vivo',   es: 'En Vivo',    de: 'Live-Events' } },
+  { href: '/certification',     label: { ja: '認定',             en: 'Certify',    ko: '인증',      pt: 'Certificação', es: 'Certificación', de: 'Zertifizierung' } },
+  { href: '/#discover',         label: { ja: 'スカウト',         en: 'Discover',   ko: '디스커버',  pt: 'Descobrir',  es: 'Descubrir',  de: 'Entdecken'  } },
 ];
 
-const CONTACT: L3 = { ja: 'コンタクト', en: 'Contact', ko: '문의', pt: 'Contato', es: 'Contacto' };
-const LOGIN: L3 = { ja: 'ログイン', en: 'Log In', ko: '로그인', pt: 'Entrar', es: 'Entrar' };
-const MYPAGE: L3 = { ja: 'マイページ', en: 'My Page', ko: '마이페이지', pt: 'Minha Página', es: 'Mi Página' };
+const CONTACT: L3 = { ja: 'コンタクト', en: 'Contact', ko: '문의', pt: 'Contato', es: 'Contacto', de: 'Kontakt' };
+const LOGIN: L3 = { ja: 'ログイン', en: 'Log In', ko: '로그인', pt: 'Entrar', es: 'Entrar', de: 'Anmelden' };
+const MYPAGE: L3 = { ja: 'マイページ', en: 'My Page', ko: '마이페이지', pt: 'Minha Página', es: 'Mi Página', de: 'Mein Bereich' };
 
 // ─────────────────────────────────────────────
 // Header

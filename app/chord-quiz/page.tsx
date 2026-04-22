@@ -10,7 +10,7 @@ import { RegistrationNudge, useRegistrationNudge } from '@/components/Registrati
 // ============================================================================
 
 type QuizMode = 'identify' | 'inversions' | 'progressions';
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 interface ChordDef {
   intervals: number[];

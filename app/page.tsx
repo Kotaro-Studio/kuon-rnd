@@ -16,6 +16,14 @@ const t5 = (m: L5, lang: Lang): string => m[lang] ?? m.en;
 const HomePage: React.FC = () => {
   const { lang } = useLang();
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [yearly, setYearly] = useState(false);
+
+  // Student: ¥480/mo → ¥4,800/yr (2ヶ月無料 = 月換算¥400)
+  // Pro:     ¥980/mo → ¥9,800/yr (2ヶ月無料 = 月換算¥817)
+  const studentMonthly = 480;
+  const studentYearly  = 4800;
+  const proMonthly     = 980;
+  const proYearly      = 9800;
 
   const faqs = [
     {
@@ -25,6 +33,7 @@ const HomePage: React.FC = () => {
         es: '¿Hay aplicaciones gratuitas?',
         ko: '무료로 사용할 수 있는 앱이 있나요?',
         pt: 'Existem aplicativos gratuitos?',
+        de: 'Gibt es kostenlose Apps?',
       },
       a: {
         ja: 'はい。多くのブラウザアプリは無料で使用回数の制限なくお使いいただけます。一部のプレミアム機能やサーバー処理が必要なアプリにはサブスクリプションが必要です。',
@@ -32,6 +41,7 @@ const HomePage: React.FC = () => {
         es: 'Sí. Muchas aplicaciones basadas en navegador son gratuitas sin límites de uso. Algunas funciones premium y aplicaciones de servidor requieren suscripción.',
         ko: '네. 많은 브라우저 기반 앱은 사용 제한 없이 무료입니다. 일부 프리미엄 기능과 서버 앱은 구독이 필요합니다.',
         pt: 'Sim. Muitos aplicativos baseados em navegador são gratuitos sem limites de uso. Algumas funcionalidades premium e aplicativos de servidor requerem assinatura.',
+        de: 'Ja. Viele browserbasierte Apps sind kostenlos und ohne Nutzungslimit. Einige Premium-Funktionen und serverbasierte Apps erfordern ein Abonnement.',
       },
     },
     {
@@ -41,6 +51,7 @@ const HomePage: React.FC = () => {
         es: '¿Necesito una cuenta?',
         ko: '계정 등록이 필요한가요?',
         pt: 'Preciso de uma conta?',
+        de: 'Brauche ich ein Konto?',
       },
       a: {
         ja: 'アプリを使うだけなら不要です。設定の保存や処理履歴の確認にはアカウントが便利です。',
@@ -48,6 +59,7 @@ const HomePage: React.FC = () => {
         es: 'No para usar las aplicaciones. Una cuenta te permite guardar configuraciones y ver el historial.',
         ko: '앱을 사용하는 데는 필요하지 않습니다. 계정은 설정 저장 및 기록 보기에 유용합니다.',
         pt: 'Não para usar os aplicativos. Uma conta permite que você salve as configurações e visualize o histórico.',
+        de: 'Zum Verwenden der Apps nicht. Mit einem Konto können Sie Einstellungen speichern und Verläufe einsehen.',
       },
     },
     {
@@ -57,6 +69,7 @@ const HomePage: React.FC = () => {
         es: '¿A dónde envían los micrófonos?',
         ko: '마이크는 어디로 배송되나요?',
         pt: 'Para onde vocês enviam os microfones?',
+        de: 'Wohin werden die Mikrofone versendet?',
       },
       a: {
         ja: '日本国内はもちろん、国際郵便が届くすべての国・地域に発送可能です。EMS・国際小包で安全にお届けします。送料は地域により異なります。',
@@ -64,6 +77,7 @@ const HomePage: React.FC = () => {
         es: 'Enviamos a cualquier lugar al que lleguen los servicios postales internacionales, a través de EMS y correo internacional. Los costos varían por región.',
         ko: '국제 우편이 닿는 모든 국가·지역으로 배송 가능합니다. EMS 및 국제 소포로 안전하게 배송합니다.',
         pt: 'Enviamos para qualquer lugar que os serviços postais internacionais alcançam — via EMS e encomenda internacional.',
+        de: 'Wir versenden überallhin, wohin der internationale Postdienst reicht — weltweit per EMS und internationalem Paketdienst. Versandkosten variieren je nach Region.',
       },
     },
     {
@@ -73,6 +87,7 @@ const HomePage: React.FC = () => {
         es: '¿Puedo cancelar mi suscripción en cualquier momento?',
         ko: '언제든지 구독을 취소할 수 있나요?',
         pt: 'Posso cancelar minha assinatura a qualquer momento?',
+        de: 'Kann ich mein Abonnement jederzeit kündigen?',
       },
       a: {
         ja: 'はい、いつでも解約できます。解約後も無料プランの機能は引き続き使えます。',
@@ -80,6 +95,7 @@ const HomePage: React.FC = () => {
         es: 'Sí, cancela en cualquier momento. Las características del plan gratuito permanecen disponibles después de la cancelación.',
         ko: '네, 언제든지 취소할 수 있습니다. 취소 후에도 무료 플랜 기능을 계속 사용할 수 있습니다.',
         pt: 'Sim, cancele a qualquer momento. Os recursos do plano gratuito permanecem disponíveis após o cancelamento.',
+        de: 'Ja, jederzeit kündbar. Die Funktionen des kostenlosen Plans bleiben auch nach der Kündigung verfügbar.',
       },
     },
     {
@@ -89,6 +105,7 @@ const HomePage: React.FC = () => {
         es: '¿Qué formatos de archivo son compatibles?',
         ko: '지원되는 파일 형식은?',
         pt: 'Quais formatos de arquivo são suportados?',
+        de: 'Welche Dateiformate werden unterstützt?',
       },
       a: {
         ja: 'WAV、MP3、FLAC、DSD（DSF/DFF）、DDPなど幅広いフォーマットに対応しています。',
@@ -96,6 +113,7 @@ const HomePage: React.FC = () => {
         es: 'WAV, MP3, FLAC, DSD (DSF/DFF), DDP y muchos más.',
         ko: 'WAV, MP3, FLAC, DSD (DSF/DFF), DDP 등 다양한 형식을 지원합니다.',
         pt: 'WAV, MP3, FLAC, DSD (DSF/DFF), DDP e muito mais.',
+        de: 'WAV, MP3, FLAC, DSD (DSF/DFF), DDP und viele mehr.',
       },
     },
     {
@@ -105,13 +123,15 @@ const HomePage: React.FC = () => {
         es: '¿Está disponible en otros idiomas?',
         ko: '다른 언어로도 사용 가능한가요?',
         pt: 'Está disponível em outros idiomas?',
+        de: 'Ist es in anderen Sprachen verfügbar?',
       },
       a: {
-        ja: 'はい。日本語、英語、スペイン語、韓国語、ポルトガル語の5言語に対応しています。',
-        en: 'Yes. Available in Japanese, English, Spanish, Korean, and Portuguese.',
-        es: 'Sí. Disponible en japonés, inglés, español, coreano y portugués.',
-        ko: '네. 일본어, 영어, 스페인어, 한국어, 포르투갈어 5가지 언어로 제공됩니다.',
-        pt: 'Sim. Disponível em japonês, inglês, espanhol, coreano e português.',
+        ja: 'はい。日本語、英語、ドイツ語、スペイン語、韓国語、ポルトガル語の6言語に対応しています。',
+        en: 'Yes. Available in Japanese, English, German, Spanish, Korean, and Portuguese.',
+        es: 'Sí. Disponible en japonés, inglés, alemán, español, coreano y portugués.',
+        ko: '네. 일본어, 영어, 독일어, 스페인어, 한국어, 포르투갈어 6가지 언어로 제공됩니다.',
+        pt: 'Sim. Disponível em japonês, inglês, alemão, espanhol, coreano e português.',
+        de: 'Ja. Verfügbar in Japanisch, Englisch, Deutsch, Spanisch, Koreanisch und Portugiesisch.',
       },
     },
   ];
@@ -120,50 +140,50 @@ const HomePage: React.FC = () => {
     {
       emoji: '🎚️',
       name: 'MASTER CHECK',
-      desc: { ja: 'ラウドネス測定 + 自動調整', en: 'Loudness measurement + auto-adjust', es: 'Medición de volumen + ajuste automático', ko: '라우드니스 측정 + 자동 조정', pt: 'Medição de volume + ajuste automático' },
+      desc: { ja: 'ラウドネス測定 + 自動調整', en: 'Loudness measurement + auto-adjust', es: 'Medición de volumen + ajuste automático', ko: '라우드니스 측정 + 자동 조정', pt: 'Medição de volume + ajuste automático', de: 'Lautheitsmessung + Auto-Anpassung' },
       href: '/master-check-lp',
     },
     {
       emoji: '🎼',
       name: 'DSD CONVERTER',
-      desc: { ja: '世界初ブラウザDSD再生', en: 'World\'s first browser DSD player', es: 'Primer reproductor DSD de navegador del mundo', ko: '세계 최초 브라우저 DSD 플레이어', pt: 'Primeiro reprodutor DSD do navegador do mundo' },
+      desc: { ja: '世界初ブラウザDSD再生', en: 'World\'s first browser DSD player', es: 'Primer reproductor DSD de navegador del mundo', ko: '세계 최초 브라우저 DSD 플레이어', pt: 'Primeiro reprodutor DSD do navegador do mundo', de: 'Der weltweit erste DSD-Player im Browser' },
       href: '/dsd-lp',
     },
     {
       emoji: '💿',
       name: 'DDP CHECKER',
-      desc: { ja: 'DDPイメージ検証', en: 'DDP image verification', es: 'Verificación de imágenes DDP', ko: 'DDP 이미지 검증', pt: 'Verificação de imagem DDP' },
+      desc: { ja: 'DDPイメージ検証', en: 'DDP image verification', es: 'Verificación de imágenes DDP', ko: 'DDP 이미지 검증', pt: 'Verificação de imagem DDP', de: 'DDP-Image-Prüfung' },
       href: '/ddp-checker-lp',
     },
     {
       emoji: '🎵',
       name: 'NORMALIZE',
-      desc: { ja: 'ピーク・ラウドネス正規化', en: 'Peak & loudness normalization', es: 'Normalización de pico y volumen', ko: '피크 & 라우드니스 정규화', pt: 'Normalização de pico e volume' },
+      desc: { ja: 'ピーク・ラウドネス正規化', en: 'Peak & loudness normalization', es: 'Normalización de pico y volumen', ko: '피크 & 라우드니스 정규화', pt: 'Normalização de pico e volume', de: 'Peak- & Lautheits-Normalisierung' },
       href: '/normalize-lp',
-      badge: { ja: 'マイク購入者限定', en: 'Mic Owners Only', es: 'Solo compradores', ko: '마이크 구매자 전용', pt: 'Apenas compradores' },
+      badge: { ja: 'マイク購入者限定', en: 'Mic Owners Only', es: 'Solo compradores', ko: '마이크 구매자 전용', pt: 'Apenas compradores', de: 'Nur für Mikrofonkäufer' },
     },
     {
       emoji: '🔇',
       name: 'NOISE REDUCTION',
-      desc: { ja: 'スペクトルノイズ除去', en: 'Spectral noise reduction', es: 'Reducción de ruido espectral', ko: '스펙트럼 노이즈 제거', pt: 'Redução de ruído espectral' },
+      desc: { ja: 'スペクトルノイズ除去', en: 'Spectral noise reduction', es: 'Reducción de ruido espectral', ko: '스펙트럼 노이즈 제거', pt: 'Redução de ruído espectral', de: 'Spektrale Rauschunterdrückung' },
       href: '/noise-reduction',
     },
     {
       emoji: '🎹',
       name: 'EAR TRAINING',
-      desc: { ja: '音感トレーニング', en: 'Ear training exercises', es: 'Ejercicios de entrenamiento auditivo', ko: '귀 훈련', pt: 'Exercícios de treinamento auditivo' },
+      desc: { ja: '音感トレーニング', en: 'Ear training exercises', es: 'Ejercicios de entrenamiento auditivo', ko: '귀 훈련', pt: 'Exercícios de treinamento auditivo', de: 'Gehörbildung' },
       href: '/ear-training-lp',
     },
     {
       emoji: '🥁',
       name: 'METRONOME',
-      desc: { ja: 'プロ仕様メトロノーム', en: 'Professional metronome', es: 'Metrónomo profesional', ko: '프로 메트로놈', pt: 'Metrônomo profissional' },
+      desc: { ja: 'プロ仕様メトロノーム', en: 'Professional metronome', es: 'Metrónomo profesional', ko: '프로 메트로놈', pt: 'Metrônomo profissional', de: 'Profi-Metronom' },
       href: '/metronome-lp',
     },
     {
       emoji: '🎸',
       name: 'CHORD QUIZ',
-      desc: { ja: 'コード聴き取りクイズ', en: 'Chord recognition quiz', es: 'Quiz de reconocimiento de acordes', ko: '코드 인식 퀴즈', pt: 'Quiz de reconhecimento de acordes' },
+      desc: { ja: 'コード聴き取りクイズ', en: 'Chord recognition quiz', es: 'Quiz de reconocimiento de acordes', ko: '코드 인식 퀴즈', pt: 'Quiz de reconhecimento de acordes', de: 'Akkord-Erkennungs-Quiz' },
       href: '/chord-quiz-lp',
     },
   ];
@@ -171,23 +191,23 @@ const HomePage: React.FC = () => {
   const personas = [
     {
       emoji: '🎵',
-      title: { ja: '演奏家', en: 'Musicians', es: 'Músicos', ko: '연주자', pt: 'Músicos' },
-      desc: { ja: '練習の記録、ラウドネス調整、音源分離。プロの現場で使われるツールが、すべて無料。', en: 'Practice logs, loudness adjustment, stem separation. Professional-grade tools, all free.', es: 'Registros de práctica, ajuste de volumen, separación de stems. Herramientas de calidad profesional, todas gratis.', ko: '연습 기록, 라우드니스 조정, 스템 분리. 전문 수준의 도구, 모두 무료.', pt: 'Registros de prática, ajuste de volume, separação de stems. Ferramentas de qualidade profissional, todas grátis.' },
+      title: { ja: '演奏家', en: 'Musicians', es: 'Músicos', ko: '연주자', pt: 'Músicos', de: 'Musiker' },
+      desc: { ja: '練習の記録、ラウドネス調整、音源分離。プロの現場で使われるツールが、すべて無料。', en: 'Practice logs, loudness adjustment, stem separation. Professional-grade tools, all free.', es: 'Registros de práctica, ajuste de volumen, separación de stems. Herramientas de calidad profesional, todas gratis.', ko: '연습 기록, 라우드니스 조정, 스템 분리. 전문 수준의 도구, 모두 무료.', pt: 'Registros de prática, ajuste de volume, separação de stems. Ferramentas de qualidade profissional, todas grátis.', de: 'Übungsprotokolle, Lautheitsanpassung, Stem-Separation. Profiwerkzeuge, komplett kostenlos.' },
     },
     {
       emoji: '🎓',
-      title: { ja: '音大生', en: 'Music Students', es: 'Estudiantes de Música', ko: '음악학생', pt: 'Estudantes de Música' },
-      desc: { ja: '和声分析、リズム訓練、聴音テスト。学割¥480/月で、音大4年間の成長を記録。', en: 'Harmony analysis, rhythm training, ear tests. Student plan ¥480/mo to track 4 years of growth.', es: 'Análisis de armonía, entrenamiento de ritmo, pruebas auditivas. Plan de estudiante ¥480/mes para registrar 4 años de crecimiento.', ko: '화성 분석, 리듬 훈련, 청음 테스트. 학생 플랜 ¥480/월로 4년간의 성장을 기록합니다.', pt: 'Análise de harmonia, treinamento de ritmo, testes auditivos. Plano de estudante ¥480/mês para rastrear 4 anos de crescimento.' },
+      title: { ja: '音大生', en: 'Music Students', es: 'Estudiantes de Música', ko: '음악학생', pt: 'Estudantes de Música', de: 'Musikstudierende' },
+      desc: { ja: '和声分析、リズム訓練、聴音テスト。学割¥480/月で、音大4年間の成長を記録。', en: 'Harmony analysis, rhythm training, ear tests. Student plan ¥480/mo to track 4 years of growth.', es: 'Análisis de armonía, entrenamiento de ritmo, pruebas auditivas. Plan de estudiante ¥480/mes para registrar 4 años de crecimiento.', ko: '화성 분석, 리듬 훈련, 청음 테스트. 학생 플랜 ¥480/월로 4년간의 성장을 기록합니다.', pt: 'Análise de harmonia, treinamento de ritmo, testes auditivos. Plano de estudante ¥480/mês para rastrear 4 anos de crescimento.', de: 'Harmonielehre, Rhythmustraining, Gehörtests. Studi-Tarif ¥480/Monat — dokumentiert 4 Jahre Wachstum.' },
     },
     {
       emoji: '🎛️',
-      title: { ja: '録音エンジニア', en: 'Recording Engineers', es: 'Ingenieros de Grabación', ko: '녹음 엔지니어', pt: 'Engenheiros de Gravação' },
-      desc: { ja: 'DSD変換、DDPチェッカー、マスターチェック。他にないツールが、ブラウザで動く。', en: 'DSD converter, DDP checker, master check. Tools you can\'t find anywhere else, in your browser.', es: 'Convertidor DSD, verificador DDP, verificación maestra. Herramientas que no encontrarás en ningún otro lugar, en tu navegador.', ko: 'DSD 컨버터, DDP 체커, 마스터 체크. 다른 곳에서 찾을 수 없는 도구, 브라우저에서.', pt: 'Conversor DSD, verificador DDP, verificação mestre. Ferramentas que você não encontrará em nenhum outro lugar, no seu navegador.' },
+      title: { ja: '録音エンジニア', en: 'Recording Engineers', es: 'Ingenieros de Grabación', ko: '녹음 엔지니어', pt: 'Engenheiros de Gravação', de: 'Tonmeister' },
+      desc: { ja: 'DSD変換、DDPチェッカー、マスターチェック。他にないツールが、ブラウザで動く。', en: 'DSD converter, DDP checker, master check. Tools you can\'t find anywhere else, in your browser.', es: 'Convertidor DSD, verificador DDP, verificación maestra. Herramientas que no encontrarás en ningún otro lugar, en tu navegador.', ko: 'DSD 컨버터, DDP 체커, 마스터 체크. 다른 곳에서 찾을 수 없는 도구, 브라우저에서.', pt: 'Conversor DSD, verificador DDP, verificação mestre. Ferramentas que você não encontrará em nenhum outro lugar, no seu navegador.', de: 'DSD-Konverter, DDP-Prüfer, Master-Check. Werkzeuge, die es sonst nirgends gibt — direkt im Browser.' },
     },
     {
       emoji: '🎧',
-      title: { ja: '音楽ファン', en: 'Music Fans', es: 'Aficionados a la Música', ko: '음악 팬', pt: 'Fãs de Música' },
-      desc: { ja: '世界中のライブ情報、録音マップ、アーティスト発掘。音楽の新しい楽しみ方。', en: 'Live events worldwide, sound map, discover artists. A new way to enjoy music.', es: 'Eventos en vivo en todo el mundo, mapa de sonido, descubre artistas. Una nueva forma de disfrutar la música.', ko: '세계 라이브 이벤트, 사운드 맵, 아티스트 발견. 음악을 즐기는 새로운 방식.', pt: 'Eventos ao vivo em todo o mundo, mapa de som, descubra artistas. Uma nova maneira de desfrutar da música.' },
+      title: { ja: '音楽ファン', en: 'Music Fans', es: 'Aficionados a la Música', ko: '음악 팬', pt: 'Fãs de Música', de: 'Musikliebhaber' },
+      desc: { ja: '世界中のライブ情報、録音マップ、アーティスト発掘。音楽の新しい楽しみ方。', en: 'Live events worldwide, sound map, discover artists. A new way to enjoy music.', es: 'Eventos en vivo en todo el mundo, mapa de sonido, descubre artistas. Una nueva forma de disfrutar la música.', ko: '세계 라이브 이벤트, 사운드 맵, 아티스트 발견. 음악을 즐기는 새로운 방식.', pt: 'Eventos ao vivo em todo o mundo, mapa de som, descubra artistas. Uma nova maneira de desfrutar da música.', de: 'Konzerte weltweit, Klanglandkarte, Künstler entdecken. Eine neue Art, Musik zu erleben.' },
     },
   ];
 
@@ -197,17 +217,17 @@ const HomePage: React.FC = () => {
       <section style={{ minHeight: '90vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: 'clamp(2rem, 5%, 6rem) clamp(1rem, 3%, 4rem)', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' }}>
         <div style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#64748b', marginBottom: '1.5rem' }}>THE PLATFORM FOR MUSICIANS</div>
         <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 2rem 0', maxWidth: '1000px', whiteSpace: 'pre-line', wordBreak: 'keep-all', color: '#0f172a' }}>
-          {t5({ ja: 'あなたの音楽を、\n次のステージへ。', en: 'Take your music\nto the next stage.', es: 'Lleva tu música\nal siguiente nivel.', ko: '당신의 음악을\n다음 단계로.', pt: 'Leve sua música\npara o próximo nível.' }, lang)}
+          {t5({ ja: 'あなたの音楽を、\n次のステージへ。', en: 'Take your music\nto the next stage.', es: 'Lleva tu música\nal siguiente nivel.', ko: '당신의 음악을\n다음 단계로.', pt: 'Leve sua música\npara o próximo nível.', de: 'Bring deine Musik\nauf die nächste Stufe.' }, lang)}
         </h1>
         <p style={{ fontFamily: sans, fontSize: 'clamp(1rem, 2.5vw, 1.125rem)', color: '#64748b', maxWidth: '800px', lineHeight: 1.6, margin: '0 0 3rem 0', whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
-          {t5({ ja: '15以上の無料ツール、ハンドメイドマイク、世界中の音楽家コミュニティ。\n空音開発は、音楽に生きるすべての人のためのプラットフォームです。', en: '15+ free tools, handmade microphones, a global musician community.\nKuon R&D is the platform for everyone who lives for music.', es: 'Más de 15 herramientas gratuitas, micrófonos artesanales, comunidad global.\nKuon R&D es la plataforma para quienes viven por la música.', ko: '15개 이상의 무료 도구, 핸드메이드 마이크, 글로벌 음악가 커뮤니티.\n공음개발은 음악으로 살아가는 모든 사람을 위한 플랫폼입니다.', pt: 'Mais de 15 ferramentas gratuitas, microfones artesanais, comunidade global.\nKuon R&D é a plataforma para quem vive pela música.' }, lang)}
+          {t5({ ja: '15以上の無料ツール、ハンドメイドマイク、世界中の音楽家コミュニティ。\n空音開発は、音楽に生きるすべての人のためのプラットフォームです。', en: '15+ free tools, handmade microphones, a global musician community.\nKuon R&D is the platform for everyone who lives for music.', es: 'Más de 15 herramientas gratuitas, micrófonos artesanales, comunidad global.\nKuon R&D es la plataforma para quienes viven por la música.', ko: '15개 이상의 무료 도구, 핸드메이드 마이크, 글로벌 음악가 커뮤니티.\n공음개발은 음악으로 살아가는 모든 사람을 위한 플랫폼입니다.', pt: 'Mais de 15 ferramentas gratuitas, microfones artesanais, comunidade global.\nKuon R&D é a plataforma para quem vive pela música.', de: 'Über 15 kostenlose Tools, handgefertigte Mikrofone, eine weltweite Musikergemeinschaft.\nKuon R&D ist die Plattform für alle, die für Musik leben.' }, lang)}
         </p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.875rem 2rem', background: '#0f172a', color: 'white', borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#0f172a'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-            {t5({ ja: '無料ではじめる', en: 'Start Free', es: 'Comenzar Gratis', ko: '무료로 시작', pt: 'Comece Grátis' }, lang)}
+            {t5({ ja: '無料ではじめる', en: 'Start Free', es: 'Comenzar Gratis', ko: '무료로 시작', pt: 'Comece Grátis', de: 'Kostenlos starten' }, lang)}
           </Link>
           <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.875rem 2rem', border: `2px solid ${ACCENT}`, color: ACCENT, borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', background: 'white', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-            {t5({ ja: 'アプリを体験する', en: 'Try the Apps', es: 'Probar las Aplicaciones', ko: '앱 시도', pt: 'Experimente os Aplicativos' }, lang)}
+            {t5({ ja: 'アプリを体験する', en: 'Try the Apps', es: 'Probar las Aplicaciones', ko: '앱 시도', pt: 'Experimente os Aplicativos', de: 'Apps ausprobieren' }, lang)}
           </Link>
         </div>
       </section>
@@ -215,20 +235,20 @@ const HomePage: React.FC = () => {
       {/* 2. TRUST BAR */}
       <section style={{ borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '2rem clamp(1rem, 3%, 4rem)', background: 'white' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>15+</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'オーディオツール', en: 'Audio Tools', es: 'Herramientas de Audio', ko: '오디오 도구', pt: 'Ferramentas de Áudio' }, lang)}</div></div>
-          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>🌐</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '世界中に発送', en: 'Ships Worldwide', es: 'Envío Mundial', ko: '전 세계 배송', pt: 'Envio Mundial' }, lang)}</div></div>
-          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>5</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '言語対応', en: 'Languages', es: 'Idiomas', ko: '언어', pt: 'Idiomas' }, lang)}</div></div>
-          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>100%</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'ブラウザ完結', en: 'Browser-Based', es: 'Basado en Navegador', ko: '브라우저 기반', pt: 'Baseado em Navegador' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>15+</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'オーディオツール', en: 'Audio Tools', es: 'Herramientas de Audio', ko: '오디오 도구', pt: 'Ferramentas de Áudio', de: 'Audio-Tools' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>🌐</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '世界中に発送', en: 'Ships Worldwide', es: 'Envío Mundial', ko: '전 세계 배송', pt: 'Envio Mundial', de: 'Weltweiter Versand' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>6</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '言語対応', en: 'Languages', es: 'Idiomas', ko: '언어', pt: 'Idiomas', de: 'Sprachen' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>100%</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'ブラウザ完結', en: 'Browser-Based', es: 'Basado en Navegador', ko: '브라우저 기반', pt: 'Baseado em Navegador', de: 'Browserbasiert' }, lang)}</div></div>
         </div>
       </section>
 
       {/* 3. WHO IS THIS FOR */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
-          {t5({ ja: 'あなたのための場所', en: 'Built for you', es: 'Hecho para ti', ko: '당신을 위해 만들어졌습니다', pt: 'Feito para você' }, lang)}
+          {t5({ ja: 'あなたのための場所', en: 'Built for you', es: 'Hecho para ti', ko: '당신을 위해 만들어졌습니다', pt: 'Feito para você', de: 'Für dich gemacht' }, lang)}
         </h2>
         <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem' }}>
-          {t5({ ja: '音楽に関わるすべての人が、自分のステージを持つことができます。', en: 'Everyone involved in music can have their own stage.', es: 'Todos los involucrados en la música pueden tener su propio escenario.', ko: '음악에 관련된 모든 사람이 자신의 무대를 가질 수 있습니다.', pt: 'Todos os envolvidos na música podem ter seu próprio palco.' }, lang)}
+          {t5({ ja: '音楽に関わるすべての人が、自分のステージを持つことができます。', en: 'Everyone involved in music can have their own stage.', es: 'Todos los involucrados en la música pueden tener su propio escenario.', ko: '음악에 관련된 모든 사람이 자신의 무대를 가질 수 있습니다.', pt: 'Todos os envolvidos na música podem ter seu próprio palco.', de: 'Jeder, der mit Musik zu tun hat, kann seine eigene Bühne haben.' }, lang)}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
           {personas.map((p, idx) => (
@@ -244,10 +264,10 @@ const HomePage: React.FC = () => {
       {/* 4. APP SHOWCASE */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
-          {t5({ ja: 'プロが使うツールを、あなたの手に。', en: 'Professional tools, in your hands.', es: 'Herramientas profesionales, en tus manos.', ko: '프로가 사용하는 도구를 당신의 손에.', pt: 'Ferramentas profissionais, nas suas mãos.' }, lang)}
+          {t5({ ja: 'プロが使うツールを、あなたの手に。', en: 'Professional tools, in your hands.', es: 'Herramientas profesionales, en tus manos.', ko: '프로가 사용하는 도구를 당신의 손에.', pt: 'Ferramentas profissionais, nas suas mãos.', de: 'Profi-Werkzeuge in deiner Hand.' }, lang)}
         </h2>
         <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem', maxWidth: '700px', margin: '0 auto 3rem', wordBreak: 'keep-all' }}>
-          {t5({ ja: 'ブラウザだけで完結。ダウンロード不要で今すぐ使えます。', en: 'Everything runs in your browser. No downloads needed — start right now.', es: 'Todo se ejecuta en tu navegador. Sin descargas necesarias.', ko: '모든 것이 브라우저에서 실행됩니다. 다운로드 없이 바로 시작하세요.', pt: 'Tudo é executado no seu navegador. Sem downloads necessários.' }, lang)}
+          {t5({ ja: 'ブラウザだけで完結。ダウンロード不要で今すぐ使えます。', en: 'Everything runs in your browser. No downloads needed — start right now.', es: 'Todo se ejecuta en tu navegador. Sin descargas necesarias.', ko: '모든 것이 브라우저에서 실행됩니다. 다운로드 없이 바로 시작하세요.', pt: 'Tudo é executado no seu navegador. Sem downloads necessários.', de: 'Alles läuft im Browser. Kein Download nötig — direkt loslegen.' }, lang)}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
           {apps.map((app, idx) => (
@@ -264,7 +284,7 @@ const HomePage: React.FC = () => {
         </div>
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
           <Link href="/audio-apps" style={{ color: ACCENT, textDecoration: 'none', fontSize: '1rem', fontWeight: 500 }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
-            {t5({ ja: 'すべてのアプリを見る →', en: 'See all apps →', es: 'Ver todas las aplicaciones →', ko: '모든 앱 보기 →', pt: 'Ver todos os aplicativos →' }, lang)}
+            {t5({ ja: 'すべてのアプリを見る →', en: 'See all apps →', es: 'Ver todas las aplicaciones →', ko: '모든 앱 보기 →', pt: 'Ver todos os aplicativos →', de: 'Alle Apps ansehen →' }, lang)}
           </Link>
         </div>
       </section>
@@ -272,10 +292,10 @@ const HomePage: React.FC = () => {
       {/* 5. MICROPHONE */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
-          {t5({ ja: 'ソフトウェアだけじゃない。', en: 'Not just software.', es: 'No solo software.', ko: '소프트웨어만이 아닙니다.', pt: 'Não é apenas software.' }, lang)}
+          {t5({ ja: 'ソフトウェアだけじゃない。', en: 'Not just software.', es: 'No solo software.', ko: '소프트웨어만이 아닙니다.', pt: 'Não é apenas software.', de: 'Nicht nur Software.' }, lang)}
         </h2>
         <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '0.95rem', maxWidth: '800px', margin: '0 auto 3rem', wordBreak: 'keep-all' }}>
-          {t5({ ja: '音大生だった創業者が、自分のために作ったマイク。数十万円の高級マイクと同等以上のクオリティを、手が届く価格で。', en: 'Microphones built by our founder, who was once a music student. Studio-quality at an accessible price.', es: 'Micrófonos construidos por nuestro fundador, que fue estudiante de música. Calidad de estudio a un precio accesible.', ko: '음대생이었던 우리의 창립자가 만든 마이크. 저렴한 가격에 스튜디오 품질.', pt: 'Microfones construídos pelo nosso fundador, que foi estudante de música. Qualidade de estúdio a um preço acessível.' }, lang)}
+          {t5({ ja: '音大生だった創業者が、自分のために作ったマイク。数十万円の高級マイクと同等以上のクオリティを、手が届く価格で。', en: 'Microphones built by our founder, who was once a music student. Studio-quality at an accessible price.', es: 'Micrófonos construidos por nuestro fundador, que fue estudiante de música. Calidad de estudio a un precio accesible.', ko: '음대생이었던 우리의 창립자가 만든 마이크. 저렴한 가격에 스튜디오 품질.', pt: 'Microfones construídos pelo nosso fundador, que foi estudante de música. Qualidade de estúdio a um preço acessível.', de: 'Mikrofone unseres Gründers, selbst einst Musikstudent. Studioqualität zu einem erschwinglichen Preis.' }, lang)}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
@@ -284,15 +304,15 @@ const HomePage: React.FC = () => {
               <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: '#0284c7', color: 'white', padding: '0.5rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>BESTSELLER</div>
             </div>
             <div style={{ padding: '2rem' }}>
-              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'P-86S ステレオマイクロフォン', en: 'P-86S Stereo Microphone', es: 'Micrófono Estéreo P-86S', ko: 'P-86S 스테레오 마이크로폰', pt: 'Microfone Estéreo P-86S' }, lang)}</h3>
+              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'P-86S ステレオマイクロフォン', en: 'P-86S Stereo Microphone', es: 'Micrófono Estéreo P-86S', ko: 'P-86S 스테레오 마이크로폰', pt: 'Microfone Estéreo P-86S', de: 'P-86S Stereo-Mikrofon' }, lang)}</h3>
               <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥16,900</div>
               <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
-                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'プラグインパワー対応', en: 'Plug-in power compatible', es: 'Compatible con alimentación plug-in', ko: '플러그인 전원 호환', pt: 'Compatível com alimentação plug-in' }, lang)}</li>
-                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '1本でABステレオ', en: 'Single-body AB stereo', es: 'Estéreo AB de un solo cuerpo', ko: '단일 바디 AB 스테레오', pt: 'Estéreo AB de corpo único' }, lang)}</li>
-                <li>• {t5({ ja: '手はんだ製作', en: 'Hand-soldered', es: 'Soldada a mano', ko: '손납', pt: 'Soldado à mão' }, lang)}</li>
+                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'プラグインパワー対応', en: 'Plug-in power compatible', es: 'Compatible con alimentación plug-in', ko: '플러그인 전원 호환', pt: 'Compatível com alimentação plug-in', de: 'Plug-in-Power-kompatibel' }, lang)}</li>
+                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '1本でABステレオ', en: 'Single-body AB stereo', es: 'Estéreo AB de un solo cuerpo', ko: '단일 바디 AB 스테레오', pt: 'Estéreo AB de corpo único', de: 'AB-Stereo aus einem Gehäuse' }, lang)}</li>
+                <li>• {t5({ ja: '手はんだ製作', en: 'Hand-soldered', es: 'Soldada a mano', ko: '손납', pt: 'Soldado à mão', de: 'Handgelötet' }, lang)}</li>
               </ul>
               <Link href="/microphone" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                {t5({ ja: '詳しく見る →', en: 'Learn more →', es: 'Aprende más →', ko: '자세히 보기 →', pt: 'Saiba mais →' }, lang)}
+                {t5({ ja: '詳しく見る →', en: 'Learn more →', es: 'Aprende más →', ko: '자세히 보기 →', pt: 'Saiba mais →', de: 'Mehr erfahren →' }, lang)}
               </Link>
             </div>
           </div>
@@ -302,15 +322,15 @@ const HomePage: React.FC = () => {
               <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: '#64748b', color: 'white', padding: '0.5rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>PRO</div>
             </div>
             <div style={{ padding: '2rem' }}>
-              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'X-86S プロフェッショナル', en: 'X-86S Professional', es: 'X-86S Profesional', ko: 'X-86S 프로페셔널', pt: 'X-86S Profissional' }, lang)}</h3>
+              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'X-86S プロフェッショナル', en: 'X-86S Professional', es: 'X-86S Profesional', ko: 'X-86S 프로페셔널', pt: 'X-86S Profissional', de: 'X-86S Professional' }, lang)}</h3>
               <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥39,600</div>
               <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
-                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'ミニXLR端子', en: 'Mini XLR connector', es: 'Conector XLR mini', ko: '미니 XLR 커넥터', pt: 'Conector XLR mini' }, lang)}</li>
-                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '48Vファンタム電源', en: '48V phantom power', es: 'Alimentación fantasma 48V', ko: '48V 팬텀 전원', pt: 'Alimentação fantasma 48V' }, lang)}</li>
-                <li>• {t5({ ja: 'スタジオ品質', en: 'Studio quality', es: 'Calidad de estudio', ko: '스튜디오 품질', pt: 'Qualidade de estúdio' }, lang)}</li>
+                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'ミニXLR端子', en: 'Mini XLR connector', es: 'Conector XLR mini', ko: '미니 XLR 커넥터', pt: 'Conector XLR mini', de: 'Mini-XLR-Anschluss' }, lang)}</li>
+                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '48Vファンタム電源', en: '48V phantom power', es: 'Alimentación fantasma 48V', ko: '48V 팬텀 전원', pt: 'Alimentação fantasma 48V', de: '48V Phantomspeisung' }, lang)}</li>
+                <li>• {t5({ ja: 'スタジオ品質', en: 'Studio quality', es: 'Calidad de estudio', ko: '스튜디오 품질', pt: 'Qualidade de estúdio', de: 'Studioqualität' }, lang)}</li>
               </ul>
               <button style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#cbd5e1', color: '#64748b', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, border: 'none', cursor: 'not-allowed' }} disabled>
-                {t5({ ja: 'Coming Soon', en: 'Coming Soon', es: 'Próximamente', ko: '곧 출시', pt: 'Em breve' }, lang)}
+                {t5({ ja: 'Coming Soon', en: 'Coming Soon', es: 'Próximamente', ko: '곧 출시', pt: 'Em breve', de: 'Demnächst' }, lang)}
               </button>
             </div>
           </div>
@@ -320,21 +340,21 @@ const HomePage: React.FC = () => {
       {/* 6. DISCOVER */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '1400px', margin: '0 auto', width: '100%' }} id="discover">
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
-          {t5({ ja: 'スカウト', en: 'Discover', es: 'Descubrir', ko: '발견', pt: 'Descobrir' }, lang)}
+          {t5({ ja: 'スカウト', en: 'Discover', es: 'Descubrir', ko: '발견', pt: 'Descobrir', de: 'Entdecken' }, lang)}
         </h2>
         <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem' }}>
-          {t5({ ja: '世界中の音楽、音風景、アーティストを探索する。', en: 'Explore music, soundscapes, and artists around the world.', es: 'Explora música, paisajes sonoros y artistas de todo el mundo.', ko: '세계의 음악, 음풍경, 아티스트를 탐색합니다.', pt: 'Explore música, paisagens sonoras e artistas em todo o mundo.' }, lang)}
+          {t5({ ja: '世界中の音楽、音風景、アーティストを探索する。', en: 'Explore music, soundscapes, and artists around the world.', es: 'Explora música, paisajes sonoros y artistas de todo el mundo.', ko: '세계의 음악, 음풍경, 아티스트를 탐색합니다.', pt: 'Explore música, paisagens sonoras e artistas em todo o mundo.', de: 'Entdecke Musik, Klanglandschaften und Künstler aus aller Welt.' }, lang)}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
           <Link href="/soundmap" style={{ display: 'block', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', textDecoration: 'none', color: 'inherit', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌍</div>
-            <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: '地球の音マップ', en: 'Sound Map', es: 'Mapa de Sonido', ko: '사운드 맵', pt: 'Mapa de Som' }, lang)}</h3>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', wordBreak: 'keep-all' }}>{t5({ ja: '世界中の音風景を探索', en: 'Explore soundscapes worldwide', es: 'Explora paisajes sonoros en todo el mundo', ko: '세계의 음풍경 탐색', pt: 'Explore paisagens sonoras em todo o mundo' }, lang)}</p>
+            <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: '地球の音マップ', en: 'Sound Map', es: 'Mapa de Sonido', ko: '사운드 맵', pt: 'Mapa de Som', de: 'Klangkarte' }, lang)}</h3>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', wordBreak: 'keep-all' }}>{t5({ ja: '世界中の音風景を探索', en: 'Explore soundscapes worldwide', es: 'Explora paisajes sonoros en todo el mundo', ko: '세계의 음풍경 탐색', pt: 'Explore paisagens sonoras em todo o mundo', de: 'Klanglandschaften weltweit erkunden' }, lang)}</p>
           </Link>
           <Link href="/events-lp" style={{ display: 'block', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', textDecoration: 'none', color: 'inherit', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎪</div>
-            <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'ライブ情報', en: 'Live Events', es: 'Eventos en Vivo', ko: '라이브 이벤트', pt: 'Eventos ao Vivo' }, lang)}</h3>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', wordBreak: 'keep-all' }}>{t5({ ja: '近くのコンサートを見つける', en: 'Find concerts near you', es: 'Encuentra conciertos cerca de ti', ko: '근처 콘서트 찾기', pt: 'Encontre concertos perto de você' }, lang)}</p>
+            <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'ライブ情報', en: 'Live Events', es: 'Eventos en Vivo', ko: '라이브 이벤트', pt: 'Eventos ao Vivo', de: 'Live-Events' }, lang)}</h3>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', wordBreak: 'keep-all' }}>{t5({ ja: '近くのコンサートを見つける', en: 'Find concerts near you', es: 'Encuentra conciertos cerca de ti', ko: '근처 콘서트 찾기', pt: 'Encontre concertos perto de você', de: 'Konzerte in deiner Nähe finden' }, lang)}</p>
           </Link>
         </div>
       </section>
@@ -342,59 +362,186 @@ const HomePage: React.FC = () => {
       {/* 7. PRICING */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
-          {t5({ ja: 'はじめ方', en: 'Choose your plan', es: 'Elige tu plan', ko: '계획 선택', pt: 'Escolha seu plano' }, lang)}
+          {t5({ ja: 'はじめ方', en: 'Choose your plan', es: 'Elige tu plan', ko: '계획 선택', pt: 'Escolha seu plano', de: 'Wähle deinen Plan' }, lang)}
         </h2>
-        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem', wordBreak: 'keep-all' }}>
-          {t5({ ja: 'まずは無料で。もっと使いたくなったらプランを選べます。', en: 'Start free. Upgrade when you want more.', es: 'Empieza gratis. Actualiza cuando quieras más.', ko: '무료로 시작하세요. 더 필요하면 업그레이드하세요.', pt: 'Comece grátis. Atualize quando quiser mais.' }, lang)}
+        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '2rem', fontSize: '1rem', wordBreak: 'keep-all' }}>
+          {t5({ ja: 'まずは無料で。もっと使いたくなったらプランを選べます。', en: 'Start free. Upgrade when you want more.', es: 'Empieza gratis. Actualiza cuando quieras más.', ko: '무료로 시작하세요. 더 필요하면 업그레이드하세요.', pt: 'Comece grátis. Atualize quando quiser mais.', de: 'Kostenlos starten. Upgrade, wenn du mehr willst.' }, lang)}
         </p>
+        {/* Billing toggle — 2ヶ月無料 */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginBottom: '3rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.9rem', color: yearly ? '#94a3b8' : '#0f172a', fontWeight: yearly ? 400 : 600, transition: 'color 0.2s ease' }}>
+            {t5({ ja: '月払い', en: 'Monthly', es: 'Mensual', ko: '월간', pt: 'Mensal', de: 'Monatlich' }, lang)}
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={yearly}
+            onClick={() => setYearly(!yearly)}
+            style={{
+              width: 56,
+              height: 30,
+              borderRadius: 999,
+              border: 'none',
+              background: yearly ? ACCENT : '#cbd5e1',
+              position: 'relative',
+              cursor: 'pointer',
+              transition: 'background 0.2s ease',
+              padding: 0,
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: yearly ? 29 : 3,
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: 'white',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                transition: 'left 0.2s ease',
+              }}
+            />
+          </button>
+          <span style={{ fontSize: '0.9rem', color: yearly ? '#0f172a' : '#94a3b8', fontWeight: yearly ? 600 : 400, transition: 'color 0.2s ease', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+            {t5({ ja: '年払い', en: 'Yearly', es: 'Anual', ko: '연간', pt: 'Anual', de: 'Jährlich' }, lang)}
+            <span style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, fontWeight: 600, letterSpacing: '0.02em' }}>
+              {t5({ ja: '2ヶ月無料', en: '2 months free', es: '2 meses gratis', ko: '2개월 무료', pt: '2 meses grátis', de: '2 Monate gratis' }, lang)}
+            </span>
+          </span>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Free', en: 'Free', es: 'Gratis', ko: '무료', pt: 'Gratuito' }, lang)}</h3>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Free', en: 'Free', es: 'Gratis', ko: '무료', pt: 'Gratuito', de: 'Kostenlos' }, lang)}</h3>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥0</div>
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados' }, lang)}</li>
-              <li>✓ {t5({ ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ahora, sin registro', ko: '지금 사용, 가입 불필요', pt: 'Use agora, sem inscrição' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li>✓ {t5({ ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ahora, sin registro', ko: '지금 사용, 가입 불필요', pt: 'Use agora, sem inscrição', de: 'Sofort nutzen, keine Registrierung' }, lang)}</li>
             </ul>
             <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-              {t5({ ja: '登録なしで今すぐ使う', en: 'Use Now — No Signup', es: 'Usar Ahora — Sin Registro', ko: '가입 없이 지금 사용', pt: 'Usar Agora — Sem Inscrição' }, lang)}
+              {t5({ ja: '登録なしで今すぐ使う', en: 'Use Now — No Signup', es: 'Usar Ahora — Sin Registro', ko: '가입 없이 지금 사용', pt: 'Usar Agora — Sem Inscrição', de: 'Jetzt nutzen — ohne Registrierung' }, lang)}
             </Link>
           </div>
           <div style={{ background: 'white', border: `2px solid ${ACCENT}`, borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center', position: 'relative' }}>
             <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: ACCENT, color: 'white', padding: '0.375rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>
-              {t5({ ja: 'おすすめ', en: 'POPULAR', es: 'POPULAR', ko: '인기', pt: 'POPULAR' }, lang)}
+              {t5({ ja: 'おすすめ', en: 'POPULAR', es: 'POPULAR', ko: '인기', pt: 'POPULAR', de: 'BELIEBT' }, lang)}
             </div>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Student', en: 'Student', es: 'Estudiante', ko: '학생', pt: 'Estudante' }, lang)}</h3>
-            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>¥480</div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>{t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês' }, lang)}</div>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Student', en: 'Student', es: 'Estudiante', ko: '학생', pt: 'Estudante', de: 'Student' }, lang)}</h3>
+            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
+              ¥{yearly ? studentYearly.toLocaleString() : studentMonthly.toLocaleString()}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
+              {yearly
+                ? t5({ ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }, lang)
+                : t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' }, lang)}
+            </div>
+            {yearly && (
+              <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
+                {t5({
+                  ja: `月換算 ¥${Math.round(studentYearly / 12).toLocaleString()}`,
+                  en: `¥${Math.round(studentYearly / 12).toLocaleString()} / mo equivalent`,
+                  es: `¥${Math.round(studentYearly / 12).toLocaleString()} / mes`,
+                  ko: `월 환산 ¥${Math.round(studentYearly / 12).toLocaleString()}`,
+                  pt: `equivalente a ¥${Math.round(studentYearly / 12).toLocaleString()} / mês`,
+                  de: `entspricht ¥${Math.round(studentYearly / 12).toLocaleString()} / Monat`,
+                }, lang)}
+              </div>
+            )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados' }, lang)}</li>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'サーバーアプリ無制限', en: 'Unlimited server apps', es: 'Aplicaciones de servidor ilimitadas', ko: '무제한 서버 앱', pt: 'Aplicativos de servidor ilimitados' }, lang)}</li>
-              <li>✓ {t5({ ja: '練習ログ記録', en: 'Practice logs', es: 'Registros de práctica', ko: '연습 기록', pt: 'Registros de prática' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'サーバーアプリ無制限', en: 'Unlimited server apps', es: 'Aplicaciones de servidor ilimitadas', ko: '무제한 서버 앱', pt: 'Aplicativos de servidor ilimitados', de: 'Unbegrenzte Server-Apps' }, lang)}</li>
+              <li>✓ {t5({ ja: '練習ログ記録', en: 'Practice logs', es: 'Registros de práctica', ko: '연습 기록', pt: 'Registros de prática', de: 'Übungsprotokolle' }, lang)}</li>
             </ul>
             <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-              {t5({ ja: '登録する', en: 'Sign Up', es: 'Registrarse', ko: '가입', pt: 'Inscrever-se' }, lang)}
+              {t5({ ja: '登録する', en: 'Sign Up', es: 'Registrarse', ko: '가입', pt: 'Inscrever-se', de: 'Registrieren' }, lang)}
             </Link>
           </div>
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Pro', en: 'Pro', es: 'Pro', ko: '프로', pt: 'Pro' }, lang)}</h3>
-            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>¥980</div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>{t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês' }, lang)}</div>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Pro', en: 'Pro', es: 'Pro', ko: '프로', pt: 'Pro', de: 'Pro' }, lang)}</h3>
+            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
+              ¥{yearly ? proYearly.toLocaleString() : proMonthly.toLocaleString()}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
+              {yearly
+                ? t5({ ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }, lang)
+                : t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' }, lang)}
+            </div>
+            {yearly && (
+              <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
+                {t5({
+                  ja: `月換算 ¥${Math.round(proYearly / 12).toLocaleString()}`,
+                  en: `¥${Math.round(proYearly / 12).toLocaleString()} / mo equivalent`,
+                  es: `¥${Math.round(proYearly / 12).toLocaleString()} / mes`,
+                  ko: `월 환산 ¥${Math.round(proYearly / 12).toLocaleString()}`,
+                  pt: `equivalente a ¥${Math.round(proYearly / 12).toLocaleString()} / mês`,
+                  de: `entspricht ¥${Math.round(proYearly / 12).toLocaleString()} / Monat`,
+                }, lang)}
+              </div>
+            )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全機能アクセス', en: 'Full access', es: 'Acceso completo', ko: '전체 액세스', pt: 'Acesso completo' }, lang)}</li>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ライブ投稿', en: 'Post live events', es: 'Publicar eventos en vivo', ko: '라이브 포스팅', pt: 'Postar eventos ao vivo' }, lang)}</li>
-              <li>✓ {t5({ ja: '優先サポート', en: 'Priority support', es: 'Soporte prioritario', ko: '우선 지원', pt: 'Suporte prioritário' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全機能アクセス', en: 'Full access', es: 'Acceso completo', ko: '전체 액세스', pt: 'Acesso completo', de: 'Voller Zugriff' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ライブ投稿', en: 'Post live events', es: 'Publicar eventos en vivo', ko: '라이브 포스팅', pt: 'Postar eventos ao vivo', de: 'Live-Events posten' }, lang)}</li>
+              <li>✓ {t5({ ja: '優先サポート', en: 'Priority support', es: 'Soporte prioritario', ko: '우선 지원', pt: 'Suporte prioritário', de: 'Prioritäts-Support' }, lang)}</li>
             </ul>
             <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-              {t5({ ja: '登録する', en: 'Sign Up', es: 'Registrarse', ko: '가입', pt: 'Inscrever-se' }, lang)}
+              {t5({ ja: '登録する', en: 'Sign Up', es: 'Registrarse', ko: '가입', pt: 'Inscrever-se', de: 'Registrieren' }, lang)}
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* 7.5 CERTIFICATION */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'linear-gradient(135deg, #0b1220 0%, #1e293b 100%)', color: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%', borderRadius: 'clamp(0px, 2vw, 24px)' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ display: 'inline-block', padding: '0.5rem 1.25rem', border: `1px solid ${ACCENT}`, borderRadius: '999px', fontSize: '0.75rem', letterSpacing: '0.15em', color: ACCENT, marginBottom: '1.5rem' }}>
+            {t5({ ja: '— KUON CERTIFICATION —', en: '— KUON CERTIFICATION —', es: '— KUON CERTIFICATION —', ko: '— KUON CERTIFICATION —', pt: '— KUON CERTIFICATION —', de: '— KUON CERTIFICATION —' }, lang)}
+          </div>
+          <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, marginBottom: '1.25rem', color: 'white', letterSpacing: '0.02em', lineHeight: 1.3 }}>
+            {t5({ ja: '実力を、公式に。', en: 'Make your skill official.', es: 'Haz oficial tu talento.', ko: '실력을 공식적으로.', pt: 'Torne seu talento oficial.', de: 'Machen Sie Ihr Können offiziell.' }, lang)}
+          </h2>
+          <p style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)', lineHeight: 1.85, color: '#cbd5e1', marginBottom: '2.5rem', maxWidth: '680px', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all' }}>
+            {t5({
+              ja: '学歴も国籍も年齢も問わない、音楽家のための独立した国際認定制度。Bronze から Platinum まで、4段階の認定で、あなたの実力を世界に示します。',
+              en: 'An independent international certification open to all — no degree, no nationality, no age barrier. Four tiers from Bronze to Platinum to prove your skill to the world.',
+              es: 'Una certificación internacional independiente abierta a todos — sin título, sin nacionalidad, sin barrera de edad. Cuatro niveles, de Bronze a Platinum.',
+              ko: '학력·국적·연령을 묻지 않는 음악가를 위한 독립 국제 인증. Bronze부터 Platinum까지 4단계 인증으로 실력을 세계에 증명합니다.',
+              pt: 'Uma certificação internacional independente aberta a todos — sem diploma, sem nacionalidade, sem barreira de idade. Quatro níveis, de Bronze a Platinum.',
+              de: 'Eine unabhängige internationale Zertifizierung, offen für alle — ohne Abschluss, ohne Nationalität, ohne Altersgrenze. Vier Stufen von Bronze bis Platinum.',
+            }, lang)}
+          </p>
+          <div style={{ display: 'flex', gap: '2.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
+            {[
+              { tier: 'Bronze', color: '#b45309', fee: '¥9,800' },
+              { tier: 'Silver', color: '#94a3b8', fee: '¥14,800' },
+              { tier: 'Gold', color: '#d4a017', fee: '¥19,800' },
+              { tier: 'Platinum', color: '#e2e8f0', fee: '¥39,800' },
+            ].map((t) => (
+              <div key={t.tier} style={{ textAlign: 'center', minWidth: 90 }}>
+                <div style={{ fontFamily: serif, fontSize: '1.25rem', color: t.color, letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.tier}</div>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t.fee}</div>
+              </div>
+            ))}
+          </div>
+          <Link href="/certification" style={{ display: 'inline-block', padding: '1rem 2.5rem', background: ACCENT, color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 500, letterSpacing: '0.05em', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(139,92,246,0.4)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+            {t5({ ja: '認定制度を見る →', en: 'Explore certification →', es: 'Ver certificación →', ko: '인증 제도 보기 →', pt: 'Ver certificação →', de: 'Zertifizierung ansehen →' }, lang)}
+          </Link>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '1.25rem', fontStyle: 'italic' }}>
+            {t5({
+              ja: 'ウェイトリスト登録で受験料25%割引',
+              en: 'Join the waitlist for 25% off your first exam',
+              es: 'Únete a la lista de espera para 25% de descuento',
+              ko: '웨이트리스트 등록으로 첫 시험 25% 할인',
+              pt: 'Entre na lista de espera para 25% de desconto',
+              de: '25 % Rabatt auf die erste Prüfung bei Warteliste-Anmeldung',
+            }, lang)}
+          </p>
         </div>
       </section>
 
       {/* 8. FAQ */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '3rem', color: '#0f172a' }}>
-          {t5({ ja: 'よくある質問', en: 'FAQ', es: 'Preguntas Frecuentes', ko: '자주 묻는 질문', pt: 'Perguntas Frequentes' }, lang)}
+          {t5({ ja: 'よくある質問', en: 'FAQ', es: 'Preguntas Frecuentes', ko: '자주 묻는 질문', pt: 'Perguntas Frequentes', de: 'Häufige Fragen' }, lang)}
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {faqs.map((faq, idx) => (
@@ -417,16 +564,16 @@ const HomePage: React.FC = () => {
       <section style={{ padding: 'clamp(5rem, 10%, 8rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '900px', margin: '0 auto', width: '100%', textAlign: 'center' }}>
         <p style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#64748b', marginBottom: '1rem', textTransform: 'uppercase' }}>Founder</p>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 400, marginBottom: '2.5rem', color: '#0f172a' }}>
-          {t5({ ja: '創業者の想い', en: 'The Vision Behind Kuon R&D', es: 'La visión detrás de Kuon R&D', ko: '창립자의 비전', pt: 'A visão por trás da Kuon R&D' }, lang)}
+          {t5({ ja: '創業者の想い', en: 'The Vision Behind Kuon R&D', es: 'La visión detrás de Kuon R&D', ko: '창립자의 비전', pt: 'A visão por trás da Kuon R&D', de: 'Die Vision hinter Kuon R&D' }, lang)}
         </h2>
         <div style={{ marginBottom: '2rem' }}>
           <Image src="/kotaro.jpeg" alt="Kotaro Asahina" width={140} height={140} style={{ borderRadius: '50%', margin: '0 auto', display: 'block', border: '3px solid #e2e8f0' }} />
         </div>
         <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.3rem', color: '#0f172a' }}>
-          {t5({ ja: '朝比奈 幸太郎', en: 'Kotaro Asahina', es: 'Kotaro Asahina', ko: '아사히나 코타로', pt: 'Kotaro Asahina' }, lang)}
+          {t5({ ja: '朝比奈 幸太郎', en: 'Kotaro Asahina', es: 'Kotaro Asahina', ko: '아사히나 코타로', pt: 'Kotaro Asahina', de: 'Kotaro Asahina' }, lang)}
         </h3>
         <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '2rem', letterSpacing: '0.05em' }}>
-          {t5({ ja: '音響エンジニア / マイク設計者 / 音楽プロデューサー', en: 'Audio Engineer / Microphone Designer / Music Producer', es: 'Ingeniero de Audio / Diseñador de Micrófonos / Productor Musical', ko: '오디오 엔지니어 / 마이크 설계자 / 음악 프로듀서', pt: 'Engenheiro de Áudio / Designer de Microfones / Produtor Musical' }, lang)}
+          {t5({ ja: '音響エンジニア / マイク設計者 / 音楽プロデューサー', en: 'Audio Engineer / Microphone Designer / Music Producer', es: 'Ingeniero de Audio / Diseñador de Micrófonos / Productor Musical', ko: '오디오 엔지니어 / 마이크 설계자 / 음악 프로듀서', pt: 'Engenheiro de Áudio / Designer de Microfones / Produtor Musical', de: 'Tontechniker / Mikrofondesigner / Musikproduzent' }, lang)}
         </p>
         <blockquote style={{ fontFamily: serif, fontSize: 'clamp(1rem, 2vw, 1.15rem)', lineHeight: 2.0, color: '#334155', maxWidth: '700px', margin: '0 auto 2rem', padding: '1.5rem 2rem', background: '#f8fafc', borderRadius: '12px', borderLeft: `4px solid ${ACCENT}`, textAlign: 'left', wordBreak: 'keep-all', fontStyle: 'normal' }}>
           {t5({
@@ -435,50 +582,51 @@ const HomePage: React.FC = () => {
             es: 'Quiero un mundo donde la cultura musical prospere, donde los músicos puedan concentrarse puramente en la creatividad, donde los ingenieros puedan dedicarse a la expresión, y donde los artistas se conecten más allá de las fronteras. Por eso fundé Kuon R&D.',
             ko: '음악 문화가 발전하고 음악가가 창의성에만 집중할 수 있는 세상, 엔지니어가 표현에 전념할 수 있는 세상, 국경을 넘어 음악가들이 연결되어 전 세계에서 문화와 예술이 싹틔는 세상을 만들고 싶었습니다. 그래서 공음개발을 설립했습니다.',
             pt: 'Quero um mundo onde a cultura musical prospere, onde os músicos possam focar puramente na criatividade, onde os engenheiros possam se dedicar à expressão, e onde os artistas se conectem além das fronteiras. Por isso fundei a Kuon R&D.',
+            de: 'Ich möchte eine Welt, in der die Musikkultur gedeiht, in der sich Musiker voll auf ihre Kreativität konzentrieren können, in der Tontechniker sich dem Ausdruck widmen können und in der Künstler über Grenzen hinweg verbunden sind – damit Kultur, Ausdruck und vor allem Kunst überall erblühen können. Deshalb habe ich Kuon R&D gegründet.',
           }, lang)}
         </blockquote>
         <div style={{ marginBottom: '2.5rem' }} />
         <Link href="/profile" style={{ display: 'inline-block', padding: '0.875rem 2.5rem', border: `2px solid ${ACCENT}`, color: ACCENT, borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', background: 'white', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(2,132,199,0.2)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-          {t5({ ja: 'プロフィールを見る', en: 'View Full Profile', es: 'Ver Perfil Completo', ko: '프로필 보기', pt: 'Ver Perfil Completo' }, lang)}
+          {t5({ ja: 'プロフィールを見る', en: 'View Full Profile', es: 'Ver Perfil Completo', ko: '프로필 보기', pt: 'Ver Perfil Completo', de: 'Vollständiges Profil ansehen' }, lang)}
         </Link>
       </section>
 
       {/* 10. FINAL CTA */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', textAlign: 'center', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, marginBottom: '2rem', color: '#0f172a', wordBreak: 'keep-all' }}>
-          {t5({ ja: '音楽の、いちばん近くに。', en: 'Closer to music than ever.', es: 'Más cerca de la música que nunca.', ko: '음악과 더 가깝게.', pt: 'Mais perto da música do que nunca.' }, lang)}
+          {t5({ ja: '音楽の、いちばん近くに。', en: 'Closer to music than ever.', es: 'Más cerca de la música que nunca.', ko: '음악과 더 가깝게.', pt: 'Mais perto da música do que nunca.', de: 'Näher an der Musik als je zuvor.' }, lang)}
         </h2>
         <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.875rem 2rem', background: '#0f172a', color: 'white', borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#0f172a'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-          {t5({ ja: '無料ではじめる', en: 'Start Free', es: 'Comenzar Gratis', ko: '무료로 시작', pt: 'Comece Grátis' }, lang)}
+          {t5({ ja: '無料ではじめる', en: 'Start Free', es: 'Comenzar Gratis', ko: '무료로 시작', pt: 'Comece Grátis', de: 'Kostenlos starten' }, lang)}
         </Link>
       </section>
 
       {/* 11. CONTACT */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '900px', margin: '0 auto', width: '100%' }} id="contact">
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 400, textAlign: 'center', marginBottom: '2rem', color: '#0f172a' }}>
-          {t5({ ja: 'お問い合わせ', en: 'Contact', es: 'Contacto', ko: '문의', pt: 'Contato' }, lang)}
+          {t5({ ja: 'お問い合わせ', en: 'Contact', es: 'Contacto', ko: '문의', pt: 'Contato', de: 'Kontakt' }, lang)}
         </h2>
         <form action="https://formspree.io/f/xyknanzy" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', color: '#0f172a', fontWeight: 500, fontSize: '0.95rem' }}>
-              {t5({ ja: 'お名前', en: 'Name', es: 'Nombre', ko: '이름', pt: 'Nome' }, lang)}
+              {t5({ ja: 'お名前', en: 'Name', es: 'Nombre', ko: '이름', pt: 'Nome', de: 'Name' }, lang)}
             </label>
             <input type="text" name="name" required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.95rem', boxSizing: 'border-box' }} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', color: '#0f172a', fontWeight: 500, fontSize: '0.95rem' }}>
-              {t5({ ja: 'メールアドレス', en: 'Email', es: 'Correo Electrónico', ko: '이메일', pt: 'E-mail' }, lang)}
+              {t5({ ja: 'メールアドレス', en: 'Email', es: 'Correo Electrónico', ko: '이메일', pt: 'E-mail', de: 'E-Mail' }, lang)}
             </label>
             <input type="email" name="email" required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.95rem', boxSizing: 'border-box' }} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', color: '#0f172a', fontWeight: 500, fontSize: '0.95rem' }}>
-              {t5({ ja: 'メッセージ', en: 'Message', es: 'Mensaje', ko: '메시지', pt: 'Mensagem' }, lang)}
+              {t5({ ja: 'メッセージ', en: 'Message', es: 'Mensaje', ko: '메시지', pt: 'Mensagem', de: 'Nachricht' }, lang)}
             </label>
             <textarea name="message" required rows={5} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.95rem', boxSizing: 'border-box', fontFamily: sans }} />
           </div>
           <button type="submit" style={{ padding: '0.875rem 2rem', background: ACCENT, color: 'white', borderRadius: '6px', border: 'none', fontWeight: 500, fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-            {t5({ ja: '送信', en: 'Send', es: 'Enviar', ko: '전송', pt: 'Enviar' }, lang)}
+            {t5({ ja: '送信', en: 'Send', es: 'Enviar', ko: '전송', pt: 'Enviar', de: 'Senden' }, lang)}
           </button>
         </form>
       </section>

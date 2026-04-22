@@ -14,11 +14,11 @@ const mono = '"SF Mono", "Fira Code", "Consolas", monospace';
 const ACCENT = '#0284c7';
 const ACCENT_LIGHT = '#0ea5e9';
 
-type L5 = Record<Lang, string>;
-type L5Node = Record<Lang, React.ReactNode>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
+type L5Node = Partial<Record<Lang, React.ReactNode>> & { en: React.ReactNode };
 
-const t = (m: L5, lang: Lang) => m[lang];
-const tn = (m: L5Node, lang: Lang) => m[lang];
+const t = (m: L5, lang: Lang) => m[lang] ?? m.en;
+const tn = (m: L5Node, lang: Lang) => m[lang] ?? m.en;
 
 // ─────────────────────────────────────────────
 // Scroll-reveal hook

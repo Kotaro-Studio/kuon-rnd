@@ -9,7 +9,7 @@ import type { Lang } from '@/context/LangContext';
 // Design Tokens
 // ─────────────────────────────────────────────
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans  = '"Helvetica Neue", Arial, sans-serif';

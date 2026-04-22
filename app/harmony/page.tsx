@@ -8,7 +8,7 @@ import type { Lang } from '@/context/LangContext';
 // TYPES
 // ============================================================================
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 interface HNote {
   letter: number;     // 0=C,1=D,2=E,3=F,4=G,5=A,6=B
@@ -624,7 +624,7 @@ const errPanel: React.CSSProperties = {
 
 export default function HarmonyPage() {
   const { lang } = useLang();
-  const t = (m: L5) => m[lang];
+  const t = (m: L5) => m[lang] ?? m.en;
 
   const [keyIdx, setKeyIdx] = useState(0);
   const [chords, setChords] = useState<ChordSlot[]>([
@@ -880,7 +880,7 @@ export default function HarmonyPage() {
           ].map((rule, i) => (
             <div key={i}>
               <span style={{ fontWeight: 600, color: ACCENT, marginRight: 6 }}>{i+1}.</span>
-              {rule[lang]}
+              {(rule as Record<string, string>)[lang] ?? rule.en}
             </div>
           ))}
         </div>

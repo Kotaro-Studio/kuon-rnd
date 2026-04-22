@@ -9,7 +9,7 @@ import { RegistrationNudge, useRegistrationNudge } from '@/components/Registrati
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 type Bitrate = 160 | 320;
 type ConvertStatus = 'idle' | 'decoding' | 'encoding' | 'done' | 'error';

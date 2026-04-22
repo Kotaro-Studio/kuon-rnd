@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type Lang = 'ja' | 'en' | 'ko' | 'pt' | 'es';
+export type Lang = 'ja' | 'en' | 'ko' | 'pt' | 'es' | 'de';
 
 interface LangContextType {
   lang: Lang;
@@ -14,7 +14,7 @@ const LangContext = createContext<LangContextType>({
   setLang: () => {},
 });
 
-const VALID_LANGS: Lang[] = ['ja', 'en', 'ko', 'pt', 'es'];
+const VALID_LANGS: Lang[] = ['ja', 'en', 'ko', 'pt', 'es', 'de'];
 
 function detectLang(browserLang: string): Lang {
   const l = browserLang.toLowerCase();
@@ -22,6 +22,7 @@ function detectLang(browserLang: string): Lang {
   if (l.startsWith('ko')) return 'ko';
   if (l.startsWith('pt')) return 'pt';
   if (l.startsWith('es')) return 'es';
+  if (l.startsWith('de')) return 'de';
   return 'en';
 }
 
@@ -59,12 +60,13 @@ export function useLang() {
 
 /**
  * 多言語テキストヘルパー
- * 全5言語を持つオブジェクトから現在の言語のテキストを返す。
- * ko/pt が未定義の場合は en にフォールバック。
+ * 全6言語（ja/en/ko/pt/es/de）を持つオブジェクトから現在の言語のテキストを返す。
+ * 未定義の場合は en にフォールバック。
+ * 段階的な de 追加を許容するため Partial + en 必須 にしてある。
  */
-export type L5 = Record<Lang, string>;
+export type L5 = Partial<Record<Lang, string>> & { en: string };
 
-/** 3言語 → 5言語変換（ko/pt は en にフォールバック） */
-export function l(ja: string, en: string, ko?: string, pt?: string, es?: string): L5 {
-  return { ja, en, ko: ko ?? en, pt: pt ?? en, es: es ?? en };
+/** 3言語 → 6言語変換（未指定は en にフォールバック） */
+export function l(ja: string, en: string, ko?: string, pt?: string, es?: string, de?: string): L5 {
+  return { ja, en, ko: ko ?? en, pt: pt ?? en, es: es ?? en, de: de ?? en };
 }

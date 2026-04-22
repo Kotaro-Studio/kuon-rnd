@@ -8,7 +8,7 @@ import type { Lang } from '@/context/LangContext';
 const sans = '"Helvetica Neue", Arial, sans-serif';
 const ACCENT = '#0284c7';
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 /**
  * RegistrationNudge — Canva-style soft wall

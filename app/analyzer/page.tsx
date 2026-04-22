@@ -9,7 +9,7 @@ import { AuthGate } from '@/components/AuthGate';
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 type InputMode = 'file' | 'mic';
 type AppStatus = 'idle' | 'loading' | 'active' | 'error';
 

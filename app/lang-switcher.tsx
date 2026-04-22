@@ -7,6 +7,7 @@ import type { CSSProperties } from 'react';
 const LANGS: { code: Lang; flag: string; name: string; nativeName: string }[] = [
   { code: 'ja', flag: '🇯🇵', name: 'Japanese', nativeName: '日本語' },
   { code: 'en', flag: '🇬🇧', name: 'English', nativeName: 'English' },
+  { code: 'de', flag: '🇩🇪', name: 'German', nativeName: 'Deutsch' },
   { code: 'ko', flag: '🇰🇷', name: 'Korean', nativeName: '한국어' },
   { code: 'pt', flag: '🇧🇷', name: 'Portuguese', nativeName: 'Português' },
   { code: 'es', flag: '🇪🇸', name: 'Spanish', nativeName: 'Español' },

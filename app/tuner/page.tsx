@@ -10,7 +10,7 @@ import type { Lang } from '@/context/LangContext';
 
 type Temperament = 'equal' | 'just' | 'pythagorean';
 type Instrument = 'c' | 'bb' | 'eb' | 'f' | 'a';
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 interface SessionStats {
   duration: number;
@@ -72,7 +72,7 @@ const YIN_THRESHOLD = 0.1;
 // TRANSLATIONS
 // ============================================================================
 
-const T: Record<string, Record<Lang, string>> = {
+const T: Record<string, Partial<Record<Lang, string>> & { en: string }> = {
   title: { ja: 'KUON TUNER PRO', en: 'KUON TUNER PRO', ko: 'KUON TUNER PRO', pt: 'KUON TUNER PRO', es: 'KUON TUNER PRO' },
   subtitle: { ja: '高精度クロマチックチューナー', en: 'High-Precision Chromatic Tuner', ko: '고정밀 색음 튜너', pt: 'Afinador Cromático de Alta Precisão', es: 'Afinador Cromático de Alta Precisión' },
   startMic: { ja: 'マイクを起動', en: 'Start Microphone', ko: '마이크 시작', pt: 'Iniciar Microfone', es: 'Iniciar Micrófono' },

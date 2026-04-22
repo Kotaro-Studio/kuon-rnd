@@ -8,7 +8,7 @@ import { AuthGate } from '@/components/AuthGate';
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 
 type AppStatus = 'idle' | 'loading-wasm' | 'parsing' | 'decoding' | 'playing' | 'paused' | 'converting' | 'done' | 'error';
 type SampleRate = 44100 | 48000 | 88200 | 96000 | 176400 | 192000;

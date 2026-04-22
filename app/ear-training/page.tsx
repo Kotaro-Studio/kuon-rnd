@@ -10,7 +10,7 @@ import { RegistrationNudge, useRegistrationNudge } from '@/components/Registrati
 // ============================================================================
 
 type Mode = 'intervals' | 'chords' | 'scales' | 'melody';
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 
 interface Question {
   type: Mode;
@@ -384,17 +384,19 @@ function generateQuestion(mode: Mode, level: number): Question {
 // ============================================================================
 
 function getAnswerName(mode: Mode, key: string, lang: Lang): string {
+  const pickName = (name: { en: string } & Partial<Record<Lang, string>>): string =>
+    (name as Record<string, string>)[lang] ?? name.en;
   if (mode === 'intervals') {
     const found = INTERVALS.find(i => i.key === key);
-    return found ? found.name[lang] : key;
+    return found ? pickName(found.name) : key;
   }
   if (mode === 'chords') {
     const found = CHORDS.find(c => c.key === key);
-    return found ? found.name[lang] : key;
+    return found ? pickName(found.name) : key;
   }
   if (mode === 'scales') {
     const found = SCALES.find(s => s.key === key);
-    return found ? found.name[lang] : key;
+    return found ? pickName(found.name) : key;
   }
   // melody: show note sequence
   return key.replace(/-/g, ' → ');

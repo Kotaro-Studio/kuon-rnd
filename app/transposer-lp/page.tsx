@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
-type L5 = Record<Lang, string>;
+type L5 = Partial<Record<Lang, string>> & { en: string };
 const serif = '"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif';
 const sans  = '"Helvetica Neue",Arial,sans-serif';
 const mono  = '"SF Mono","Fira Code","Consolas",monospace';

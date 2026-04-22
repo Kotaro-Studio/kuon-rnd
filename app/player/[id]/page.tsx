@@ -8,7 +8,7 @@ import type { Lang } from '@/context/LangContext';
 // ─────────────────────────────────────────────
 // Typography / Colors
 // ─────────────────────────────────────────────
-type L3 = Record<Lang, string>;
+type L3 = Partial<Record<Lang, string>> & { en: string };
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans  = '"Helvetica Neue", Arial, sans-serif';
 const mono  = '"SF Mono", "Fira Code", "Consolas", monospace';
@@ -92,7 +92,7 @@ type PageStatus = 'loading' | 'not-found' | 'expired' | 'auth' | 'playing' | 'de
 // ─────────────────────────────────────────────
 export default function PlayerPage() {
   const { lang } = useLang();
-  const t = (obj: L3) => obj[lang];
+  const t = (obj: L3) => obj[lang] ?? obj.en;
   const params = useParams();
   const id = params.id as string;
 
