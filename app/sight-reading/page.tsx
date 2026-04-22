@@ -11,7 +11,12 @@ import type { Lang } from '@/context/LangContext';
 type L5 = Record<Lang, string>;
 type Mode = 'note' | 'keysig' | 'clef' | 'convert';
 type ClefType = 'treble' | 'bass' | 'alto' | 'tenor';
-type NotationSystem = 'deutsch' | 'english' | 'japanese';
+// 4 notation systems:
+//   solfege  = Do/Re/Mi/Fa/Sol/La/Si (Italian — Latin America, Italy, Japan pop/casual)
+//   deutsch  = C/Cis/D/Es/E/F/Fis/G/As/A/B/H (Germany, Austria, classical standard)
+//   english  = C/C#/D/Eb/E/F/F#/G/Ab/A/Bb/B (US/UK, jazz/pop)
+//   japanese = イロハ (ハ=C / ニ=D / ホ=E / ヘ=F / ト=G / イ=A / ロ=B) — 楽典試験
+type NotationSystem = 'solfege' | 'deutsch' | 'english' | 'japanese';
 
 interface StaffNote { name: string; octave: number; midi: number; pos: number; }
 
@@ -48,12 +53,16 @@ function xpForLevel(lv: number) { return Math.floor(100 * (1 + (lv - 1) * 0.15))
 
 const NOTE_NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const JA_MAP: Record<string, string> = { C: 'ハ', D: 'ニ', E: 'ホ', F: 'ヘ', G: 'ト', A: 'イ', B: 'ロ' };
+// Italian solfège — the standard in Latin America, Italy, France, Spain, Portugal, and
+// widely used in Japanese casual/pop music education. Fixed-do system.
+const SOLFEGE_MAP: Record<string, string> = { C: 'Do', D: 'Re', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
 
 function getGermanRoot(letter: string, acc?: 'sharp' | 'flat'): string {
+  // Proper German musical notation: H = B-natural, B = B-flat (no ♭ needed — they are distinct letters).
   if (letter === 'B') {
-    if (acc === 'flat') return 'B\u266D';  // Bb = B♭ in German (with ♭ to distinguish from H)
-    if (acc === 'sharp') return 'His';  // B# = His
-    return 'H';                          // B-natural = H
+    if (acc === 'flat') return 'B';   // B already means B-flat in German
+    if (acc === 'sharp') return 'His'; // B# = His
+    return 'H';                        // B-natural = H
   }
   if (!acc) return letter;
   if (acc === 'sharp') return letter + 'is';
@@ -61,6 +70,13 @@ function getGermanRoot(letter: string, acc?: 'sharp' | 'flat'): string {
   if (letter === 'E') return 'Es';
   if (letter === 'A') return 'As';
   return letter + 'es'; // Ces, Des, Fes, Ges
+}
+
+function getSolfegeRoot(letter: string, acc?: 'sharp' | 'flat'): string {
+  const base = SOLFEGE_MAP[letter] || letter;
+  if (acc === 'sharp') return base + '\u266F'; // ♯
+  if (acc === 'flat') return base + '\u266D';  // ♭
+  return base;
 }
 
 function formatNote(letter: string, octave: number, acc: 'sharp' | 'flat' | undefined, sys: NotationSystem): string {
@@ -74,15 +90,21 @@ function formatNote(letter: string, octave: number, acc: 'sharp' | 'flat' | unde
     const a = acc === 'sharp' ? '#' : acc === 'flat' ? 'b' : '';
     return `${letter}${a}${octave}`;
   }
-  // Deutsch — Helmholtz notation
-  const root = getGermanRoot(letter, acc);
-  if (octave <= 1) {
-    const base = root.charAt(0).toUpperCase() + root.slice(1).toLowerCase();
-    return octave === 1 ? base : base + '\u2081'; // subscript 1 for contra
+  if (sys === 'solfege') {
+    // Italian-style: simple root, no octave markers (octave is visually obvious from the staff)
+    return getSolfegeRoot(letter, acc);
   }
-  if (octave === 2) return root.charAt(0).toUpperCase() + root.slice(1).toLowerCase();
-  if (octave === 3) return root.toLowerCase();
-  return root.toLowerCase() + "'".repeat(octave - 3);
+  // Deutsch — Helmholtz octave notation (SPN ↔ Helmholtz mapping, corrected)
+  // SPN oct 0 → Subcontra (C₂), 1 → Contra (C₁), 2 → Great (C), 3 → Small (c),
+  //         4 → one-line (c′, includes middle C), 5 → two-line (c″), etc.
+  const root = getGermanRoot(letter, acc);
+  const upper = root.charAt(0).toUpperCase() + root.slice(1).toLowerCase();
+  const lower = root.toLowerCase();
+  if (octave <= 0) return upper + '\u2082'; // C₂ (sub-contra)
+  if (octave === 1) return upper + '\u2081'; // C₁ (contra)
+  if (octave === 2) return upper;            // C (great)
+  if (octave === 3) return lower;            // c (small)
+  return lower + "'".repeat(octave - 3);     // c' (one-line) etc.
 }
 
 function formatNoteNameOnly(letter: string, acc: 'sharp' | 'flat' | undefined, sys: NotationSystem): string {
@@ -91,42 +113,87 @@ function formatNoteNameOnly(letter: string, acc: 'sharp' | 'flat' | undefined, s
     const a = acc === 'sharp' ? '#' : acc === 'flat' ? 'b' : '';
     return `${letter}${a}`;
   }
+  if (sys === 'solfege') return getSolfegeRoot(letter, acc);
   // Deutsch: citation form (uppercase)
   const root = getGermanRoot(letter, acc);
   return root.charAt(0).toUpperCase() + root.slice(1).toLowerCase();
 }
 
 // ============================================================================
-// KEY SIGNATURE DATA — All 15 keys × 3 notation systems
+// KEY SIGNATURE DATA — All 15 keys × 4 notation systems
 // ============================================================================
-// [sharps, flats, de-major, de-minor, en-major, en-minor, ja-major, ja-minor]
+// Solfège names are computed on the fly from the root letter+acc, with the
+// "major/minor" suffix localized by UI language.
 
-const KS_RAW: [number, number, string, string, string, string, string, string][] = [
-  [0, 0, 'C-dur',   'a-moll',   'C major',  'A minor',  'ハ長調',   'イ短調'],
-  [1, 0, 'G-dur',   'e-moll',   'G major',  'E minor',  'ト長調',   'ホ短調'],
-  [2, 0, 'D-dur',   'h-moll',   'D major',  'B minor',  'ニ長調',   'ロ短調'],
-  [3, 0, 'A-dur',   'fis-moll', 'A major',  'F# minor', 'イ長調',   '嬰ヘ短調'],
-  [4, 0, 'E-dur',   'cis-moll', 'E major',  'C# minor', 'ホ長調',   '嬰ハ短調'],
-  [5, 0, 'H-dur',   'gis-moll', 'B major',  'G# minor', 'ロ長調',   '嬰ト短調'],
-  [6, 0, 'Fis-dur', 'dis-moll', 'F# major', 'D# minor', '嬰ヘ長調', '嬰ニ短調'],
-  [7, 0, 'Cis-dur', 'ais-moll', 'C# major', 'A# minor', '嬰ハ長調', '嬰イ短調'],
-  [0, 1, 'F-dur',   'd-moll',   'F major',  'D minor',  'ヘ長調',   'ニ短調'],
-  [0, 2, 'B\u266D-dur', 'g-moll',   'Bb major', 'G minor',  '変ロ長調', 'ト短調'],
-  [0, 3, 'Es-dur',  'c-moll',   'Eb major', 'C minor',  '変ホ長調', 'ハ短調'],
-  [0, 4, 'As-dur',  'f-moll',   'Ab major', 'F minor',  '変イ長調', 'ヘ短調'],
-  [0, 5, 'Des-dur', 'b\u266D-moll', 'Db major', 'Bb minor', '変ニ長調', '変ロ短調'],
-  [0, 6, 'Ges-dur', 'es-moll',  'Gb major', 'Eb minor', '変ト長調', '変ホ短調'],
-  [0, 7, 'Ces-dur', 'as-moll',  'Cb major', 'Ab minor', '変ハ長調', '変イ短調'],
+type RootSpec = { letter: string; acc?: 'sharp' | 'flat' };
+
+// [sharps, flats, majorRoot, minorRoot, de-major, de-minor, en-major, en-minor, ja-major, ja-minor]
+// Note: in proper German, B=B♭ and H=B♮ — no ♭ symbol needed (H/B are separate letters).
+const KS_RAW: [number, number, RootSpec, RootSpec, string, string, string, string, string, string][] = [
+  [0, 0, { letter: 'C' },               { letter: 'A' },               'C-dur',   'a-moll',   'C major',  'A minor',  'ハ長調',   'イ短調'],
+  [1, 0, { letter: 'G' },               { letter: 'E' },               'G-dur',   'e-moll',   'G major',  'E minor',  'ト長調',   'ホ短調'],
+  [2, 0, { letter: 'D' },               { letter: 'B' },               'D-dur',   'h-moll',   'D major',  'B minor',  'ニ長調',   'ロ短調'],
+  [3, 0, { letter: 'A' },               { letter: 'F', acc: 'sharp' }, 'A-dur',   'fis-moll', 'A major',  'F# minor', 'イ長調',   '嬰ヘ短調'],
+  [4, 0, { letter: 'E' },               { letter: 'C', acc: 'sharp' }, 'E-dur',   'cis-moll', 'E major',  'C# minor', 'ホ長調',   '嬰ハ短調'],
+  [5, 0, { letter: 'B' },               { letter: 'G', acc: 'sharp' }, 'H-dur',   'gis-moll', 'B major',  'G# minor', 'ロ長調',   '嬰ト短調'],
+  [6, 0, { letter: 'F', acc: 'sharp' }, { letter: 'D', acc: 'sharp' }, 'Fis-dur', 'dis-moll', 'F# major', 'D# minor', '嬰ヘ長調', '嬰ニ短調'],
+  [7, 0, { letter: 'C', acc: 'sharp' }, { letter: 'A', acc: 'sharp' }, 'Cis-dur', 'ais-moll', 'C# major', 'A# minor', '嬰ハ長調', '嬰イ短調'],
+  [0, 1, { letter: 'F' },               { letter: 'D' },               'F-dur',   'd-moll',   'F major',  'D minor',  'ヘ長調',   'ニ短調'],
+  [0, 2, { letter: 'B', acc: 'flat' },  { letter: 'G' },               'B-dur',   'g-moll',   'Bb major', 'G minor',  '変ロ長調', 'ト短調'],
+  [0, 3, { letter: 'E', acc: 'flat' },  { letter: 'C' },               'Es-dur',  'c-moll',   'Eb major', 'C minor',  '変ホ長調', 'ハ短調'],
+  [0, 4, { letter: 'A', acc: 'flat' },  { letter: 'F' },               'As-dur',  'f-moll',   'Ab major', 'F minor',  '変イ長調', 'ヘ短調'],
+  [0, 5, { letter: 'D', acc: 'flat' },  { letter: 'B', acc: 'flat' },  'Des-dur', 'b-moll',   'Db major', 'Bb minor', '変ニ長調', '変ロ短調'],
+  [0, 6, { letter: 'G', acc: 'flat' },  { letter: 'E', acc: 'flat' },  'Ges-dur', 'es-moll',  'Gb major', 'Eb minor', '変ト長調', '変ホ短調'],
+  [0, 7, { letter: 'C', acc: 'flat' },  { letter: 'A', acc: 'flat' },  'Ces-dur', 'as-moll',  'Cb major', 'Ab minor', '変ハ長調', '変イ短調'],
 ];
 
 interface KeySigDef {
   sharps: number; flats: number;
-  names: Record<NotationSystem, { major: string; minor: string }>;
+  majorRoot: RootSpec; minorRoot: RootSpec;
+  // Solfège names are derived at render time (depends on UI language suffix).
+  names: Record<'deutsch' | 'english' | 'japanese', { major: string; minor: string }>;
 }
-const KEY_SIGS: KeySigDef[] = KS_RAW.map(([s, f, dm, dn, em, en, jm, jn]) => ({
+const KEY_SIGS: KeySigDef[] = KS_RAW.map(([s, f, mj, mn, dm, dn, em, en, jm, jn]) => ({
   sharps: s, flats: f,
+  majorRoot: mj, minorRoot: mn,
   names: { deutsch: { major: dm, minor: dn }, english: { major: em, minor: en }, japanese: { major: jm, minor: jn } },
 }));
+
+// Major/minor suffix localized by UI language. Used only with solfège notation,
+// since deutsch/english/japanese already bake the suffix into KS_RAW.
+function solfegeKeyMajorMinor(isMajor: boolean, uiLang: Lang): string {
+  if (isMajor) {
+    if (uiLang === 'ja') return '長調';
+    if (uiLang === 'ko') return '장조';
+    if (uiLang === 'es') return 'mayor';
+    if (uiLang === 'pt') return 'maior';
+    return 'major';
+  } else {
+    if (uiLang === 'ja') return '短調';
+    if (uiLang === 'ko') return '단조';
+    if (uiLang === 'es') return 'menor';
+    if (uiLang === 'pt') return 'menor';
+    return 'minor';
+  }
+}
+
+function solfegeKeyName(root: RootSpec, isMajor: boolean, uiLang: Lang): string {
+  return getSolfegeRoot(root.letter, root.acc) + ' ' + solfegeKeyMajorMinor(isMajor, uiLang);
+}
+
+function keyName(ks: KeySigDef, isMajor: boolean, sys: NotationSystem, uiLang: Lang): string {
+  if (sys === 'solfege') {
+    return solfegeKeyName(isMajor ? ks.majorRoot : ks.minorRoot, isMajor, uiLang);
+  }
+  return isMajor ? ks.names[sys].major : ks.names[sys].minor;
+}
+
+function defaultNotationFor(lang: Lang): NotationSystem {
+  // Spanish/Portuguese/Japanese music education defaults to Italian solfège (Do Re Mi Fa Sol La Si).
+  // English & Korean default to English letter-name notation.
+  if (lang === 'es' || lang === 'pt' || lang === 'ja') return 'solfege';
+  return 'english';
+}
 
 // ============================================================================
 // STAFF NOTE GENERATION (fixed Helmholtz-correct mapping)
@@ -211,14 +278,14 @@ function genNoteQ(lv: number, sys: NotationSystem): Question {
   return { type: 'staff', clef, staffY: note.pos, accidental: acc, correctAnswer: answer, choices: shuffle([answer, ...wrongs.slice(0, 3)]) };
 }
 
-function genKeySigQ(lv: number, sys: NotationSystem): Question {
+function genKeySigQ(lv: number, sys: NotationSystem, uiLang: Lang): Question {
   const maxAcc = getKSMaxAcc(lv);
   const pool = KEY_SIGS.filter(k => k.sharps <= maxAcc && k.flats <= maxAcc);
   const ks = pick(pool);
   const isMajor = lv < 4 ? true : Math.random() < 0.5;
-  const answer = isMajor ? ks.names[sys].major : ks.names[sys].minor;
+  const answer = keyName(ks, isMajor, sys, uiLang);
 
-  const wrongPool = pool.filter(k => k !== ks).map(k => isMajor ? k.names[sys].major : k.names[sys].minor);
+  const wrongPool = pool.filter(k => k !== ks).map(k => keyName(k, isMajor, sys, uiLang));
   const wrongs = shuffle([...new Set(wrongPool)].filter(w => w !== answer)).slice(0, 3);
   return { type: 'keysig', sharps: ks.sharps, flats: ks.flats, correctAnswer: answer, choices: shuffle([answer, ...wrongs]) };
 }
@@ -249,8 +316,8 @@ function genClefQ(lv: number, sys: NotationSystem): Question {
   return { type: 'staff', clef, staffY: note.pos, accidental: acc, correctAnswer: answer, choices: shuffle([answer, ...wrongs.slice(0, 3)]) };
 }
 
-function genConvertQ(lv: number, sys: NotationSystem): Question {
-  const otherSystems: NotationSystem[] = (['deutsch', 'english', 'japanese'] as NotationSystem[]).filter(s => s !== sys);
+function genConvertQ(lv: number, sys: NotationSystem, uiLang: Lang): Question {
+  const otherSystems: NotationSystem[] = (['solfege', 'deutsch', 'english', 'japanese'] as NotationSystem[]).filter(s => s !== sys);
   const srcSys = pick(otherSystems);
   const isKey = lv >= 3 && Math.random() < 0.4;
 
@@ -259,9 +326,9 @@ function genConvertQ(lv: number, sys: NotationSystem): Question {
     const pool = KEY_SIGS.filter(k => k.sharps <= maxAcc && k.flats <= maxAcc);
     const ks = pick(pool);
     const isMajor = lv < 4 ? true : Math.random() < 0.5;
-    const srcText = isMajor ? ks.names[srcSys].major : ks.names[srcSys].minor;
-    const answer = isMajor ? ks.names[sys].major : ks.names[sys].minor;
-    const wrongPool = pool.filter(k => k !== ks).map(k => isMajor ? k.names[sys].major : k.names[sys].minor);
+    const srcText = keyName(ks, isMajor, srcSys, uiLang);
+    const answer = keyName(ks, isMajor, sys, uiLang);
+    const wrongPool = pool.filter(k => k !== ks).map(k => keyName(k, isMajor, sys, uiLang));
     const wrongs = shuffle([...new Set(wrongPool)].filter(w => w !== answer)).slice(0, 3);
     return { type: 'convert', sourceSystem: srcSys, sourceText: srcText, correctAnswer: answer, choices: shuffle([answer, ...wrongs]) };
   }
@@ -292,24 +359,82 @@ function drawStaff(ctx: CanvasRenderingContext2D) {
   }
 }
 
+// Clefs are drawn using Bravura — the official SMuFL (Standard Music Font Layout)
+// reference font from Steinberg (SIL OFL 1.1). Self-hosted at /public/fonts/Bravura.woff2.
+//
+// SMuFL convention (the critical point):
+//   • 1em = 4 staff spaces (so font-size SG*4 = 56px gives native engraving scale).
+//   • Every glyph origin (0, 0) sits exactly on its musical reference point,
+//     which for fonts means the OpenType baseline (textBaseline='alphabetic').
+//     – gClef (U+E050): origin = center of the G-line (spiral center)
+//     – fClef (U+E062): origin = center of the F-line (between the two dots)
+//     – cClef (U+E05C): origin = center of the reference line (middle of the glyph)
+//     – accidentals (U+E260 flat, U+E262 sharp): origin = notehead vertical center
+//
+// This means: pass the staff-line y directly to fillText with baseline='alphabetic'
+// and the glyph lands musicologically-correctly. No offset guesswork.
+const MUSIC_FONT = '"Bravura", serif';
+const CLEF_FONT_SIZE = SG * 4; // 1em = 4 staff spaces (SMuFL native scale)
+const ACCIDENTAL_FONT_SIZE = SG * 2.8; // ~2.8 sp — proportional to notehead
+
+// SMuFL codepoints (Private Use Area)
+const SMUFL_G_CLEF = '\uE050';
+const SMUFL_F_CLEF = '\uE062';
+const SMUFL_C_CLEF = '\uE05C';
+const SMUFL_SHARP = '\uE262';
+const SMUFL_FLAT = '\uE260';
+
+// ─── Treble (G) clef — SMuFL U+E050 gClef ───
+// The inner spiral's center point aligns exactly with the 2nd line from the
+// bottom (G-line) because Bravura's glyph origin IS the G-line.
+function drawTrebleClef(ctx: CanvasRenderingContext2D, cx: number, cyG: number) {
+  ctx.save();
+  ctx.fillStyle = '#1e293b';
+  ctx.font = `${CLEF_FONT_SIZE}px ${MUSIC_FONT}`;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
+  ctx.fillText(SMUFL_G_CLEF, cx, cyG);
+  ctx.restore();
+}
+// ─── Bass (F) clef — SMuFL U+E062 fClef ───
+// The two dots flanking the body straddle the F-line (2nd from top).
+function drawBassClef(ctx: CanvasRenderingContext2D, cx: number, cyF: number) {
+  ctx.save();
+  ctx.fillStyle = '#1e293b';
+  ctx.font = `${CLEF_FONT_SIZE}px ${MUSIC_FONT}`;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
+  ctx.fillText(SMUFL_F_CLEF, cx, cyF);
+  ctx.restore();
+}
+// ─── C clef (alto / tenor) — SMuFL U+E05C cClef ───
+// The center of the clef aligns with the reference staff line (alto: 3rd line,
+// tenor: 4th line). Bravura's origin IS that reference line.
+function drawCClef(ctx: CanvasRenderingContext2D, cx: number, cyC: number) {
+  ctx.save();
+  ctx.fillStyle = '#1e293b';
+  ctx.font = `${CLEF_FONT_SIZE}px ${MUSIC_FONT}`;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
+  ctx.fillText(SMUFL_C_CLEF, cx, cyC);
+  ctx.restore();
+}
+
 function drawClefLabel(ctx: CanvasRenderingContext2D, clef: ClefType) {
-  ctx.fillStyle = '#1e293b'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  const cx = SL + 16;
+  const cx = SL + 18;
   if (clef === 'treble') {
-    // Treble clef: 𝄞 U+1D11E — centered on G line (pos 2, 2nd line from bottom)
-    ctx.font = '72px "Times New Roman", "Noto Music", serif';
-    ctx.fillText('\u{1D11E}', cx, ST + SG * 1.6);
+    // G line = pos 2 (2nd line from bottom)
+    drawTrebleClef(ctx, cx, posToY(2));
   } else if (clef === 'bass') {
-    // Bass clef: 𝄢 U+1D122 — centered on F line (pos 6, 4th line)
-    ctx.font = '52px "Times New Roman", "Noto Music", serif';
-    ctx.fillText('\u{1D122}', cx, ST + SG * 1.2);
+    // F line = pos 6 (2nd line from top)
+    drawBassClef(ctx, cx, posToY(6));
+  } else if (clef === 'alto') {
+    // Middle line = pos 4
+    drawCClef(ctx, cx, posToY(4));
   } else {
-    // C clef: 𝄡 U+1D121 — alto: center line (pos 4), tenor: 4th line (pos 6)
-    ctx.font = '52px "Times New Roman", "Noto Music", serif';
-    const cy = clef === 'alto' ? ST + SG * 2 : ST + SG * 1;
-    ctx.fillText('\u{1D121}', cx, cy);
+    // Tenor: 4th line = pos 6
+    drawCClef(ctx, cx, posToY(6));
   }
-  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
 }
 
 function posToY(pos: number) { return ST + (4 - pos / 2) * SG; }
@@ -327,12 +452,14 @@ function drawNoteOnStaff(ctx: CanvasRenderingContext2D, pos: number, acc?: 'shar
   ctx.strokeStyle = color || '#1e293b'; ctx.lineWidth = 1.8;
   if (pos < 4) { ctx.beginPath(); ctx.moveTo(x + r * 1.2, y); ctx.lineTo(x + r * 1.2, y - SG * 3.5); ctx.stroke(); }
   else { ctx.beginPath(); ctx.moveTo(x - r * 1.2, y); ctx.lineTo(x - r * 1.2, y + SG * 3.5); ctx.stroke(); }
-  // Accidental
+  // Accidental (SMuFL: sharp U+E262, flat U+E260) — origin at notehead center
   if (acc) {
-    ctx.font = 'bold 20px serif'; ctx.fillStyle = color || '#1e293b';
-    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText(acc === 'sharp' ? '\u266F' : '\u266D', x - r * 1.6 - 4, y);
-    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    ctx.font = `${ACCIDENTAL_FONT_SIZE}px ${MUSIC_FONT}`;
+    ctx.fillStyle = color || '#1e293b';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'alphabetic'; // SMuFL baseline = notehead center
+    ctx.fillText(acc === 'sharp' ? SMUFL_SHARP : SMUFL_FLAT, x - r * 1.6 - 4, y);
+    ctx.textAlign = 'start';
   }
 }
 
@@ -342,12 +469,14 @@ const FLAT_POS = [4, 7, 3, 6, 2, 5, 1];  // B E A D G C F
 
 function drawKeySigOnStaff(ctx: CanvasRenderingContext2D, sharps: number, flats: number) {
   drawStaff(ctx); drawClefLabel(ctx, 'treble');
-  ctx.font = 'bold 22px serif'; ctx.fillStyle = '#1e293b';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  const sx = SL + 50;
-  if (sharps > 0) for (let i = 0; i < sharps; i++) ctx.fillText('\u266F', sx + i * 16, posToY(SHARP_POS[i]));
-  else if (flats > 0) for (let i = 0; i < flats; i++) ctx.fillText('\u266D', sx + i * 16, posToY(FLAT_POS[i]));
-  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `${ACCIDENTAL_FONT_SIZE}px ${MUSIC_FONT}`;
+  ctx.fillStyle = '#1e293b';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic'; // SMuFL baseline = accidental vertical center
+  const sx = SL + 58;
+  if (sharps > 0) for (let i = 0; i < sharps; i++) ctx.fillText(SMUFL_SHARP, sx + i * 14, posToY(SHARP_POS[i]));
+  else if (flats > 0) for (let i = 0; i < flats; i++) ctx.fillText(SMUFL_FLAT, sx + i * 14, posToY(FLAT_POS[i]));
+  ctx.textAlign = 'start';
 }
 
 // ============================================================================
@@ -390,7 +519,13 @@ function loadStats(): UserStats {
   } catch { return defStats(); }
 }
 function saveStats(s: UserStats) { try { localStorage.setItem(SK, JSON.stringify(s)); } catch { /* */ } }
-function loadNotation(): NotationSystem { try { const r = localStorage.getItem(NK); return (r === 'english' || r === 'japanese') ? r : 'deutsch'; } catch { return 'deutsch'; } }
+function loadNotation(fallback: NotationSystem): NotationSystem {
+  try {
+    const r = localStorage.getItem(NK);
+    if (r === 'solfege' || r === 'deutsch' || r === 'english' || r === 'japanese') return r;
+    return fallback;
+  } catch { return fallback; }
+}
 function saveNotation(n: NotationSystem) { try { localStorage.setItem(NK, n); } catch { /* */ } }
 
 // ============================================================================
@@ -401,6 +536,7 @@ const T: Record<string, L5> = {
   title: { ja: 'KUON SIGHT READING', en: 'KUON SIGHT READING', ko: 'KUON SIGHT READING', pt: 'KUON SIGHT READING', es: 'KUON SIGHT READING' },
   subtitle: { ja: '譜面を読む力を、鍛える。', en: 'Train your music reading skills.', ko: '악보 읽는 힘을 기르자.', pt: 'Treine sua leitura musical.', es: 'Entrena tu lectura musical.' },
   notationSys: { ja: '記譜法', en: 'Notation System', ko: '기보법', pt: 'Sistema de Notacao', es: 'Sistema de Notacion' },
+  solfTip: { ja: 'ドレミファソラシ（世界で最も広く使われる固定ド）', en: 'Do Re Mi Fa Sol La Si (fixed-do, Latin America / Italy / France / Spain / Japan)', ko: '도레미파솔라시 (고정도, 세계에서 가장 널리 사용됨)', pt: 'Do Re Mi Fa Sol La Si (do-fixo, America Latina / Portugal / Espanha / Italia / Franca)', es: 'Do Re Mi Fa Sol La Si (do-fijo, America Latina / Espana / Italia / Francia / Portugal)' },
   deTip: { ja: 'H=シ♮ / B=シ♭（クラシック国際標準）', en: 'H=B-natural / B=B-flat (Classical standard)', ko: 'H=시♮ / B=시♭ (클래식 국제 표준)', pt: 'H=Si♮ / B=Sib (Padrao classico)', es: 'H=Si♮ / B=Sib (Estandar clasico)' },
   enTip: { ja: 'B=シ♮（ジャズ・ポップス標準）', en: 'B=B-natural (Jazz/Pop standard)', ko: 'B=시♮ (재즈/팝 표준)', pt: 'B=Si♮ (Padrao Jazz/Pop)', es: 'B=Si♮ (Estandar Jazz/Pop)' },
   jaTip: { ja: 'イロハニホヘト（楽典試験）', en: 'Iroha system (Japanese theory exam)', ko: '이로하니호헤토 (악전 시험)', pt: 'Sistema Iroha (exame japones)', es: 'Sistema Iroha (examen japones)' },
@@ -411,7 +547,7 @@ const T: Record<string, L5> = {
   noteDesc: { ja: '五線譜上の音名を答える', en: 'Identify notes on the staff', ko: '오선보 위의 음이름을 답하기', pt: 'Identifique notas na pauta', es: 'Identifica notas en el pentagrama' },
   keysigDesc: { ja: '調号から調を判定', en: 'Identify key from signature', ko: '조표로 조를 판정', pt: 'Identifique o tom', es: 'Identifica el tono' },
   clefDesc: { ja: '異なる音部記号で読む', en: 'Read in different clefs', ko: '다른 음자리표에서 읽기', pt: 'Leia em diferentes claves', es: 'Lee en diferentes claves' },
-  convertDesc: { ja: 'Deutsch/English/日本語を変換', en: 'Convert between notation systems', ko: 'Deutsch/English/일본어 변환', pt: 'Converta entre sistemas', es: 'Convierte entre sistemas' },
+  convertDesc: { ja: 'ドレミ/Deutsch/English/日本語を変換', en: 'Convert between Do-Re-Mi / Deutsch / English / Japanese', ko: '도레미/Deutsch/English/일본어 변환', pt: 'Converta entre Do-Re-Mi / Deutsch / English / Japones', es: 'Convierte entre Do-Re-Mi / Deutsch / English / Japones' },
   correct: { ja: '正解！', en: 'Correct!', ko: '정답!', pt: 'Correto!', es: 'Correcto!' },
   wrong: { ja: '不正解', en: 'Wrong', ko: '오답', pt: 'Errado', es: 'Incorrecto' },
   next: { ja: '次の問題', en: 'Next', ko: '다음 문제', pt: 'Proximo', es: 'Siguiente' },
@@ -434,7 +570,7 @@ const T: Record<string, L5> = {
   from: { ja: '出題', en: 'From', ko: '출제', pt: 'De', es: 'De' },
 };
 
-const NOTATION_LABELS: Record<NotationSystem, string> = { deutsch: 'Deutsch', english: 'English', japanese: '日本語' };
+const NOTATION_LABELS: Record<NotationSystem, string> = { solfege: 'Do Re Mi', deutsch: 'Deutsch', english: 'English', japanese: '日本語' };
 
 // ============================================================================
 // MAIN COMPONENT
@@ -443,7 +579,7 @@ const NOTATION_LABELS: Record<NotationSystem, string> = { deutsch: 'Deutsch', en
 export default function SightReadingPage() {
   const { lang } = useLang();
   const [stats, setStats] = useState<UserStats>(defStats);
-  const [notation, setNotation] = useState<NotationSystem>('deutsch');
+  const [notation, setNotation] = useState<NotationSystem>('solfege');
   const [mode, setMode] = useState<Mode | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -453,8 +589,55 @@ export default function SightReadingPage() {
   const [newAch, setNewAch] = useState<Achievement[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [fontReady, setFontReady] = useState(false);
 
-  useEffect(() => { setMounted(true); setStats(loadStats()); setNotation(loadNotation()); }, []);
+  useEffect(() => { setMounted(true); setStats(loadStats()); setNotation(loadNotation(defaultNotationFor(lang))); }, [lang]);
+
+  // Load self-hosted Bravura (SMuFL reference font) for musicologically-correct
+  // clef + accidental rendering. Self-hosted at /fonts/Bravura.woff2 (247KB).
+  // SMuFL glyph origin convention means the baseline IS the reference line —
+  // no offset math required.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    type FontFaceCtor = new (family: string, source: string, descriptors?: { display?: string }) => {
+      load: () => Promise<unknown>;
+      family: string;
+    };
+    type FontFaceSet = {
+      add: (f: { family: string }) => void;
+      load: (s: string) => Promise<unknown>;
+      ready: Promise<unknown>;
+    };
+    type WindowWithFontFace = Window & { FontFace?: FontFaceCtor };
+    type DocWithFonts = Document & { fonts?: FontFaceSet };
+    const w = window as WindowWithFontFace;
+    const doc = document as DocWithFonts;
+    if (w.FontFace && doc.fonts) {
+      const FF = w.FontFace;
+      const face = new FF('Bravura', 'url(/fonts/Bravura.woff2) format("woff2")', { display: 'block' });
+      face.load()
+        .then(() => {
+          doc.fonts!.add(face);
+          return Promise.all([
+            doc.fonts!.load(`${CLEF_FONT_SIZE}px "Bravura"`),
+            doc.fonts!.load(`${ACCIDENTAL_FONT_SIZE}px "Bravura"`),
+          ]);
+        })
+        .then(() => setFontReady(true))
+        .catch(() => setFontReady(true)); // Fallback: render anyway
+    } else {
+      // Very old browsers — inject @font-face and hope for the best
+      const styleId = 'kuon-bravura-face';
+      if (!document.getElementById(styleId)) {
+        const s = document.createElement('style');
+        s.id = styleId;
+        s.textContent = `@font-face { font-family: 'Bravura'; src: url('/fonts/Bravura.woff2') format('woff2'); font-display: block; }`;
+        document.head.appendChild(s);
+      }
+      const t = setTimeout(() => setFontReady(true), 1500);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   // Canvas rendering
   useEffect(() => {
@@ -467,17 +650,17 @@ export default function SightReadingPage() {
     ctx.scale(dpr, dpr); ctx.clearRect(0, 0, 380, 160);
     if (question.type === 'keysig') { drawKeySigOnStaff(ctx, question.sharps, question.flats); }
     else { drawStaff(ctx); drawClefLabel(ctx, question.clef); const c = isCorrect === null ? '#1e293b' : isCorrect ? GREEN : RED; drawNoteOnStaff(ctx, question.staffY, question.accidental, c); }
-  }, [question, isCorrect]);
+  }, [question, isCorrect, fontReady]);
 
   const genQ = useCallback((m: Mode) => {
     setSelected(null); setIsCorrect(null);
     switch (m) {
       case 'note': setQuestion(genNoteQ(stats.level, notation)); break;
-      case 'keysig': setQuestion(genKeySigQ(stats.level, notation)); break;
+      case 'keysig': setQuestion(genKeySigQ(stats.level, notation, lang)); break;
       case 'clef': setQuestion(genClefQ(stats.level, notation)); break;
-      case 'convert': setQuestion(genConvertQ(stats.level, notation)); break;
+      case 'convert': setQuestion(genConvertQ(stats.level, notation, lang)); break;
     }
-  }, [stats.level, notation]);
+  }, [stats.level, notation, lang]);
 
   const startMode = useCallback((m: Mode) => { setMode(m); setCurrentStreak(0); setTimeout(() => genQ(m), 50); }, [genQ]);
 
@@ -542,17 +725,17 @@ export default function SightReadingPage() {
           {/* Notation System Selector */}
           <div style={{ ...card, marginBottom: 20, padding: '16px 20px' }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{T.notationSys[lang]}</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {(['deutsch', 'english', 'japanese'] as NotationSystem[]).map(n => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+              {(['solfege', 'deutsch', 'english', 'japanese'] as NotationSystem[]).map(n => (
                 <button key={n} onClick={() => changeNotation(n)} style={{
-                  flex: 1, padding: '10px 8px', borderRadius: 10, border: `2px solid ${notation === n ? ACCENT : '#e2e8f0'}`,
+                  padding: '10px 8px', borderRadius: 10, border: `2px solid ${notation === n ? ACCENT : '#e2e8f0'}`,
                   background: notation === n ? `${ACCENT}10` : '#fff', color: notation === n ? ACCENT : '#475569',
                   fontFamily: sans, fontSize: 'clamp(12px,2.8vw,14px)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
                 }}>{NOTATION_LABELS[n]}</button>
               ))}
             </div>
             <div style={{ fontSize: 'clamp(11px,2.5vw,13px)', color: '#94a3b8', marginTop: 8, lineHeight: 1.5 }}>
-              {notation === 'deutsch' ? T.deTip[lang] : notation === 'english' ? T.enTip[lang] : T.jaTip[lang]}
+              {notation === 'solfege' ? T.solfTip[lang] : notation === 'deutsch' ? T.deTip[lang] : notation === 'english' ? T.enTip[lang] : T.jaTip[lang]}
             </div>
           </div>
 

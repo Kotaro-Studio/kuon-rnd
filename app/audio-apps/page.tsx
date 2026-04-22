@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
@@ -12,57 +12,97 @@ const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans  = '"Helvetica Neue", Arial, sans-serif';
 const mono  = '"SF Mono", "Fira Code", "Consolas", monospace';
 
-type L5 = Record<Lang, string>;
-const t5 = (m: Partial<Record<Lang, string>> & { en: string }, lang: Lang) => m[lang] ?? m.en;
+type L5 = Partial<Record<Lang, string>> & { en: string };
+const t5 = (m: L5, lang: Lang) => m[lang] ?? m.en;
 
 // ─────────────────────────────────────────────
-// Tab & Tier definitions
+// Persona & Tier definitions
 // ─────────────────────────────────────────────
-type Tab = 'learn' | 'create' | 'connect';
+// Persona = 顧客のジャンル（誰向け）
+// Tier    = アクセス層（どう使う）
+// この 2 軸をかけ合わせることで、ユーザーは自分に最適なツール群を発見できる。
+type Persona = 'engineer' | 'student' | 'producer';
 type Tier = 'open' | 'login' | 'pro';
 
-const TAB_META: Record<Tab, { icon: string; label: L5; accent: string; desc: L5 }> = {
-  learn: {
-    icon: '🎓',
-    label: { ja: 'LEARN', en: 'LEARN', ko: 'LEARN', pt: 'LEARN', es: 'LEARN' },
-    accent: '#22c55e',
-    desc: {
-      ja: '毎日の練習パートナー。あなたの成長を記録し、可視化する。',
-      en: 'Your daily practice partner. Record and visualize your growth.',
-      ko: '매일의 연습 파트너. 당신의 성장을 기록하고 시각화합니다.',
-      pt: 'Seu parceiro de prática diário. Registre e visualize seu crescimento.',
-      es: 'Tu compañero de práctica diario. Registra y visualiza tu crecimiento.',
+const PERSONA_META: Record<Persona, {
+  icon: string;
+  label: L5;
+  tag: L5;
+  lead: L5;
+  accent: string;
+  gradient: string;
+}> = {
+  engineer: {
+    icon: '🎧',
+    label: {
+      ja: 'エンジニア', en: 'Engineer', ko: '엔지니어', pt: 'Engenheiro', es: 'Ingeniero',
     },
-  },
-  create: {
-    icon: '🎛️',
-    label: { ja: 'CREATE', en: 'CREATE', ko: 'CREATE', pt: 'CREATE', es: 'CREATE' },
+    tag: {
+      ja: 'マスタリング・アーカイブ・フォーマット',
+      en: 'Mastering · Archive · Format',
+      ko: '마스터링·아카이브·포맷',
+      pt: 'Mastering · Arquivamento · Formato',
+      es: 'Mastering · Archivado · Formato',
+    },
+    lead: {
+      ja: 'プロエンジニアのための精密ツール群。DDP・DSD・LUFS・True Peak・ジッタ制御。世界初のブラウザ完結ワークフロー。',
+      en: 'Precision tools for pro engineers. DDP, DSD, LUFS, True Peak, jitter control — the world\'s first browser-native workflow.',
+      ko: '프로 엔지니어를 위한 정밀 도구. DDP·DSD·LUFS·True Peak·지터 제어. 세계 최초 브라우저 완결 워크플로우.',
+      pt: 'Ferramentas de precisão para engenheiros profissionais. DDP, DSD, LUFS, True Peak — workflow completo no navegador.',
+      es: 'Herramientas de precisión para ingenieros profesionales. DDP, DSD, LUFS, True Peak — flujo completo en navegador.',
+    },
     accent: '#0284c7',
-    desc: {
-      ja: 'あなたの音をプロ品質に。録音から配信まで。',
-      en: 'Professional quality for your sound. From recording to distribution.',
-      ko: '당신의 소리를 프로 품질로. 녹음에서 배포까지.',
-      pt: 'Qualidade profissional para seu som. Da gravação à distribuição.',
-      es: 'Calidad profesional para tu sonido. De la grabación a la distribución.',
-    },
+    gradient: 'linear-gradient(135deg,#0284c7,#0ea5e9)',
   },
-  connect: {
-    icon: '🌍',
-    label: { ja: 'CONNECT', en: 'CONNECT', ko: 'CONNECT', pt: 'CONNECT', es: 'CONNECT' },
-    accent: '#f59e0b',
-    desc: {
-      ja: '音楽仲間とつながる。共有し、発見する。',
-      en: 'Connect with fellow musicians. Share and discover.',
-      ko: '음악 동료와 연결하세요. 공유하고 발견하세요.',
-      pt: 'Conecte-se com outros músicos. Compartilhe e descubra.',
-      es: 'Conéctate con otros músicos. Comparte y descubre.',
+  student: {
+    icon: '🎓',
+    label: {
+      ja: '音大生・学習者', en: 'Student', ko: '학습자', pt: 'Estudante', es: 'Estudiante',
     },
+    tag: {
+      ja: '練習・聴音・音楽理論',
+      en: 'Practice · Ear · Theory',
+      ko: '연습·청음·이론',
+      pt: 'Prática · Ouvido · Teoria',
+      es: 'Práctica · Oído · Teoría',
+    },
+    lead: {
+      ja: '毎日の練習を支え、4年後の成長を形にする。チューナー、聴音、和声、対位法——音大生のために設計された学習パートナー。',
+      en: 'Support your daily practice, visualize your growth over 4 years. Tuner, ear training, harmony, counterpoint — built for music students.',
+      ko: '매일의 연습을 지원하고 4년 후의 성장을 형태로. 튜너, 청음, 화성, 대위법 — 음대생을 위한 학습 파트너.',
+      pt: 'Apoie sua prática diária e visualize seu crescimento ao longo de 4 anos. Afinador, treino auditivo, harmonia, contraponto — feito para estudantes.',
+      es: 'Apoya tu práctica diaria y visualiza tu crecimiento en 4 años. Afinador, entrenamiento auditivo, armonía, contrapunto — para estudiantes.',
+    },
+    accent: '#8b5cf6',
+    gradient: 'linear-gradient(135deg,#8b5cf6,#ec4899)',
+  },
+  producer: {
+    icon: '🎼',
+    label: {
+      ja: 'プロ制作', en: 'Pro Creator', ko: '프로 제작', pt: 'Criador Pro', es: 'Creador Pro',
+    },
+    tag: {
+      ja: '録音・ミックス・AI 分離',
+      en: 'Record · Mix · AI Separation',
+      ko: '녹음·믹스·AI 분리',
+      pt: 'Gravação · Mixagem · IA',
+      es: 'Grabación · Mezcla · IA',
+    },
+    lead: {
+      ja: '複雑な処理を要するプロ制作者のためのツール群。AI 音源分離、クリッピング復元、ノイズ除去。サーバーサイド処理を含む。',
+      en: 'Tools for pro creators who need heavy processing. AI source separation, declipping, noise reduction — includes server-side processing.',
+      ko: '복잡한 처리가 필요한 프로 제작자를 위한 도구. AI 음원 분리, 클리핑 복원, 노이즈 제거 — 서버 처리 포함.',
+      pt: 'Ferramentas para criadores profissionais. Separação de fontes com IA, declipping, redução de ruído — com processamento no servidor.',
+      es: 'Herramientas para creadores profesionales. Separación con IA, declipping, reducción de ruido — con procesamiento en servidor.',
+    },
+    accent: '#dc2626',
+    gradient: 'linear-gradient(135deg,#dc2626,#f59e0b)',
   },
 };
 
 const TIER_META: Record<Tier, { label: L5; bg: string; color: string; dot: string; desc: L5 }> = {
   open: {
-    label: { ja: 'OPEN', en: 'OPEN', ko: 'OPEN', pt: 'OPEN', es: 'OPEN' },
+    label: { en: 'FREE' },
     bg: 'rgba(5,150,105,0.12)', color: '#059669', dot: '#059669',
     desc: {
       ja: 'ログイン不要・無制限',
@@ -73,10 +113,10 @@ const TIER_META: Record<Tier, { label: L5; bg: string; color: string; dot: strin
     },
   },
   login: {
-    label: { ja: 'LOGIN', en: 'LOGIN', ko: 'LOGIN', pt: 'LOGIN', es: 'LOGIN' },
+    label: { en: 'LOGIN' },
     bg: 'rgba(2,132,199,0.12)', color: '#0284c7', dot: '#0284c7',
     desc: {
-      ja: '無料登録でデータ蓄積',
+      ja: '無料登録・データ蓄積',
       en: 'Free signup · Data saved',
       ko: '무료 가입 · 데이터 저장',
       pt: 'Cadastro grátis · Dados salvos',
@@ -84,39 +124,78 @@ const TIER_META: Record<Tier, { label: L5; bg: string; color: string; dot: strin
     },
   },
   pro: {
-    label: { ja: 'PRO', en: 'PRO', ko: 'PRO', pt: 'PRO', es: 'PRO' },
+    label: { en: 'PRO' },
     bg: 'rgba(245,158,11,0.12)', color: '#d97706', dot: '#f59e0b',
     desc: {
-      ja: 'サーバー処理＋AI分析',
-      en: 'Server processing + AI',
-      ko: '서버 처리 + AI 분석',
-      pt: 'Processamento + IA',
-      es: 'Procesamiento + IA',
+      ja: 'サーバー処理・サブスク',
+      en: 'Server processing · Subscription',
+      ko: '서버 처리 · 구독',
+      pt: 'Processamento · Assinatura',
+      es: 'Servidor · Suscripción',
     },
   },
 };
 
 // ─────────────────────────────────────────────
-// App data — reorganized by tab + tier
+// Plan badge — shown prominently on each card.
+//  "FREE"          : browser-complete or free-signup apps (anyone can use, no paid plan required)
+//  "STUDENT · PRO" : subscription apps (Student plan & Pro plan both include; Pro covers everything)
+// 洗練された雰囲気を保ちつつ、無料アプリが一目でわかるデザイン。
+// ─────────────────────────────────────────────
+type PlanBadgeStyle = {
+  label: string;
+  accent: string;
+  bgGradient: string;
+  borderColor: string;
+  textColor: string;
+  isFree: boolean;
+};
+
+function planBadge(tier: Tier): PlanBadgeStyle {
+  if (tier === 'pro') {
+    return {
+      label: 'STUDENT · PRO',
+      accent: '#b45309',
+      bgGradient: 'linear-gradient(135deg, rgba(254,243,199,0.95), rgba(253,230,138,0.95))',
+      borderColor: 'rgba(217,119,6,0.5)',
+      textColor: '#92400e',
+      isFree: false,
+    };
+  }
+  // open / login: both are free (login just requires a free account)
+  return {
+    label: 'FREE',
+    accent: '#059669',
+    bgGradient: 'linear-gradient(135deg, rgba(209,250,229,0.95), rgba(167,243,208,0.92))',
+    borderColor: 'rgba(5,150,105,0.42)',
+    textColor: '#065f46',
+    isFree: true,
+  };
+}
+
+// ─────────────────────────────────────────────
+// App data — each app can belong to multiple personas
+// NOTE: href values and app system paths are UNCHANGED.
 // ─────────────────────────────────────────────
 type AppEntry = {
   id: string;
-  tab: Tab;
+  personas: Persona[];
   tier: Tier;
   badge: string;
   name: string;
-  tagline: Partial<Record<Lang, string>> & { en: string };
-  desc: Partial<Record<Lang, string>> & { en: string };
+  tagline: L5;
+  desc: L5;
   href: string;
   accent: string;
+  replaces?: L5;       // 競合ソフト置換訴求（IQ180）
   isNew?: boolean;
   isComingSoon?: boolean;
 };
 
 const apps: AppEntry[] = [
-  // ─── LEARN ───
+  // ─── STUDENT primary (教育学習) ───
   {
-    id: 'tuner', tab: 'learn', tier: 'open',
+    id: 'tuner', personas: ['student'], tier: 'open',
     badge: 'YIN', name: 'KUON TUNER PRO',
     tagline: {
       ja: 'あなたの耳は、もっと正確さを求めている。',
@@ -135,7 +214,7 @@ const apps: AppEntry[] = [
     href: '/tuner-lp', accent: '#22c55e', isNew: true,
   },
   {
-    id: 'ear-training', tab: 'learn', tier: 'open',
+    id: 'ear-training', personas: ['student'], tier: 'open',
     badge: 'EAR', name: 'KUON EAR TRAINING',
     tagline: {
       ja: '聴音力を鍛える。毎日10分で変わる。',
@@ -154,7 +233,7 @@ const apps: AppEntry[] = [
     href: '/ear-training-lp', accent: '#8b5cf6', isNew: true,
   },
   {
-    id: 'chord-quiz', tab: 'learn', tier: 'open',
+    id: 'chord-quiz', personas: ['student'], tier: 'open',
     badge: 'CHORD', name: 'KUON CHORD QUIZ',
     tagline: {
       ja: '和音が「聴こえる」ようになる。',
@@ -173,7 +252,7 @@ const apps: AppEntry[] = [
     href: '/chord-quiz-lp', accent: '#8b5cf6', isNew: true,
   },
   {
-    id: 'interval-speed', tab: 'learn', tier: 'open',
+    id: 'interval-speed', personas: ['student'], tier: 'open',
     badge: 'SPEED', name: 'KUON INTERVAL SPEED',
     tagline: {
       ja: '1秒以内に答えられるか？',
@@ -192,7 +271,7 @@ const apps: AppEntry[] = [
     href: '/interval-speed-lp', accent: '#8b5cf6', isNew: true,
   },
   {
-    id: 'metronome', tab: 'learn', tier: 'open',
+    id: 'metronome', personas: ['student', 'producer'], tier: 'open',
     badge: 'METRO', name: 'KUON METRONOME',
     tagline: {
       ja: 'プロの音楽家が監修した、最高のメトロノーム。',
@@ -211,7 +290,7 @@ const apps: AppEntry[] = [
     href: '/metronome-lp', accent: '#8b5cf6', isNew: true,
   },
   {
-    id: 'sight-reading', tab: 'learn', tier: 'open',
+    id: 'sight-reading', personas: ['student'], tier: 'open',
     badge: 'READING', name: 'KUON SIGHT READING',
     tagline: {
       ja: '譜面を読む力を、鍛える。',
@@ -230,7 +309,7 @@ const apps: AppEntry[] = [
     href: '/sight-reading-lp', accent: '#8b5cf6', isNew: true,
   },
   {
-    id: 'harmony', tab: 'learn', tier: 'open',
+    id: 'harmony', personas: ['student', 'producer'], tier: 'open',
     badge: 'HARMONY', name: 'KUON HARMONY',
     tagline: {
       ja: '提出前に、和声課題をチェック。',
@@ -249,7 +328,7 @@ const apps: AppEntry[] = [
     href: '/harmony-lp', accent: '#ec4899', isNew: true,
   },
   {
-    id: 'counterpoint', tab: 'learn', tier: 'open',
+    id: 'counterpoint', personas: ['student'], tier: 'open',
     badge: 'COUNTERPOINT', name: 'KUON COUNTERPOINT',
     tagline: {
       ja: '対位法の課題を、提出前にチェック。',
@@ -268,7 +347,7 @@ const apps: AppEntry[] = [
     href: '/counterpoint-lp', accent: '#0891b2', isNew: true,
   },
   {
-    id: 'transposer', tab: 'learn', tier: 'open',
+    id: 'transposer', personas: ['student', 'producer'], tier: 'open',
     badge: 'TRANSPOSER', name: 'KUON TRANSPOSER',
     tagline: {
       ja: '移調の計算を、一瞬で。',
@@ -287,7 +366,7 @@ const apps: AppEntry[] = [
     href: '/transposer-lp', accent: '#ea580c', isNew: true,
   },
   {
-    id: 'sight-reading-app', tab: 'learn', tier: 'login',
+    id: 'sight-reading-app', personas: ['student'], tier: 'login',
     badge: 'SIGHT', name: 'KUON SIGHT READING',
     tagline: {
       ja: '初見力を、数値で測る。',
@@ -306,7 +385,7 @@ const apps: AppEntry[] = [
     href: '/sight-reading', accent: '#06b6d4', isComingSoon: true,
   },
   {
-    id: 'drone', tab: 'learn', tier: 'open',
+    id: 'drone', personas: ['student', 'producer'], tier: 'open',
     badge: 'DRONE', name: 'KUON DRONE',
     tagline: {
       ja: '純正律の響きを、体で覚える。',
@@ -325,8 +404,8 @@ const apps: AppEntry[] = [
     href: '/drone', accent: '#14b8a6', isComingSoon: true,
   },
   {
-    id: 'metronome', tab: 'learn', tier: 'open',
-    badge: 'BPM', name: 'KUON METRONOME',
+    id: 'metronome-intelligent', personas: ['student', 'producer'], tier: 'open',
+    badge: 'BPM', name: 'KUON METRONOME INTELLIGENT',
     tagline: {
       ja: 'テンポの揺れを、検出する。',
       en: 'Detect tempo fluctuations.',
@@ -344,11 +423,11 @@ const apps: AppEntry[] = [
     href: '/metronome', accent: '#f97316', isComingSoon: true,
   },
   {
-    id: 'practice-log', tab: 'learn', tier: 'login',
+    id: 'practice-log', personas: ['student', 'producer'], tier: 'login',
     badge: 'LOG', name: 'KUON PRACTICE LOG',
     tagline: {
       ja: '4年分の成長が、グラフになる。',
-      en: "4 years of growth, in one graph.",
+      en: '4 years of growth, in one graph.',
       ko: '4년간의 성장이 그래프가 됩니다.',
       pt: '4 anos de crescimento em um gráfico.',
       es: '4 años de crecimiento en un gráfico.',
@@ -363,9 +442,9 @@ const apps: AppEntry[] = [
     href: '/practice-log', accent: '#0ea5e9', isComingSoon: true,
   },
 
-  // ─── CREATE ───
+  // ─── ENGINEER primary (エンジニア向け) ───
   {
-    id: 'master-check', tab: 'create', tier: 'open',
+    id: 'master-check', personas: ['engineer', 'producer'], tier: 'open',
     badge: 'LUFS', name: 'KUON MASTER CHECK',
     tagline: {
       ja: '配信前の最終チェックを、ブラウザだけで。',
@@ -381,10 +460,17 @@ const apps: AppEntry[] = [
       pt: 'Verifique LUFS, True Peak, clipping, correlação estéreo. Ajuste automático com limitador e download WAV.',
       es: 'Verifica LUFS, True Peak, clipping, correlación estéreo. Ajuste automático con limitador y descarga WAV.',
     },
+    replaces: {
+      ja: '※ iZotope Insight ($249) 相当のLUFS測定をブラウザで',
+      en: 'Browser-native alternative to iZotope Insight ($249).',
+      ko: 'iZotope Insight ($249) 대안을 브라우저에서.',
+      pt: 'Alternativa ao iZotope Insight ($249) no navegador.',
+      es: 'Alternativa a iZotope Insight ($249) en el navegador.',
+    },
     href: '/master-check-lp', accent: '#0284c7',
   },
   {
-    id: 'analyzer', tab: 'create', tier: 'open',
+    id: 'analyzer', personas: ['engineer', 'producer'], tier: 'open',
     badge: 'FFT', name: 'KUON ANALYZER',
     tagline: {
       ja: 'あなたのミックス、プロと何が違う？',
@@ -403,64 +489,33 @@ const apps: AppEntry[] = [
     href: '/analyzer-lp', accent: '#4F46E5',
   },
   {
-    id: 'normalize', tab: 'create', tier: 'login',
-    badge: 'NORMALIZE', name: 'KUON NORMALIZE',
+    id: 'ddp-checker', personas: ['engineer'], tier: 'open',
+    badge: 'DDP', name: 'KUON DDP CHECKER',
     tagline: {
-      ja: 'ブラウザが、スタジオになる。',
-      en: 'Your browser becomes a studio.',
-      ko: '브라우저가 스튜디오가 됩니다.',
-      pt: 'Seu navegador se torna um estúdio.',
-      es: 'Tu navegador se convierte en un estudio.',
+      ja: 'DDPの中身を、ブラウザで確認。',
+      en: 'Verify DDP contents in your browser.',
+      ko: 'DDP 내용을 브라우저에서 확인.',
+      pt: 'Verifique conteúdo DDP no navegador.',
+      es: 'Verifica contenido DDP en el navegador.',
     },
     desc: {
-      ja: 'ピークノーマライズ・ラウドネス最適化・シグネチャーEQ・ホールリバーブ搭載。マイク購入者特典。',
-      en: 'Peak normalize, loudness optimization, signature EQ, hall reverb. Mic owner bonus.',
-      ko: '피크 노멀라이즈, 라우드니스 최적화, 시그니처 EQ, 홀 리버브. 마이크 구매자 특전.',
-      pt: 'Normalização de picos, otimização de loudness, EQ signature, reverb. Bônus para donos de mic.',
-      es: 'Normalización de picos, optimización de loudness, EQ signature, reverb. Bonus para dueños de mic.',
+      ja: 'CDマスタリング用DDP構造検証・トラック試聴・曲間試聴・WAVダウンロード。完全ローカル。',
+      en: 'CD mastering DDP verification — track preview, gap listen, WAV download. 100% local.',
+      ko: 'CD 마스터링 DDP 구조 검증 · 트랙 시청 · 곡간 시청 · WAV 다운로드. 완전 로컬.',
+      pt: 'Verificação DDP para CD — preview de faixas, gap listen, download WAV. 100% local.',
+      es: 'Verificación DDP para CD — vista previa, gap listen, descarga WAV. 100% local.',
     },
-    href: '/normalize-lp', accent: '#059669',
+    replaces: {
+      ja: '※ WaveLab Pro (¥86,000) の DDP 機能相当',
+      en: 'Equivalent to WaveLab Pro ($600) DDP tools.',
+      ko: 'WaveLab Pro의 DDP 기능 동등.',
+      pt: 'Equivalente às ferramentas DDP do WaveLab Pro ($600).',
+      es: 'Equivalente a las herramientas DDP de WaveLab Pro ($600).',
+    },
+    href: '/ddp-checker-lp', accent: '#0284c7',
   },
   {
-    id: 'resampler', tab: 'create', tier: 'open',
-    badge: 'SINC', name: 'KUON RESAMPLER',
-    tagline: {
-      ja: 'サンプルレート変換に、プロの品質を。',
-      en: 'Professional quality for sample rate conversion.',
-      ko: '샘플 레이트 변환에 프로 품질을.',
-      pt: 'Qualidade profissional para conversão de sample rate.',
-      es: 'Calidad profesional para conversión de frecuencia.',
-    },
-    desc: {
-      ja: 'Sinc補間×Kaiser窓。44.1k↔48k↔96k↔192kHz。3段階品質。32-bit float WAV出力。',
-      en: 'Sinc interpolation × Kaiser window. 44.1k↔48k↔96k↔192kHz. 3 quality presets. 32-bit float WAV.',
-      ko: 'Sinc 보간 × Kaiser 윈도우. 44.1k↔48k↔96k↔192kHz. 3단계 품질. 32-bit float WAV.',
-      pt: 'Interpolação Sinc × janela Kaiser. 44.1k↔48k↔96k↔192kHz. 3 presets. WAV 32-bit float.',
-      es: 'Interpolación Sinc × ventana Kaiser. 44.1k↔48k↔96k↔192kHz. 3 presets. WAV 32-bit float.',
-    },
-    href: '/resampler-lp', accent: '#0891B2',
-  },
-  {
-    id: 'converter', tab: 'create', tier: 'open',
-    badge: 'MP3', name: 'KUON CONVERTER',
-    tagline: {
-      ja: 'WAV → MP3。ブラウザで一瞬。',
-      en: 'WAV → MP3. Instant in browser.',
-      ko: 'WAV → MP3. 브라우저에서 순식간에.',
-      pt: 'WAV → MP3. Instantâneo no navegador.',
-      es: 'WAV → MP3. Instantáneo en el navegador.',
-    },
-    desc: {
-      ja: '320kbps / 160kbps 高品質変換。サーバー送信なし。マスタリング後のMP3作成に。',
-      en: '320kbps / 160kbps high-quality conversion. No server upload. For post-mastering MP3.',
-      ko: '320kbps / 160kbps 고품질 변환. 서버 전송 없음. 마스터링 후 MP3 제작에.',
-      pt: 'Conversão 320kbps / 160kbps. Sem upload. Para MP3 pós-masterização.',
-      es: 'Conversión 320kbps / 160kbps. Sin subir al servidor. Para MP3 post-masterización.',
-    },
-    href: '/converter', accent: '#0284c7',
-  },
-  {
-    id: 'dsd', tab: 'create', tier: 'open',
+    id: 'dsd', personas: ['engineer'], tier: 'open',
     badge: 'DSD', name: 'KUON DSD',
     tagline: {
       ja: 'DSD を、ブラウザで再生する。世界初。',
@@ -479,26 +534,45 @@ const apps: AppEntry[] = [
     href: '/dsd-lp', accent: '#7C3AED',
   },
   {
-    id: 'ddp-checker', tab: 'create', tier: 'open',
-    badge: 'DDP', name: 'DDP CHECKER',
+    id: 'resampler', personas: ['engineer', 'producer'], tier: 'open',
+    badge: 'SINC', name: 'KUON RESAMPLER',
     tagline: {
-      ja: 'DDPの中身を、ブラウザで確認。',
-      en: 'Verify DDP contents in your browser.',
-      ko: 'DDP 내용을 브라우저에서 확인.',
-      pt: 'Verifique conteúdo DDP no navegador.',
-      es: 'Verifica contenido DDP en el navegador.',
+      ja: 'サンプルレート変換に、プロの品質を。',
+      en: 'Professional quality for sample rate conversion.',
+      ko: '샘플 레이트 변환에 프로 품질을.',
+      pt: 'Qualidade profissional para conversão de sample rate.',
+      es: 'Calidad profesional para conversión de frecuencia.',
     },
     desc: {
-      ja: 'CDマスタリング用DDP構造検証・トラック試聴・曲間試聴・WAVダウンロード。完全ローカル。',
-      en: 'CD mastering DDP verification — track preview, gap listen, WAV download. 100% local.',
-      ko: 'CD 마스터링 DDP 구조 검증 · 트랙 시청 · 곡간 시청 · WAV 다운로드. 완전 로컬.',
-      pt: 'Verificação DDP para CD — preview de faixas, gap listen, download WAV. 100% local.',
-      es: 'Verificación DDP para CD — vista previa, gap listen, descarga WAV. 100% local.',
+      ja: 'Sinc補間×Kaiser窓。44.1k↔48k↔96k↔192kHz。3段階品質。32-bit float WAV出力。',
+      en: 'Sinc interpolation × Kaiser window. 44.1k↔48k↔96k↔192kHz. 3 quality presets. 32-bit float WAV.',
+      ko: 'Sinc 보간 × Kaiser 윈도우. 44.1k↔48k↔96k↔192kHz. 3단계 품질. 32-bit float WAV.',
+      pt: 'Interpolação Sinc × janela Kaiser. 44.1k↔48k↔96k↔192kHz. 3 presets. WAV 32-bit float.',
+      es: 'Interpolación Sinc × ventana Kaiser. 44.1k↔48k↔96k↔192kHz. 3 presets. WAV 32-bit float.',
     },
-    href: '/ddp-checker-lp', accent: '#0284c7',
+    href: '/resampler-lp', accent: '#0891B2',
   },
   {
-    id: 'noise-reduction', tab: 'create', tier: 'open',
+    id: 'converter', personas: ['engineer', 'producer', 'student'], tier: 'open',
+    badge: 'MP3', name: 'KUON CONVERTER',
+    tagline: {
+      ja: 'WAV → MP3。ブラウザで一瞬。',
+      en: 'WAV → MP3. Instant in browser.',
+      ko: 'WAV → MP3. 브라우저에서 순식간에.',
+      pt: 'WAV → MP3. Instantâneo no navegador.',
+      es: 'WAV → MP3. Instantáneo en el navegador.',
+    },
+    desc: {
+      ja: '320kbps / 160kbps 高品質変換。サーバー送信なし。マスタリング後のMP3作成に。',
+      en: '320kbps / 160kbps high-quality conversion. No server upload. For post-mastering MP3.',
+      ko: '320kbps / 160kbps 고품질 변환. 서버 전송 없음. 마스터링 후 MP3 제작에.',
+      pt: 'Conversão 320kbps / 160kbps. Sem upload. Para MP3 pós-masterização.',
+      es: 'Conversión 320kbps / 160kbps. Sin subir al servidor. Para MP3 post-masterización.',
+    },
+    href: '/converter', accent: '#0284c7',
+  },
+  {
+    id: 'noise-reduction', personas: ['engineer', 'producer'], tier: 'open',
     badge: 'DENOISE', name: 'KUON DENOISE',
     tagline: {
       ja: '定常ノイズをスペクトルから消す。',
@@ -516,8 +590,29 @@ const apps: AppEntry[] = [
     },
     href: '/noise-reduction', accent: '#7C3AED',
   },
+
+  // ─── PRODUCER primary (プロ制作向け) ───
   {
-    id: 'dual-mono', tab: 'create', tier: 'open',
+    id: 'normalize', personas: ['producer', 'student'], tier: 'login',
+    badge: 'NORMALIZE', name: 'KUON NORMALIZE',
+    tagline: {
+      ja: 'ブラウザが、スタジオになる。',
+      en: 'Your browser becomes a studio.',
+      ko: '브라우저가 스튜디오가 됩니다.',
+      pt: 'Seu navegador se torna um estúdio.',
+      es: 'Tu navegador se convierte en un estudio.',
+    },
+    desc: {
+      ja: 'ピークノーマライズ・ラウドネス最適化・シグネチャーEQ・ホールリバーブ搭載。マイク購入者特典。',
+      en: 'Peak normalize, loudness optimization, signature EQ, hall reverb. Mic owner bonus.',
+      ko: '피크 노멀라이즈, 라우드니스 최적화, 시그니처 EQ, 홀 리버브. 마이크 구매자 특전.',
+      pt: 'Normalização de picos, otimização de loudness, EQ signature, reverb. Bônus para donos de mic.',
+      es: 'Normalización de picos, optimización de loudness, EQ signature, reverb. Bonus para dueños de mic.',
+    },
+    href: '/normalize-lp', accent: '#059669',
+  },
+  {
+    id: 'dual-mono', personas: ['producer', 'engineer'], tier: 'open',
     badge: 'STEREO', name: 'KUON DUAL',
     tagline: {
       ja: 'モノラルに、広がりを与える。',
@@ -536,7 +631,7 @@ const apps: AppEntry[] = [
     href: '/dual-mono', accent: '#D97706',
   },
   {
-    id: 'itadaki', tab: 'create', tier: 'login',
+    id: 'itadaki', personas: ['producer', 'engineer'], tier: 'login',
     badge: 'DECLIP', name: 'KUON ITADAKI',
     tagline: {
       ja: '失われたピークを、数学的に甦らせる。',
@@ -552,10 +647,17 @@ const apps: AppEntry[] = [
       pt: 'Motor de restauração usando interpolação Hermite cúbica para distorção analógica assimétrica.',
       es: 'Motor de restauración usando interpolación Hermite cúbica para distorsión analógica asimétrica.',
     },
+    replaces: {
+      ja: '※ iZotope RX Advanced ($1,249) の De-clip 相当',
+      en: 'Equivalent to iZotope RX Advanced De-clip ($1,249).',
+      ko: 'iZotope RX Advanced De-clip ($1,249) 동등.',
+      pt: 'Equivalente ao De-clip do iZotope RX Advanced ($1,249).',
+      es: 'Equivalente al De-clip de iZotope RX Advanced ($1,249).',
+    },
     href: '/itadaki-lp', accent: '#0099BB',
   },
   {
-    id: 'separator', tab: 'create', tier: 'pro',
+    id: 'separator', personas: ['producer', 'student'], tier: 'pro',
     badge: 'AI', name: 'KUON SEPARATOR',
     tagline: {
       ja: '音源分離。自分のパートだけ消す。',
@@ -574,9 +676,9 @@ const apps: AppEntry[] = [
     href: '/separator', accent: '#dc2626', isComingSoon: true,
   },
 
-  // ─── CONNECT ───
+  // ─── Community / Shared (appears across personas) ───
   {
-    id: 'player', tab: 'connect', tier: 'open',
+    id: 'player', personas: ['engineer', 'student', 'producer'], tier: 'open',
     badge: '24H', name: 'KUON PLAYER',
     tagline: {
       ja: '音声を共有する。24時間で、消える。',
@@ -595,7 +697,7 @@ const apps: AppEntry[] = [
     href: '/player-lp', accent: '#059669',
   },
   {
-    id: 'events', tab: 'connect', tier: 'open',
+    id: 'events', personas: ['student', 'producer', 'engineer'], tier: 'open',
     badge: 'LIVE', name: "TODAY'S LIVE",
     tagline: {
       ja: '世界中のライブを、地図で探す。',
@@ -614,7 +716,7 @@ const apps: AppEntry[] = [
     href: '/events-lp', accent: '#e11d48',
   },
   {
-    id: 'soundmap', tab: 'connect', tier: 'open',
+    id: 'soundmap', personas: ['engineer', 'producer'], tier: 'open',
     badge: 'EARTH', name: 'SOUND MAP',
     tagline: {
       ja: '地球の音を、聴く。',
@@ -633,7 +735,7 @@ const apps: AppEntry[] = [
     href: '/soundmap-lp', accent: '#16a34a',
   },
   {
-    id: 'gallery', tab: 'connect', tier: 'login',
+    id: 'gallery', personas: ['engineer', 'producer'], tier: 'login',
     badge: 'GALLERY', name: "OWNER'S GALLERY",
     tagline: {
       ja: 'あなたの録音を、世界に聴かせる。',
@@ -652,7 +754,7 @@ const apps: AppEntry[] = [
     href: '/gallery', accent: '#a855f7',
   },
   {
-    id: 'portfolio', tab: 'connect', tier: 'login',
+    id: 'portfolio', personas: ['student', 'producer'], tier: 'login',
     badge: 'FOLIO', name: 'KUON PORTFOLIO',
     tagline: {
       ja: '演奏履歴を、1つのURLに。',
@@ -669,6 +771,165 @@ const apps: AppEntry[] = [
       es: 'Organiza tus mejores interpretaciones como página pública. Para audiciones, concursos y solicitudes.',
     },
     href: '/portfolio', accent: '#0369a1', isComingSoon: true,
+  },
+];
+
+// ─────────────────────────────────────────────
+// Workflow stacks — curated paths per persona (IQ180)
+// ─────────────────────────────────────────────
+type Stack = {
+  id: string;
+  persona: Persona;
+  icon: string;
+  title: L5;
+  summary: L5;
+  steps: Array<{ appId: string; note?: L5 }>;
+};
+
+const stacks: Stack[] = [
+  // Engineer stacks
+  {
+    id: 'cd-mastering', persona: 'engineer', icon: '💿',
+    title: {
+      ja: 'CDマスタリング完全ワークフロー',
+      en: 'Complete CD Mastering Workflow',
+      ko: 'CD 마스터링 완전 워크플로우',
+      pt: 'Workflow completo de masterização CD',
+      es: 'Flujo completo de mastering para CD',
+    },
+    summary: {
+      ja: '測定 → ラウドネス調整 → DDP 検証 → DSD アーカイブ。全てブラウザで完結。',
+      en: 'Measure → adjust loudness → verify DDP → archive as DSD. Fully browser-native.',
+      ko: '측정 → 라우드니스 조정 → DDP 검증 → DSD 아카이브. 완전 브라우저 완결.',
+      pt: 'Medir → ajustar loudness → verificar DDP → arquivar DSD. Completo no navegador.',
+      es: 'Medir → loudness → DDP → DSD. Completo en navegador.',
+    },
+    steps: [
+      { appId: 'analyzer' },
+      { appId: 'master-check' },
+      { appId: 'ddp-checker' },
+      { appId: 'dsd' },
+    ],
+  },
+  {
+    id: 'restoration', persona: 'engineer', icon: '🔧',
+    title: {
+      ja: '録音レストア & リマスター',
+      en: 'Recording Restoration & Remaster',
+      ko: '녹음 복원 & 리마스터',
+      pt: 'Restauração e Remasterização',
+      es: 'Restauración y Remasterización',
+    },
+    summary: {
+      ja: 'ノイズ除去 → クリッピング復元 → サンプルレート変換 → 配信フォーマット化。',
+      en: 'Denoise → declip → resample → deliver.',
+      ko: '노이즈 제거 → 클리핑 복원 → 리샘플 → 배포.',
+      pt: 'Remover ruído → declip → resample → entregar.',
+      es: 'Denoise → declip → resample → entregar.',
+    },
+    steps: [
+      { appId: 'noise-reduction' },
+      { appId: 'itadaki' },
+      { appId: 'resampler' },
+      { appId: 'converter' },
+    ],
+  },
+
+  // Student stacks
+  {
+    id: 'daily-practice', persona: 'student', icon: '🌅',
+    title: {
+      ja: '毎日の練習ルーティン',
+      en: 'Daily Practice Routine',
+      ko: '매일의 연습 루틴',
+      pt: 'Rotina diária de prática',
+      es: 'Rutina diaria de práctica',
+    },
+    summary: {
+      ja: 'ウォームアップ（チューナー＋ドローン） → メトロノーム練習 → 聴音 → 記録。',
+      en: 'Warm up (tuner + drone) → metronome practice → ear training → log.',
+      ko: '워밍업(튜너+드론) → 메트로놈 → 청음 → 기록.',
+      pt: 'Aquecimento → metrônomo → treino auditivo → registro.',
+      es: 'Calentamiento → metrónomo → entrenamiento auditivo → registro.',
+    },
+    steps: [
+      { appId: 'tuner' },
+      { appId: 'metronome' },
+      { appId: 'ear-training' },
+      { appId: 'practice-log' },
+    ],
+  },
+  {
+    id: 'theory-prep', persona: 'student', icon: '📖',
+    title: {
+      ja: '音大受験・和声対策',
+      en: 'Theory Exam Prep',
+      ko: '시험 대비',
+      pt: 'Preparação para provas',
+      es: 'Preparación para exámenes',
+    },
+    summary: {
+      ja: '音名読み → 和音判定 → 和声課題チェック → 対位法チェック。提出前に即確認。',
+      en: 'Note reading → chord ID → harmony check → counterpoint check. Verify before submission.',
+      ko: '음이름 → 화음 → 화성 → 대위법. 제출 전 체크.',
+      pt: 'Leitura → acordes → harmonia → contraponto. Revise antes de entregar.',
+      es: 'Lectura → acordes → armonía → contrapunto. Revisa antes de entregar.',
+    },
+    steps: [
+      { appId: 'sight-reading' },
+      { appId: 'chord-quiz' },
+      { appId: 'harmony' },
+      { appId: 'counterpoint' },
+    ],
+  },
+
+  // Producer stacks
+  {
+    id: 'recording-to-release', persona: 'producer', icon: '🎙️',
+    title: {
+      ja: '録音 → リリースまで',
+      en: 'Record to Release',
+      ko: '녹음에서 릴리스까지',
+      pt: 'Da gravação ao lançamento',
+      es: 'De la grabación al lanzamiento',
+    },
+    summary: {
+      ja: 'ノイズ除去 → クリッピング復元 → 仕上げ → 測定 → MP3 化。',
+      en: 'Denoise → declip → polish → measure → MP3.',
+      ko: '노이즈 → 클리핑 → 마무리 → 측정 → MP3.',
+      pt: 'Ruído → clip → polir → medir → MP3.',
+      es: 'Ruido → clip → pulir → medir → MP3.',
+    },
+    steps: [
+      { appId: 'noise-reduction' },
+      { appId: 'itadaki' },
+      { appId: 'normalize' },
+      { appId: 'analyzer' },
+      { appId: 'converter' },
+    ],
+  },
+  {
+    id: 'stem-production', persona: 'producer', icon: '🎚️',
+    title: {
+      ja: 'AI ステム抽出 & リミックス',
+      en: 'AI Stem Extraction & Remix',
+      ko: 'AI 스템 추출 & 리믹스',
+      pt: 'Extração de stems & Remix',
+      es: 'Extracción de stems & Remix',
+    },
+    summary: {
+      ja: 'Demucs v4 で音源分離 → 個別パート処理 → 再ミックス。',
+      en: 'Separate with Demucs v4 → process per stem → remix.',
+      ko: 'Demucs v4 분리 → 개별 처리 → 리믹스.',
+      pt: 'Separar com Demucs v4 → processar stems → remixar.',
+      es: 'Separar con Demucs v4 → procesar stems → remix.',
+    },
+    steps: [
+      { appId: 'separator' },
+      { appId: 'noise-reduction' },
+      { appId: 'normalize' },
+      { appId: 'master-check' },
+    ],
   },
 ];
 
@@ -691,11 +952,12 @@ function useReveal() {
 }
 
 // ─────────────────────────────────────────────
-// App Card component
+// App Card
 // ─────────────────────────────────────────────
 function AppCard({ app, index, lang }: { app: AppEntry; index: number; lang: Lang }) {
   const ref = useReveal();
-  const tm = TIER_META[app.tier];
+  const plan = planBadge(app.tier);
+  const primary = PERSONA_META[app.personas[0]];
 
   const inner = (
     <div
@@ -705,17 +967,11 @@ function AppCard({ app, index, lang }: { app: AppEntry; index: number; lang: Lan
         overflow: 'hidden',
         background: app.isComingSoon
           ? 'rgba(255,255,255,0.35)'
-          : app.isNew
-            ? 'rgba(255,255,255,0.75)'
-            : 'rgba(255,255,255,0.6)',
+          : 'rgba(255,255,255,0.65)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        border: app.isNew
-          ? `1px solid ${app.accent}40`
-          : '1px solid rgba(255,255,255,0.8)',
-        boxShadow: app.isNew
-          ? `0 4px 20px ${app.accent}15`
-          : '0 2px 12px rgba(0,0,0,0.04)',
+        border: '1px solid rgba(255,255,255,0.8)',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         padding: 'clamp(20px, 3vw, 28px)',
         height: '100%',
         display: 'flex',
@@ -733,55 +989,70 @@ function AppCard({ app, index, lang }: { app: AppEntry; index: number; lang: Lan
       onMouseLeave={e => {
         if (!app.isComingSoon) {
           e.currentTarget.style.transform = '';
-          e.currentTarget.style.boxShadow = app.isNew
-            ? `0 4px 20px ${app.accent}15`
-            : '0 2px 12px rgba(0,0,0,0.04)';
+          e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)';
         }
       }}
     >
-      {/* Top row: badge + tier + NEW/COMING SOON */}
+      {/* Top row: 大局の分類 (ペルソナ) + プラン可用性 + coming soon */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        marginBottom: 14, flexWrap: 'wrap',
+        marginBottom: 16, flexWrap: 'wrap',
       }}>
+        {/* Persona — どのカテゴリーのアプリか（エンジニア/学習/プロ制作） */}
         <span style={{
-          fontSize: 9, fontWeight: 800, letterSpacing: '0.16em',
-          color: app.accent, background: `${app.accent}12`,
-          padding: '3px 10px', borderRadius: 50,
-          border: `1px solid ${app.accent}25`,
-          fontFamily: mono,
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          fontSize: 10.5, fontWeight: 600, letterSpacing: '0.02em',
+          color: primary.accent,
+          background: `${primary.accent}0f`,
+          padding: '4px 10px 4px 8px', borderRadius: 50,
+          border: `1px solid ${primary.accent}24`,
+          fontFamily: sans,
         }}>
-          {app.badge}
+          <span style={{ fontSize: 11, lineHeight: 1 }}>{primary.icon}</span>
+          <span>{t5(primary.label, lang)}</span>
         </span>
+
+        {/* Plan — どのプランで使えるか。FREE は目立つグラデーション + 発光ドット */}
         <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 4,
-          fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
-          color: tm.color, background: tm.bg,
-          padding: '3px 10px', borderRadius: 50,
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontSize: plan.isFree ? 11 : 10.5,
+          fontWeight: 800,
+          letterSpacing: plan.isFree ? '0.22em' : '0.16em',
+          color: plan.textColor,
+          background: plan.bgGradient,
+          padding: plan.isFree ? '4px 13px 4px 11px' : '4px 12px',
+          borderRadius: 50,
+          border: `1px solid ${plan.borderColor}`,
+          fontFamily: sans,
+          boxShadow: plan.isFree
+            ? `0 2px 10px ${plan.accent}32, inset 0 1px 0 rgba(255,255,255,0.65)`
+            : `0 2px 8px ${plan.accent}28, inset 0 1px 0 rgba(255,255,255,0.6)`,
         }}>
-          <span style={{
-            width: 5, height: 5, borderRadius: '50%',
-            background: tm.dot, display: 'inline-block',
-          }} />
-          {tm.label[lang]}
+          {plan.isFree && (
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: plan.accent,
+              boxShadow: `0 0 8px ${plan.accent}cc`,
+              display: 'inline-block',
+            }} />
+          )}
+          {plan.label}
         </span>
-        {app.isNew && (
-          <span style={{
-            fontSize: 9, fontWeight: 800, letterSpacing: '0.14em',
-            color: '#fff',
-            background: `linear-gradient(135deg, ${app.accent}, #7C3AED)`,
-            padding: '3px 10px', borderRadius: 50,
-          }}>
-            NEW
-          </span>
-        )}
+
         {app.isComingSoon && (
           <span style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.14em',
             color: '#94a3b8', background: 'rgba(148,163,184,0.12)',
             padding: '3px 10px', borderRadius: 50,
+            fontFamily: sans,
           }}>
-            COMING SOON
+            {t5({
+              ja: '近日公開',
+              en: 'COMING SOON',
+              ko: '곧 출시',
+              pt: 'EM BREVE',
+              es: 'PRONTO',
+            }, lang)}
           </span>
         )}
       </div>
@@ -809,10 +1080,25 @@ function AppCard({ app, index, lang }: { app: AppEntry; index: number; lang: Lan
       <p style={{
         fontSize: 'clamp(11px, 1.5vw, 12.5px)',
         color: '#6b7280', lineHeight: 1.7,
-        margin: '0 0 16px 0', flex: 1,
+        margin: '0 0 12px 0', flex: 1,
       }}>
         {t5(app.desc, lang)}
       </p>
+
+      {/* Replaces (competitive positioning) */}
+      {app.replaces && (
+        <p style={{
+          fontSize: 10, fontFamily: mono,
+          color: app.accent, opacity: 0.8,
+          margin: '0 0 12px 0',
+          padding: '6px 10px',
+          background: `${app.accent}08`,
+          borderLeft: `2px solid ${app.accent}60`,
+          borderRadius: '0 6px 6px 0',
+        }}>
+          {t5(app.replaces, lang)}
+        </p>
+      )}
 
       {/* CTA */}
       {!app.isComingSoon && (
@@ -840,7 +1126,7 @@ function AppCard({ app, index, lang }: { app: AppEntry; index: number; lang: Lan
     <div
       ref={ref}
       className="reveal"
-      style={{ transitionDelay: `${index * 0.04}s` }}
+      style={{ transitionDelay: `${Math.min(index, 8) * 0.04}s` }}
     >
       {app.isComingSoon ? (
         <div style={{ height: '100%' }}>{inner}</div>
@@ -854,43 +1140,599 @@ function AppCard({ app, index, lang }: { app: AppEntry; index: number; lang: Lan
 }
 
 // ─────────────────────────────────────────────
-// Tier legend component
+// Persona selector (primary navigation)
 // ─────────────────────────────────────────────
-function TierLegend({ lang }: { lang: Lang }) {
+function PersonaSelector({
+  active, setActive, counts, lang,
+}: {
+  active: Persona;
+  setActive: (p: Persona) => void;
+  counts: Record<Persona, number>;
+  lang: Lang;
+}) {
   return (
     <div style={{
-      display: 'flex', gap: 'clamp(12px, 3vw, 24px)',
-      justifyContent: 'center', flexWrap: 'wrap',
-      marginBottom: 'clamp(24px, 5vw, 40px)',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+      gap: 'clamp(10px, 2vw, 14px)',
+      marginBottom: 'clamp(20px, 4vw, 28px)',
     }}>
-      {(['open', 'login', 'pro'] as Tier[]).map(tier => {
-        const tm = TIER_META[tier];
+      {(['engineer', 'student', 'producer'] as Persona[]).map(p => {
+        const meta = PERSONA_META[p];
+        const isActive = active === p;
         return (
-          <div key={tier} style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '8px 16px', borderRadius: 50,
-            background: 'rgba(255,255,255,0.5)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.6)',
-          }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
-              color: tm.color,
+          <button
+            key={p}
+            onClick={() => setActive(p)}
+            style={{
+              position: 'relative',
+              textAlign: 'left' as const,
+              padding: 'clamp(18px, 3vw, 26px)',
+              borderRadius: 18,
+              border: isActive
+                ? `1.5px solid ${meta.accent}`
+                : '1px solid rgba(255,255,255,0.7)',
+              cursor: 'pointer',
+              background: isActive ? meta.gradient : 'rgba(255,255,255,0.55)',
+              color: isActive ? '#fff' : '#111827',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: isActive
+                ? `0 12px 32px ${meta.accent}35`
+                : '0 2px 12px rgba(0,0,0,0.04)',
+              transform: isActive ? 'translateY(-2px)' : 'none',
+              transition: 'all 0.35s cubic-bezier(0.175,0.885,0.32,1.275)',
+            }}
+          >
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 10,
             }}>
+              <span style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>{meta.icon}</span>
               <span style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: tm.dot, display: 'inline-block',
-              }} />
-              {tm.label[lang]}
-            </span>
-            <span style={{ fontSize: 11, color: '#6b7280' }}>
-              {tm.desc[lang]}
-            </span>
-          </div>
+                fontSize: 10, fontFamily: mono, fontWeight: 700,
+                letterSpacing: '0.12em',
+                padding: '3px 9px', borderRadius: 50,
+                background: isActive ? 'rgba(255,255,255,0.25)' : `${meta.accent}15`,
+                color: isActive ? '#fff' : meta.accent,
+              }}>
+                {counts[p]} {t5({ ja: 'ツール', en: 'TOOLS', ko: '도구', pt: 'FERR.', es: 'HERR.' }, lang)}
+              </span>
+            </div>
+            <div style={{
+              fontFamily: sans, fontWeight: 700,
+              fontSize: 'clamp(15px, 2.2vw, 18px)',
+              letterSpacing: '-0.01em',
+              marginBottom: 4,
+            }}>
+              {t5(meta.label, lang)}
+            </div>
+            <div style={{
+              fontFamily: mono, fontSize: 10,
+              letterSpacing: '0.1em', fontWeight: 600,
+              opacity: isActive ? 0.9 : 0.6,
+              marginBottom: 10,
+            }}>
+              {t5(meta.tag, lang)}
+            </div>
+            <p style={{
+              fontSize: 'clamp(11px, 1.6vw, 12.5px)',
+              lineHeight: 1.6,
+              opacity: isActive ? 0.95 : 0.7,
+              margin: 0,
+            }}>
+              {t5(meta.lead, lang)}
+            </p>
+          </button>
         );
       })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Tier filter chips
+// ─────────────────────────────────────────────
+type TierFilter = 'all' | Tier;
+
+function TierFilterChips({
+  active, setActive, counts, lang, accent,
+}: {
+  active: TierFilter;
+  setActive: (t: TierFilter) => void;
+  counts: Record<TierFilter, number>;
+  lang: Lang;
+  accent: string;
+}) {
+  const options: Array<{ value: TierFilter; label: L5; desc?: L5 }> = [
+    {
+      value: 'all',
+      label: { ja: 'すべて', en: 'ALL', ko: '전체', pt: 'TUDO', es: 'TODO' },
+    },
+    { value: 'open',  label: TIER_META.open.label,  desc: TIER_META.open.desc  },
+    { value: 'login', label: TIER_META.login.label, desc: TIER_META.login.desc },
+    { value: 'pro',   label: TIER_META.pro.label,   desc: TIER_META.pro.desc   },
+  ];
+
+  return (
+    <div style={{
+      display: 'flex', flexWrap: 'wrap', gap: 8,
+      justifyContent: 'center',
+      marginBottom: 'clamp(24px, 4vw, 32px)',
+    }}>
+      {options.map(opt => {
+        const isActive = active === opt.value;
+        const count = counts[opt.value];
+        return (
+          <button
+            key={opt.value}
+            onClick={() => setActive(opt.value)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '9px 18px', borderRadius: 50,
+              background: isActive ? accent : 'rgba(255,255,255,0.55)',
+              color: isActive ? '#fff' : '#374151',
+              border: isActive ? `1px solid ${accent}` : '1px solid rgba(255,255,255,0.8)',
+              cursor: 'pointer',
+              fontFamily: sans,
+              fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              boxShadow: isActive ? `0 6px 20px ${accent}30` : '0 2px 8px rgba(0,0,0,0.03)',
+              transition: 'all 0.25s',
+            }}
+          >
+            <span>{t5(opt.label, lang)}</span>
+            <span style={{
+              fontSize: 10, fontWeight: 700,
+              background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)',
+              color: isActive ? '#fff' : '#9ca3af',
+              padding: '1px 8px', borderRadius: 50,
+              minWidth: 20, textAlign: 'center' as const,
+            }}>
+              {count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Workflow stack card (IQ180)
+// ─────────────────────────────────────────────
+function WorkflowStack({ stack, lang, accent }: { stack: Stack; lang: Lang; accent: string }) {
+  const ref = useReveal();
+  const resolvedSteps = stack.steps
+    .map(s => apps.find(a => a.id === s.appId))
+    .filter((a): a is AppEntry => !!a);
+
+  return (
+    <div
+      ref={ref}
+      className="reveal"
+      style={{
+        background: 'rgba(255,255,255,0.6)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        borderRadius: 18,
+        padding: 'clamp(20px, 3vw, 28px)',
+        border: '1px solid rgba(255,255,255,0.8)',
+        boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+        <span style={{ fontSize: 22 }}>{stack.icon}</span>
+        <h4 style={{
+          fontFamily: sans, fontSize: 'clamp(14px, 2vw, 16px)',
+          fontWeight: 700, margin: 0, color: '#111827',
+          letterSpacing: '-0.01em',
+        }}>
+          {t5(stack.title, lang)}
+        </h4>
+      </div>
+      <p style={{
+        fontSize: 'clamp(11px, 1.5vw, 13px)',
+        color: '#6b7280', lineHeight: 1.7,
+        margin: '0 0 16px 0',
+      }}>
+        {t5(stack.summary, lang)}
+      </p>
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6,
+      }}>
+        {resolvedSteps.map((app, i) => (
+          <React.Fragment key={app.id}>
+            {app.isComingSoon ? (
+              <span style={{
+                padding: '6px 12px', borderRadius: 50,
+                background: 'rgba(148,163,184,0.12)',
+                color: '#94a3b8',
+                fontSize: 11, fontWeight: 700,
+                fontFamily: mono, letterSpacing: '0.06em',
+              }}>
+                {app.name.replace('KUON ', '')}
+              </span>
+            ) : (
+              <Link
+                href={app.href}
+                style={{
+                  padding: '6px 12px', borderRadius: 50,
+                  background: `${app.accent}12`,
+                  color: app.accent,
+                  border: `1px solid ${app.accent}25`,
+                  fontSize: 11, fontWeight: 700,
+                  fontFamily: mono, letterSpacing: '0.06em',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = `${app.accent}22`;
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = `${app.accent}12`;
+                  e.currentTarget.style.transform = '';
+                }}
+              >
+                {app.name.replace('KUON ', '')}
+              </Link>
+            )}
+            {i < resolvedSteps.length - 1 && (
+              <span style={{ color: accent, fontSize: 14, fontWeight: 700 }}>→</span>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Subscription preview (IQ180)
+// ─────────────────────────────────────────────
+function SubscriptionPreview({ lang }: { lang: Lang }) {
+  const plans = [
+    {
+      id: 'free',
+      label: { ja: 'FREE', en: 'FREE' } as L5,
+      price: '¥0',
+      priceNote: { ja: '永年無料', en: 'Free forever', ko: '영구 무료', pt: 'Grátis sempre', es: 'Siempre gratis' } as L5,
+      features: [
+        { ja: 'ブラウザアプリ全て無制限', en: 'All browser apps unlimited', ko: '브라우저 앱 무제한', pt: 'Apps no navegador ilimitados', es: 'Apps del navegador ilimitadas' },
+        { ja: 'サーバーアプリ 月3回', en: 'Server apps: 3/month', ko: '서버 앱 월 3회', pt: 'Apps servidor: 3/mês', es: 'Apps servidor: 3/mes' },
+        { ja: 'ログインなしでも使用可', en: 'Works without login', ko: '로그인 없이 사용 가능', pt: 'Funciona sem login', es: 'Funciona sin login' },
+      ],
+      accent: '#059669',
+      cta: { ja: '今すぐ使う', en: 'Use Now', ko: '지금 사용', pt: 'Usar agora', es: 'Usar ahora' } as L5,
+      href: '#apps',
+    },
+    {
+      id: 'student',
+      label: { ja: 'STUDENT', en: 'STUDENT' } as L5,
+      price: '¥480',
+      priceNote: { ja: '/月・学割', en: '/mo · Student', ko: '/월 · 학생', pt: '/mês · Estudante', es: '/mes · Estudiante' } as L5,
+      features: [
+        { ja: '全サーバーアプリ無制限', en: 'All server apps unlimited', ko: '모든 서버 앱 무제한', pt: 'Apps servidor ilimitados', es: 'Apps servidor ilimitadas' },
+        { ja: '練習ログ・成長曲線の保存', en: 'Practice logs & growth curves', ko: '연습 기록·성장 곡선', pt: 'Registros e curvas de crescimento', es: 'Registros y curvas de crecimiento' },
+        { ja: '音大生向けコミュニティ', en: 'Student-focused community', ko: '학생 커뮤니티', pt: 'Comunidade estudantil', es: 'Comunidad estudiantil' },
+      ],
+      accent: '#8b5cf6',
+      cta: { ja: 'まもなく', en: 'Coming soon', ko: '곧 공개', pt: 'Em breve', es: 'Próximamente' } as L5,
+      comingSoon: true,
+    },
+    {
+      id: 'pro',
+      label: { ja: 'PRO', en: 'PRO' } as L5,
+      price: '¥980',
+      priceNote: { ja: '/月', en: '/mo', ko: '/월', pt: '/mês', es: '/mes' } as L5,
+      features: [
+        { ja: '全機能無制限', en: 'All features unlimited', ko: '전 기능 무제한', pt: 'Tudo ilimitado', es: 'Todo ilimitado' },
+        { ja: '優先サーバー処理', en: 'Priority server processing', ko: '우선 서버 처리', pt: 'Processamento prioritário', es: 'Procesamiento prioritario' },
+        { ja: 'イベント投稿・ポートフォリオ', en: 'Event posting & portfolio', ko: '이벤트·포트폴리오', pt: 'Eventos e portfólio', es: 'Eventos y portafolio' },
+      ],
+      accent: '#d97706',
+      cta: { ja: 'まもなく', en: 'Coming soon', ko: '곧 공개', pt: 'Em breve', es: 'Próximamente' } as L5,
+      comingSoon: true,
+      highlight: true,
+    },
+  ];
+
+  return (
+    <section id="pricing" style={{
+      marginTop: 'clamp(48px, 8vw, 80px)',
+      marginBottom: 'clamp(32px, 6vw, 48px)',
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: 'clamp(24px, 4vw, 36px)' }}>
+        <p style={{
+          fontFamily: mono, fontSize: 10, fontWeight: 700,
+          letterSpacing: '0.2em', color: '#0284c7', margin: '0 0 10px 0',
+        }}>
+          PRICING
+        </p>
+        <h2 style={{
+          fontFamily: serif, fontSize: 'clamp(20px, 3.5vw, 28px)',
+          fontWeight: 700, letterSpacing: '0.03em',
+          margin: '0 0 10px 0', color: '#111827',
+        }}>
+          {t5({
+            ja: 'あなたに合った使い方を。',
+            en: 'A plan that fits you.',
+            ko: '당신에게 맞는 방식으로.',
+            pt: 'Um plano que se ajusta a você.',
+            es: 'Un plan que se ajusta a ti.',
+          }, lang)}
+        </h2>
+        <p style={{
+          fontSize: 'clamp(12px, 1.8vw, 14px)', color: '#6b7280',
+          maxWidth: 520, margin: '0 auto', lineHeight: 1.7,
+        }}>
+          {t5({
+            ja: 'ブラウザで動くアプリは全て無料で使えます。サーバー処理が必要なアプリのみサブスクをご用意。',
+            en: 'All browser-native apps are free, always. Subscription covers server-processing apps only.',
+            ko: '브라우저 앱은 모두 무료. 서버 처리 앱에만 구독이 필요합니다.',
+            pt: 'Todos os apps no navegador são grátis. Assinatura apenas para apps com processamento no servidor.',
+            es: 'Todas las apps del navegador son gratis. La suscripción solo cubre apps con procesamiento en servidor.',
+          }, lang)}
+        </p>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+        gap: 'clamp(12px, 2vw, 18px)',
+      }}>
+        {plans.map(plan => (
+          <div key={plan.id} style={{
+            position: 'relative',
+            padding: 'clamp(20px, 3vw, 28px)',
+            borderRadius: 18,
+            background: plan.highlight
+              ? 'linear-gradient(135deg, #1e293b, #0f172a)'
+              : 'rgba(255,255,255,0.6)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            border: plan.highlight
+              ? `1.5px solid ${plan.accent}`
+              : '1px solid rgba(255,255,255,0.8)',
+            boxShadow: plan.highlight
+              ? `0 20px 48px ${plan.accent}30`
+              : '0 2px 12px rgba(0,0,0,0.04)',
+            color: plan.highlight ? '#fff' : '#111827',
+            display: 'flex', flexDirection: 'column' as const,
+          }}>
+            {plan.highlight && (
+              <span style={{
+                position: 'absolute', top: -10, right: 16,
+                fontSize: 9, fontWeight: 800, letterSpacing: '0.14em',
+                color: '#fff',
+                background: `linear-gradient(135deg, ${plan.accent}, #ec4899)`,
+                padding: '4px 10px', borderRadius: 50,
+              }}>
+                POPULAR
+              </span>
+            )}
+            <div style={{
+              fontFamily: mono, fontSize: 11, fontWeight: 800,
+              letterSpacing: '0.16em', color: plan.accent,
+              marginBottom: 12,
+            }}>
+              {t5(plan.label, lang)}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 14 }}>
+              <span style={{
+                fontFamily: sans, fontSize: 'clamp(28px, 4vw, 36px)',
+                fontWeight: 800, letterSpacing: '-0.02em',
+              }}>
+                {plan.price}
+              </span>
+              <span style={{
+                fontSize: 12, opacity: plan.highlight ? 0.7 : 0.6,
+                fontWeight: 500,
+              }}>
+                {t5(plan.priceNote, lang)}
+              </span>
+            </div>
+            <ul style={{
+              listStyle: 'none', padding: 0, margin: '0 0 20px 0',
+              display: 'flex', flexDirection: 'column' as const, gap: 8,
+              flex: 1,
+            }}>
+              {plan.features.map((f, i) => (
+                <li key={i} style={{
+                  display: 'flex', gap: 8,
+                  fontSize: 'clamp(11px, 1.6vw, 13px)',
+                  lineHeight: 1.6,
+                  opacity: plan.highlight ? 0.9 : 0.85,
+                }}>
+                  <span style={{ color: plan.accent, fontWeight: 700 }}>✓</span>
+                  <span>{t5(f as L5, lang)}</span>
+                </li>
+              ))}
+            </ul>
+            {plan.comingSoon ? (
+              <div style={{
+                padding: '10px 16px', borderRadius: 50,
+                textAlign: 'center' as const,
+                fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
+                background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(148,163,184,0.12)',
+                color: plan.highlight ? '#94a3b8' : '#94a3b8',
+              }}>
+                {t5(plan.cta, lang)}
+              </div>
+            ) : (
+              <Link href={plan.href ?? '#apps'} style={{
+                padding: '10px 16px', borderRadius: 50,
+                textAlign: 'center' as const, textDecoration: 'none',
+                fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
+                background: plan.accent, color: '#fff',
+                transition: 'all 0.25s',
+              }}>
+                {t5(plan.cta, lang)}
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Mic bundle CTA (flywheel §29)
+// ─────────────────────────────────────────────
+function MicBundleCTA({ lang }: { lang: Lang }) {
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #fff7ed, #fef3c7)',
+      border: '1px solid rgba(217,119,6,0.2)',
+      borderRadius: 20,
+      padding: 'clamp(24px, 4vw, 36px)',
+      marginTop: 'clamp(32px, 6vw, 48px)',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+      gap: 'clamp(16px, 3vw, 24px)',
+      alignItems: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute', top: -40, right: -40,
+        width: 180, height: 180, borderRadius: '50%',
+        background: 'rgba(217,119,6,0.12)', filter: 'blur(48px)',
+      }} />
+      <div style={{ position: 'relative' }}>
+        <p style={{
+          fontFamily: mono, fontSize: 10, fontWeight: 800,
+          letterSpacing: '0.2em', color: '#d97706',
+          margin: '0 0 10px 0',
+        }}>
+          OWNER BONUS
+        </p>
+        <h3 style={{
+          fontFamily: serif, fontSize: 'clamp(18px, 3vw, 24px)',
+          fontWeight: 700, letterSpacing: '0.02em',
+          margin: '0 0 10px 0', color: '#7c2d12',
+        }}>
+          {t5({
+            ja: 'P-86S を買うと、PRO が 3 ヶ月無料。',
+            en: 'Buy P-86S, get 3 months of PRO — free.',
+            ko: 'P-86S 구매 시 PRO 3개월 무료.',
+            pt: 'Compre P-86S e ganhe 3 meses de PRO grátis.',
+            es: 'Compra P-86S y obtén 3 meses PRO gratis.',
+          }, lang)}
+        </h3>
+        <p style={{
+          fontSize: 'clamp(12px, 1.8vw, 14px)',
+          color: '#78350f', lineHeight: 1.7, margin: 0,
+        }}>
+          {t5({
+            ja: '音大生だった朝比奈幸太郎が手はんだで作る、数十万円クラスの録音クオリティ。¥16,900。KUON NORMALIZE を含む PRO 特典付き。',
+            en: 'Handmade by Kotaro Asahina with his own solder — delivering the quality of $2,000+ microphones. ¥16,900, ships worldwide. PRO benefits including KUON NORMALIZE included.',
+            ko: '음대생이었던 아사히나 코타로가 손납땜으로 제작. 수십만 엔급 녹음 품질. ¥16,900.',
+            pt: 'Feito à mão por Kotaro Asahina — qualidade de microfones de US$ 2.000+. ¥16,900. Envio internacional.',
+            es: 'Hecho a mano por Kotaro Asahina — calidad de micrófonos de $2,000+. ¥16,900. Envío internacional.',
+          }, lang)}
+        </p>
+      </div>
+      <div style={{
+        display: 'flex', gap: 10, flexWrap: 'wrap',
+        justifyContent: 'flex-end', position: 'relative',
+      }}>
+        <Link href="/microphone" style={{
+          padding: '12px 28px', borderRadius: 50,
+          background: '#d97706', color: '#fff',
+          fontSize: 13, fontWeight: 700, letterSpacing: '0.06em',
+          textDecoration: 'none',
+          boxShadow: '0 8px 20px rgba(217,119,6,0.35)',
+          transition: 'all 0.25s',
+        }}>
+          {t5({
+            ja: 'P-86S を見る', en: 'View P-86S', ko: 'P-86S 보기',
+            pt: 'Ver P-86S', es: 'Ver P-86S',
+          }, lang)} →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Service cross-sell (mastering service)
+// ─────────────────────────────────────────────
+function MasteringServiceCard({ lang }: { lang: Lang }) {
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #0f172a, #312e81)',
+      borderRadius: 20,
+      padding: 'clamp(24px, 4vw, 36px)',
+      color: '#fff',
+      position: 'relative', overflow: 'hidden',
+      marginTop: 'clamp(24px, 4vw, 32px)',
+    }}>
+      <div style={{
+        position: 'absolute', top: -60, left: -60,
+        width: 200, height: 200, borderRadius: '50%',
+        background: 'rgba(139,92,246,0.2)', filter: 'blur(60px)',
+      }} />
+      <div style={{ position: 'relative', display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+        gap: 'clamp(16px, 3vw, 24px)', alignItems: 'center',
+      }}>
+        <div>
+          <p style={{
+            fontFamily: mono, fontSize: 10, fontWeight: 800,
+            letterSpacing: '0.2em', color: '#a78bfa',
+            margin: '0 0 10px 0',
+          }}>
+            HUMAN TOUCH
+          </p>
+          <h3 style={{
+            fontFamily: serif, fontSize: 'clamp(18px, 3vw, 24px)',
+            fontWeight: 700, letterSpacing: '0.02em',
+            margin: '0 0 10px 0',
+          }}>
+            {t5({
+              ja: 'ツールで足りない時は、朝比奈幸太郎本人に依頼を。',
+              en: 'When tools aren\'t enough, let Kotaro Asahina master it himself.',
+              ko: '도구로 부족할 때, 아사히나 코타로 본인에게 의뢰하세요.',
+              pt: 'Quando ferramentas não bastam — peça a Kotaro Asahina.',
+              es: 'Cuando las herramientas no bastan — pídele a Kotaro Asahina.',
+            }, lang)}
+          </h3>
+          <p style={{
+            fontSize: 'clamp(12px, 1.8vw, 14px)',
+            color: '#cbd5e1', lineHeight: 1.7, margin: 0,
+          }}>
+            {t5({
+              ja: '音大卒の音響エンジニアによる、1対1のマスタリング／録音サービス。金田式DC録音技術を継承。KUON PRO 会員は優先対応。',
+              en: 'One-on-one mastering & recording by a conservatory-trained engineer. Inheriting the Kaneda DC recording tradition. KUON PRO members get priority.',
+              ko: '음대 졸업 음향 엔지니어의 1:1 마스터링·녹음. 카네다식 DC 녹음 기술 계승. PRO 회원 우선.',
+              pt: 'Masterização e gravação 1:1 por engenheiro formado em conservatório. Tradição Kaneda DC. Membros PRO têm prioridade.',
+              es: 'Masterización y grabación 1:1 por ingeniero formado en conservatorio. Tradición Kaneda DC. Miembros PRO con prioridad.',
+            }, lang)}
+          </p>
+        </div>
+        <div style={{
+          display: 'flex', gap: 10, flexWrap: 'wrap',
+          justifyContent: 'flex-end',
+        }}>
+          <Link href="https://academy.kotarohattori.com" target="_blank" rel="noopener" style={{
+            padding: '12px 28px', borderRadius: 50,
+            background: '#a78bfa', color: '#0f172a',
+            fontSize: 13, fontWeight: 700, letterSpacing: '0.06em',
+            textDecoration: 'none',
+            boxShadow: '0 8px 20px rgba(167,139,250,0.35)',
+            transition: 'all 0.25s',
+          }}>
+            {t5({
+              ja: 'サービスを見る', en: 'Book a session', ko: '서비스 보기',
+              pt: 'Reservar sessão', es: 'Reservar sesión',
+            }, lang)} →
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
@@ -903,7 +1745,7 @@ function SignupBanner({ lang }: { lang: Lang }) {
     <div style={{
       background: 'linear-gradient(135deg, #0f172a, #1e3a5f)',
       borderRadius: 20, padding: 'clamp(32px, 6vw, 48px)',
-      textAlign: 'center', marginTop: 'clamp(32px, 6vw, 48px)',
+      textAlign: 'center' as const, marginTop: 'clamp(32px, 6vw, 48px)',
       position: 'relative', overflow: 'hidden',
     }}>
       <div style={{
@@ -979,12 +1821,57 @@ function SignupBanner({ lang }: { lang: Lang }) {
 // ─────────────────────────────────────────────
 export default function AudioAppsPage() {
   const { lang } = useLang();
-  const [activeTab, setActiveTab] = useState<Tab>('learn');
+  const [activePersona, setActivePersona] = useState<Persona>('engineer');
+  const [activeTier, setActiveTier] = useState<TierFilter>('all');
 
-  const filteredApps = apps.filter(a => a.tab === activeTab);
-  const tabMeta = TAB_META[activeTab];
+  // Apps filtered by active persona
+  const personaApps = useMemo(
+    () => apps.filter(a => a.personas.includes(activePersona)),
+    [activePersona],
+  );
 
-  // Count stats
+  // Counts for persona selector
+  const personaCounts = useMemo(() => ({
+    engineer: apps.filter(a => a.personas.includes('engineer')).length,
+    student:  apps.filter(a => a.personas.includes('student')).length,
+    producer: apps.filter(a => a.personas.includes('producer')).length,
+  }), []);
+
+  // Counts for tier filter (within current persona)
+  const tierCounts: Record<TierFilter, number> = useMemo(() => ({
+    all:   personaApps.length,
+    open:  personaApps.filter(a => a.tier === 'open').length,
+    login: personaApps.filter(a => a.tier === 'login').length,
+    pro:   personaApps.filter(a => a.tier === 'pro').length,
+  }), [personaApps]);
+
+  // Apply tier filter
+  const filteredApps = useMemo(() => (
+    activeTier === 'all'
+      ? personaApps
+      : personaApps.filter(a => a.tier === activeTier)
+  ), [personaApps, activeTier]);
+
+  // Sort: ready apps before coming soon, within each by tier (open/login/pro)
+  const sortedApps = useMemo(() => {
+    const tierOrder: Record<Tier, number> = { open: 0, login: 1, pro: 2 };
+    return [...filteredApps].sort((a, b) => {
+      if (!!a.isComingSoon !== !!b.isComingSoon) {
+        return a.isComingSoon ? 1 : -1;
+      }
+      return tierOrder[a.tier] - tierOrder[b.tier];
+    });
+  }, [filteredApps]);
+
+  // Workflow stacks for active persona
+  const personaStacks = useMemo(
+    () => stacks.filter(s => s.persona === activePersona),
+    [activePersona],
+  );
+
+  const personaMeta = PERSONA_META[activePersona];
+
+  // Page-wide stats
   const totalApps = apps.length;
   const openApps = apps.filter(a => a.tier === 'open' && !a.isComingSoon).length;
   const comingSoonApps = apps.filter(a => a.isComingSoon).length;
@@ -1007,11 +1894,10 @@ export default function AudioAppsPage() {
 
       {/* ═══════ HERO ═══════ */}
       <section style={{
-        textAlign: 'center',
+        textAlign: 'center' as const,
         paddingTop: 'clamp(32px, 8vw, 80px)',
-        paddingBottom: 'clamp(40px, 8vw, 72px)',
+        paddingBottom: 'clamp(32px, 6vw, 56px)',
       }}>
-        {/* Stats pill */}
         <div className="hero-enter-1" style={{
           display: 'inline-flex', gap: 28,
           padding: '12px 28px', borderRadius: 50,
@@ -1029,7 +1915,7 @@ export default function AudioAppsPage() {
           ].map(({ n, label, color }, i) => (
             <React.Fragment key={label}>
               {i > 0 && <div style={{ width: 1, background: 'rgba(0,0,0,0.06)' }} />}
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center' as const }}>
                 <div style={{ fontFamily: mono, fontSize: 24, fontWeight: 800, color }}>{n}</div>
                 <div style={{ fontSize: 9, color: '#9ca3af', letterSpacing: '0.14em', fontWeight: 600 }}>{label}</div>
               </div>
@@ -1046,101 +1932,47 @@ export default function AudioAppsPage() {
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>
           {t5({
-            ja: '練習する。創る。つながる。',
-            en: 'Practice. Create. Connect.',
-            ko: '연습하다. 창작하다. 연결하다.',
-            pt: 'Praticar. Criar. Conectar.',
-            es: 'Practicar. Crear. Conectar.',
+            ja: 'あなたの仕事に、\n最適なツールを。',
+            en: 'The right tools\nfor your work.',
+            ko: '당신의 일에\n딱 맞는 도구를.',
+            pt: 'As ferramentas certas\npara seu trabalho.',
+            es: 'Las herramientas correctas\npara tu trabajo.',
           }, lang)}
         </h1>
 
         <p className="hero-enter-3" style={{
           fontFamily: sans,
           fontSize: 'clamp(13px, 2vw, 16px)', color: '#6b7280',
-          lineHeight: 1.8, maxWidth: 520, margin: '0 auto',
+          lineHeight: 1.8, maxWidth: 560, margin: '0 auto',
         }}>
           {t5({
-            ja: '音楽学習者のためのプラットフォーム。\nすべてブラウザで完結。あなたの成長を記録し続ける。',
-            en: 'A platform for music learners.\nEverything in your browser. Your growth, continuously recorded.',
-            ko: '음악 학습자를 위한 플랫폼.\n모든 것이 브라우저에서 완결. 당신의 성장을 계속 기록합니다.',
-            pt: 'Uma plataforma para estudantes de música.\nTudo no navegador. Seu crescimento, continuamente registrado.',
-            es: 'Una plataforma para estudiantes de música.\nTodo en el navegador. Tu crecimiento, registrado continuamente.',
+            ja: 'エンジニア、音大生、プロ制作者——\nあなたの役割に応じた最適なツール群を、即座に見つける。',
+            en: 'Engineers, students, pro creators —\nfind the right toolkit for your role, instantly.',
+            ko: '엔지니어, 학습자, 프로 제작자 —\n역할에 맞는 도구를 즉시 찾으세요.',
+            pt: 'Engenheiros, estudantes, criadores —\nencontre suas ferramentas instantaneamente.',
+            es: 'Ingenieros, estudiantes, creadores —\nencuentra tus herramientas al instante.',
           }, lang)}
         </p>
       </section>
 
-      {/* ═══════ TIER LEGEND ═══════ */}
-      <TierLegend lang={lang} />
+      {/* ═══════ PERSONA SELECTOR (primary nav) ═══════ */}
+      <PersonaSelector
+        active={activePersona}
+        setActive={(p) => { setActivePersona(p); setActiveTier('all'); }}
+        counts={personaCounts}
+        lang={lang}
+      />
 
-      {/* ═══════ TABS ═══════ */}
-      <div style={{
-        display: 'flex', justifyContent: 'center', gap: 0,
-        marginBottom: 12,
-        background: 'rgba(255,255,255,0.4)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderRadius: 16,
-        padding: 6,
-        border: '1px solid rgba(255,255,255,0.6)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
-      }}>
-        {(['learn', 'create', 'connect'] as Tab[]).map(tab => {
-          const meta = TAB_META[tab];
-          const isActive = activeTab === tab;
-          const count = apps.filter(a => a.tab === tab).length;
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                flex: 1,
-                padding: 'clamp(12px, 2.5vw, 16px) clamp(16px, 3vw, 24px)',
-                borderRadius: 12,
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: sans,
-                fontSize: 'clamp(12px, 2vw, 14px)',
-                fontWeight: isActive ? 700 : 500,
-                letterSpacing: '0.06em',
-                color: isActive ? '#fff' : '#6b7280',
-                background: isActive
-                  ? `linear-gradient(135deg, ${meta.accent}, ${meta.accent}cc)`
-                  : 'transparent',
-                boxShadow: isActive ? `0 4px 16px ${meta.accent}30` : 'none',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-            >
-              <span style={{ fontSize: 'clamp(16px, 2.5vw, 20px)' }}>{meta.icon}</span>
-              <span>{meta.label[lang]}</span>
-              <span style={{
-                fontSize: 10, fontWeight: 700,
-                background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)',
-                color: isActive ? '#fff' : '#9ca3af',
-                padding: '2px 7px', borderRadius: 50,
-                minWidth: 20, textAlign: 'center',
-              }}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
+      {/* ═══════ TIER FILTER ═══════ */}
+      <div id="apps" style={{ scrollMarginTop: 80 }}>
+        <TierFilterChips
+          active={activeTier}
+          setActive={setActiveTier}
+          counts={tierCounts}
+          lang={lang}
+          accent={personaMeta.accent}
+        />
       </div>
-
-      {/* Tab description */}
-      <p style={{
-        textAlign: 'center',
-        fontFamily: serif,
-        fontSize: 'clamp(13px, 2vw, 15px)',
-        color: tabMeta.accent,
-        marginBottom: 'clamp(24px, 5vw, 36px)',
-        fontWeight: 500,
-      }}>
-        {tabMeta.desc[lang]}
-      </p>
 
       {/* ═══════ APP GRID ═══════ */}
       <section style={{
@@ -1149,17 +1981,93 @@ export default function AudioAppsPage() {
         gap: 'clamp(12px, 2.5vw, 20px)',
         marginBottom: 'clamp(32px, 6vw, 48px)',
       }}>
-        {filteredApps.map((app, i) => (
-          <AppCard key={app.id} app={app} index={i} lang={lang} />
-        ))}
+        {sortedApps.length === 0 ? (
+          <div style={{
+            gridColumn: '1 / -1',
+            textAlign: 'center' as const,
+            padding: '48px 24px',
+            color: '#9ca3af',
+            fontSize: 14,
+          }}>
+            {t5({
+              ja: 'このフィルタに該当するツールはまだありません。',
+              en: 'No tools match this filter yet.',
+              ko: '이 필터에 해당하는 도구가 없습니다.',
+              pt: 'Nenhuma ferramenta corresponde a este filtro.',
+              es: 'Ninguna herramienta coincide con este filtro.',
+            }, lang)}
+          </div>
+        ) : (
+          sortedApps.map((app, i) => (
+            <AppCard key={`${app.id}-${activePersona}`} app={app} index={i} lang={lang} />
+          ))
+        )}
       </section>
+
+      {/* ═══════ WORKFLOW STACKS ═══════ */}
+      {personaStacks.length > 0 && (
+        <section style={{ marginTop: 'clamp(40px, 8vw, 72px)' }}>
+          <div style={{ textAlign: 'center' as const, marginBottom: 'clamp(20px, 4vw, 32px)' }}>
+            <p style={{
+              fontFamily: mono, fontSize: 10, fontWeight: 700,
+              letterSpacing: '0.2em', color: personaMeta.accent,
+              margin: '0 0 10px 0',
+            }}>
+              WORKFLOW STACKS
+            </p>
+            <h2 style={{
+              fontFamily: serif, fontSize: 'clamp(18px, 3vw, 24px)',
+              fontWeight: 700, letterSpacing: '0.03em',
+              margin: '0 0 10px 0', color: '#111827',
+            }}>
+              {t5({
+                ja: 'ツールの組み合わせで、作業が完結する。',
+                en: 'Complete workflows through combined tools.',
+                ko: '도구 조합으로 작업이 완결됩니다.',
+                pt: 'Workflows completos combinando ferramentas.',
+                es: 'Flujos completos combinando herramientas.',
+              }, lang)}
+            </h2>
+            <p style={{
+              fontSize: 'clamp(12px, 1.8vw, 14px)', color: '#6b7280',
+              maxWidth: 520, margin: '0 auto', lineHeight: 1.7,
+            }}>
+              {t5({
+                ja: '「次に何を使うべきか」で迷わない。用途別に組み合わせが決まっている。',
+                en: 'No more guessing what to use next. The toolchain is mapped for you.',
+                ko: '"다음 무엇을 쓸까" 고민 없음. 용도별로 조합이 정해져 있습니다.',
+                pt: 'Sem adivinhar o próximo passo. O fluxo está pronto.',
+                es: 'Sin adivinar el siguiente paso. El flujo está definido.',
+              }, lang)}
+            </p>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
+            gap: 'clamp(14px, 2.5vw, 20px)',
+          }}>
+            {personaStacks.map(stack => (
+              <WorkflowStack key={stack.id} stack={stack} lang={lang} accent={personaMeta.accent} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ═══════ PRICING / SUBSCRIPTION ═══════ */}
+      <SubscriptionPreview lang={lang} />
+
+      {/* ═══════ MIC BUNDLE CTA ═══════ */}
+      <MicBundleCTA lang={lang} />
+
+      {/* ═══════ MASTERING SERVICE CROSS-SELL ═══════ */}
+      <MasteringServiceCard lang={lang} />
 
       {/* ═══════ SIGNUP CTA ═══════ */}
       <SignupBanner lang={lang} />
 
       {/* ═══════ DATA MOAT MESSAGE ═══════ */}
       <div style={{
-        textAlign: 'center',
+        textAlign: 'center' as const,
         paddingTop: 'clamp(40px, 8vw, 64px)',
         paddingBottom: 'clamp(24px, 5vw, 40px)',
       }}>
@@ -1170,6 +2078,7 @@ export default function AudioAppsPage() {
           lineHeight: 1.8,
           maxWidth: 500,
           margin: '0 auto',
+          whiteSpace: 'pre-line' as const,
         }}>
           {t5({
             ja: '他のアプリに乗り換えても、\nここに蓄積された練習記録と成長曲線は、\n持っていけない。',
