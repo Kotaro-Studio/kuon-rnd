@@ -24,7 +24,6 @@ const MENU: MenuItem[] = [
   { href: '/microphone',        label: { ja: 'マイク',           en: 'Microphone', ko: '마이크',    pt: 'Microfone',  es: 'Micrófono',  de: 'Mikrofon'   } },
   { href: '/soundmap',          label: { ja: '地球音マップ',     en: 'Sound Map',  ko: '지구의 소리', pt: 'Sons da Terra', es: 'Sonidos',  de: 'Klangkarte' } },
   { href: '/events-lp',         label: { ja: 'ライブ情報',       en: "Today's Live", ko: '공연 정보', pt: 'Ao Vivo',   es: 'En Vivo',    de: 'Live-Events' } },
-  { href: '/certification',     label: { ja: '認定',             en: 'Certify',    ko: '인증',      pt: 'Certificação', es: 'Certificación', de: 'Zertifizierung' } },
   { href: '/#discover',         label: { ja: 'スカウト',         en: 'Discover',   ko: '디스커버',  pt: 'Descobrir',  es: 'Descubrir',  de: 'Entdecken'  } },
 ];
 
