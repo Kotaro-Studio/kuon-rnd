@@ -450,14 +450,35 @@ export default function TunerPage() {
 
   // Start microphone
   const startMicrophone = useCallback(async () => {
+    // Pre-flight: getUserMedia requires a secure context. Fail fast with a clear message.
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const msg = lang === 'ja'
+        ? 'このブラウザはマイク入力に対応していません。最新のChrome / Safari / Firefox でHTTPS接続からアクセスしてください。'
+        : 'This browser does not support microphone input. Please use a recent Chrome / Safari / Firefox over HTTPS.';
+      alert(msg);
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-      });
+      // NOTE: use "ideal" (not strict booleans) so browsers/devices that cannot
+      // disable AEC/NS/AGC (common on iOS Safari and many Android devices) still
+      // return a stream instead of throwing OverconstrainedError. The raw signal
+      // is still preferred when available; YIN is robust to mild processing.
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: { ideal: false },
+            noiseSuppression: { ideal: false },
+            autoGainControl: { ideal: false },
+          },
+        });
+      } catch (primaryErr) {
+        // Last-resort fallback: plain { audio: true }. Some very old / locked-down
+        // devices reject even advanced-optional constraints.
+        console.warn('[tuner] advanced constraints failed, falling back to { audio: true }:', primaryErr);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
       streamRef.current = stream;
 
       // Close previous context if it exists (e.g., from reference tone)
@@ -467,6 +488,18 @@ export default function TunerPage() {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
 
       const audioContext = audioContextRef.current;
+
+      // iOS Safari + Chrome autoplay policy: AudioContext often starts in 'suspended'
+      // even when created inside a user gesture. Explicitly resume so the analyser
+      // actually receives audio frames.
+      if (audioContext.state === 'suspended') {
+        try {
+          await audioContext.resume();
+        } catch (resumeErr) {
+          console.warn('[tuner] AudioContext.resume() failed:', resumeErr);
+        }
+      }
+
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
 
@@ -498,8 +531,30 @@ export default function TunerPage() {
       // Kick off the detection loop
       animationFrameRef.current = requestAnimationFrame(detectPitch);
     } catch (err) {
-      console.error('Microphone access denied:', err);
-      alert(lang === 'ja' ? 'マイクへのアクセスが拒否されました' : 'Microphone access denied');
+      // Differentiate error types so users get actionable feedback instead of a
+      // generic "access denied" that hides hardware / constraint problems.
+      const e = err as { name?: string; message?: string };
+      console.error('[tuner] getUserMedia failed:', e?.name, e?.message, err);
+
+      let msg: string;
+      if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') {
+        msg = lang === 'ja'
+          ? 'マイクへのアクセスが許可されませんでした。ブラウザのアドレスバー左のサイト設定からマイクを許可してください。'
+          : 'Microphone permission was denied. Please allow microphone access in your browser site settings.';
+      } else if (e?.name === 'NotFoundError' || e?.name === 'OverconstrainedError') {
+        msg = lang === 'ja'
+          ? '利用可能なマイクが見つかりませんでした。マイクが接続されているか確認してください。'
+          : 'No usable microphone found. Please check that a microphone is connected.';
+      } else if (e?.name === 'NotReadableError') {
+        msg = lang === 'ja'
+          ? 'マイクは他のアプリで使用中です。他のアプリ（Zoom等）を終了してから再度お試しください。'
+          : 'The microphone is in use by another application. Please close other apps (Zoom etc.) and retry.';
+      } else {
+        msg = lang === 'ja'
+          ? `マイクの起動に失敗しました: ${e?.name ?? 'UnknownError'}`
+          : `Failed to start microphone: ${e?.name ?? 'UnknownError'}`;
+      }
+      alert(msg);
     }
   }, [detectPitch, lang]);
 
