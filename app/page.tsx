@@ -232,10 +232,10 @@ const HomePage: React.FC = () => {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
           {personas.map((p, idx) => (
-            <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+            <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', transition: 'all 0.3s ease', cursor: 'pointer', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{p.emoji}</div>
-              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '1rem', color: '#0f172a' }}>{t5(p.title, lang)}</h3>
-              <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, wordBreak: 'keep-all' }}>{t5(p.desc, lang)}</p>
+              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '1rem', color: '#0f172a', overflowWrap: 'anywhere' }}>{t5(p.title, lang)}</h3>
+              <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, overflowWrap: 'anywhere', wordBreak: 'normal' }}>{t5(p.desc, lang)}</p>
             </div>
           ))}
         </div>
@@ -437,15 +437,7 @@ const HomePage: React.FC = () => {
             pt: 'Quero um mundo onde a cultura musical prospere, onde os músicos possam focar puramente na criatividade, onde os engenheiros possam se dedicar à expressão, e onde os artistas se conectem além das fronteiras. Por isso fundei a Kuon R&D.',
           }, lang)}
         </blockquote>
-        <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.8, maxWidth: '650px', margin: '0 auto 2.5rem', wordBreak: 'keep-all' }}>
-          {t5({
-            ja: '音大生時代、自分の演奏を録音するために独学でマイクを作り始めました。数十万円する高級マイクと同等以上のものを、学生でも買える価格で。すべてのマイクは、今も一本一本手はんだで製作しています。',
-            en: 'As a music student, I started building microphones to record my own performances. Studio-quality at a price students can afford. Every microphone is still hand-soldered, one at a time.',
-            es: 'Como estudiante de música, empecé a construir micrófonos para grabar mis actuaciones. Calidad de estudio a un precio accesible. Cada micrófono sigue siendo soldado a mano.',
-            ko: '음대생 시절, 자신의 연주를 녹음하기 위해 독학으로 마이크를 만들기 시작했습니다. 모든 마이크는 지금도 하나씩 손으로 납땜되고 있습니다.',
-            pt: 'Como estudante de música, comecei a construir microfones para gravar minhas apresentações. Qualidade de estúdio a um preço acessível. Cada microfone ainda é soldado à mão.',
-          }, lang)}
-        </p>
+        <div style={{ marginBottom: '2.5rem' }} />
         <Link href="/profile" style={{ display: 'inline-block', padding: '0.875rem 2.5rem', border: `2px solid ${ACCENT}`, color: ACCENT, borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', background: 'white', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(2,132,199,0.2)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
           {t5({ ja: 'プロフィールを見る', en: 'View Full Profile', es: 'Ver Perfil Completo', ko: '프로필 보기', pt: 'Ver Perfil Completo' }, lang)}
         </Link>
