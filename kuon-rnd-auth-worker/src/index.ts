@@ -51,6 +51,10 @@ interface PageviewData {
   total: number;
   countries: Record<string, number>;
   pages: Record<string, number>;
+  // Added 2026-04-23 (non-destructive): optional attribution signals.
+  // Older records will not have these fields; readers must treat them as optional.
+  referrers?: Record<string, number>;
+  utm?: Record<string, number>; // key: `${source}/${medium}/${campaign}`
 }
 
 // ─────────────────────────────────────────────
@@ -965,9 +969,16 @@ app.get('/api/auth/avatar/:email', async (c) => {
 // POST /api/auth/pageview — Track page view (no auth required)
 // ─────────────────────────────────────────────
 app.post('/api/auth/pageview', async (c) => {
-  const { path, country } = await c.req.json<{ path: string; country: string }>();
-  const page = path || '/';
-  const cc = (country || 'XX').toUpperCase();
+  const body = await c.req.json<{
+    path: string;
+    country: string;
+    referrer?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  }>();
+  const page = body.path || '/';
+  const cc = (body.country || 'XX').toUpperCase();
   const day = todayStr();
   const key = `pv:${day}`;
 
@@ -980,10 +991,25 @@ app.post('/api/auth/pageview', async (c) => {
     pv = { total: 0, countries: {}, pages: {} };
   }
 
-  // Increment
+  // Increment existing fields
   pv.total += 1;
   pv.countries[cc] = (pv.countries[cc] || 0) + 1;
   pv.pages[page] = (pv.pages[page] || 0) + 1;
+
+  // Attribution signals (additive, non-breaking for old records)
+  const ref = (body.referrer || '').trim().toLowerCase();
+  if (ref) {
+    pv.referrers = pv.referrers || {};
+    pv.referrers[ref] = (pv.referrers[ref] || 0) + 1;
+  }
+  const src = (body.utm_source || '').trim();
+  if (src) {
+    const med = (body.utm_medium || '').trim() || '-';
+    const cmp = (body.utm_campaign || '').trim() || '-';
+    const utmKey = `${src}/${med}/${cmp}`;
+    pv.utm = pv.utm || {};
+    pv.utm[utmKey] = (pv.utm[utmKey] || 0) + 1;
+  }
 
   // Store with 90-day TTL
   await c.env.SESSIONS.put(key, JSON.stringify(pv), { expirationTtl: 90 * 24 * 3600 });
@@ -1004,7 +1030,14 @@ app.get('/api/auth/admin/pageviews', async (c) => {
   }
 
   const days = parseInt(c.req.query('days') || '30', 10);
-  const results: { date: string; total: number; countries: Record<string, number>; pages: Record<string, number> }[] = [];
+  const results: {
+    date: string;
+    total: number;
+    countries: Record<string, number>;
+    pages: Record<string, number>;
+    referrers?: Record<string, number>;
+    utm?: Record<string, number>;
+  }[] = [];
 
   // Fetch each day's data
   const now = new Date();
@@ -1036,12 +1069,24 @@ app.get('/api/auth/admin/pageviews', async (c) => {
   const totalViews = results.reduce((sum, r) => sum + r.total, 0);
   const allCountries: Record<string, number> = {};
   const allPages: Record<string, number> = {};
+  const allReferrers: Record<string, number> = {};
+  const allUtm: Record<string, number> = {};
   for (const r of results) {
     for (const [cc, n] of Object.entries(r.countries)) {
       allCountries[cc] = (allCountries[cc] || 0) + n;
     }
     for (const [p, n] of Object.entries(r.pages)) {
       allPages[p] = (allPages[p] || 0) + n;
+    }
+    if (r.referrers) {
+      for (const [host, n] of Object.entries(r.referrers)) {
+        allReferrers[host] = (allReferrers[host] || 0) + n;
+      }
+    }
+    if (r.utm) {
+      for (const [k, n] of Object.entries(r.utm)) {
+        allUtm[k] = (allUtm[k] || 0) + n;
+      }
     }
   }
 
@@ -1051,6 +1096,8 @@ app.get('/api/auth/admin/pageviews', async (c) => {
       totalViews,
       countries: allCountries,
       topPages: Object.entries(allPages).sort((a, b) => b[1] - a[1]).slice(0, 20),
+      referrers: allReferrers,
+      utm: allUtm,
     },
   });
 });
