@@ -63,11 +63,18 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
       if (avatar) newForm.append('avatar', avatar);
       body = newForm;
     } else if (pathStr === 'pageview' && method === 'POST') {
-      // Pageview: inject CF country code into body
+      // Pageview: inject CF country code into body + forward optional attribution
       const country = request.headers.get('CF-IPCountry') || 'XX';
       const reqBody = await request.json() as Record<string, unknown>;
       headers['Content-Type'] = 'application/json';
-      body = JSON.stringify({ path: reqBody.path || '/', country });
+      body = JSON.stringify({
+        path: reqBody.path || '/',
+        country,
+        referrer: typeof reqBody.referrer === 'string' ? reqBody.referrer : '',
+        utm_source: typeof reqBody.utm_source === 'string' ? reqBody.utm_source : '',
+        utm_medium: typeof reqBody.utm_medium === 'string' ? reqBody.utm_medium : '',
+        utm_campaign: typeof reqBody.utm_campaign === 'string' ? reqBody.utm_campaign : '',
+      });
     } else {
       // Default: forward body as-is
       try {

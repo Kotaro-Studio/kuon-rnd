@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import UtmGenerator from './UtmGenerator';
+import { aggregateByCanonical, rankReferrers } from '@/lib/referrer';
 
 const sans = '"Helvetica Neue", Arial, sans-serif';
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
@@ -42,8 +44,8 @@ interface UserInfo {
 }
 interface Stats { total: number; free: number; student: number; pro: number; filtered: number; }
 interface UsersResponse { users: UserInfo[]; stats: Stats; page: number; totalPages: number; limit: number; }
-interface PageviewDay { date: string; total: number; countries: Record<string, number>; pages: Record<string, number>; }
-interface PageviewResponse { days: PageviewDay[]; summary: { totalViews: number; countries: Record<string, number>; topPages: [string, number][]; }; }
+interface PageviewDay { date: string; total: number; countries: Record<string, number>; pages: Record<string, number>; referrers?: Record<string, number>; utm?: Record<string, number>; }
+interface PageviewResponse { days: PageviewDay[]; summary: { totalViews: number; countries: Record<string, number>; topPages: [string, number][]; referrers?: Record<string, number>; utm?: Record<string, number>; }; }
 
 export default function AdminPage() {
   const router = useRouter();
@@ -135,6 +137,16 @@ export default function AdminPage() {
   const pages30d: Record<string, number> = {};
   pvDays.forEach(d => { Object.entries(d.pages).forEach(([p, n]) => { pages30d[p] = (pages30d[p] || 0) + n; }); });
   const topPages30d = Object.entries(pages30d).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+  // Compute 30-day canonical referrer ranking (read-time normalization)
+  const referrersRaw30d: Record<string, number> = {};
+  pvDays.forEach(d => { if (d.referrers) Object.entries(d.referrers).forEach(([h, n]) => { referrersRaw30d[h] = (referrersRaw30d[h] || 0) + n; }); });
+  const referrerRanking = rankReferrers(aggregateByCanonical(referrersRaw30d)).slice(0, 10);
+
+  // Compute 30-day UTM campaign ranking
+  const utmRaw30d: Record<string, number> = {};
+  pvDays.forEach(d => { if (d.utm) Object.entries(d.utm).forEach(([k, n]) => { utmRaw30d[k] = (utmRaw30d[k] || 0) + n; }); });
+  const utmRanking = Object.entries(utmRaw30d).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
   // ─── Motivation: Week-over-week growth ───
   const thisWeek = pvDays.slice(-7).reduce((s, d) => s + d.total, 0);
@@ -413,6 +425,78 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* ═══════ Referrer Ranking (canonical) ═══════ */}
+        {!pvLoading && referrerRanking.length > 0 && (
+          <div className="admin-card" style={{ background: '#1e293b', borderRadius: 12, padding: '1.2rem', border: '1px solid #334155', marginBottom: '1.5rem', animationDelay: '.17s' }}>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+              流入元 TOP 10（30日間・正規化済み）
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {referrerRanking.map(({ source, count }, idx) => {
+                const maxCount = referrerRanking[0]?.count ?? 1;
+                const barWidth = (count / maxCount) * 100;
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
+                return (
+                  <div key={source} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, background: idx < 3 ? 'rgba(167,139,250,0.05)' : 'transparent' }}>
+                    <span style={{ width: 24, fontSize: idx < 3 ? '1rem' : '0.75rem', textAlign: 'center', color: '#64748b', fontWeight: 700, fontFamily: mono, flexShrink: 0 }}>
+                      {medal || (idx + 1)}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                        <span style={{ fontSize: '0.85rem', color: idx < 3 ? '#f8fafc' : '#94a3b8', fontWeight: idx < 3 ? 600 : 400, fontFamily: mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {source}
+                        </span>
+                      </div>
+                      <div style={{ height: 3, background: '#334155', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${barWidth}%`, height: '100%', background: idx === 0 ? 'linear-gradient(90deg, #a78bfa, #c4b5fd)' : idx === 1 ? 'linear-gradient(90deg, #94a3b8, #cbd5e1)' : idx === 2 ? 'linear-gradient(90deg, #7c3aed, #a78bfa)' : 'linear-gradient(90deg, #475569, #64748b)', borderRadius: 2, transition: 'width .4s' }} />
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: idx < 3 ? '#f8fafc' : '#64748b', fontWeight: 700, fontFamily: mono, width: 36, textAlign: 'right', flexShrink: 0 }}>
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 10, fontFamily: sans }}>
+              l.instagram.com / lm.facebook.com / t.co などのリダイレクトホストは正規化して集約表示。direct はリファラー無しの直接アクセス。
+            </div>
+          </div>
+        )}
+
+        {/* ═══════ UTM Campaign Ranking ═══════ */}
+        {!pvLoading && utmRanking.length > 0 && (
+          <div className="admin-card" style={{ background: '#1e293b', borderRadius: 12, padding: '1.2rem', border: '1px solid #334155', marginBottom: '1.5rem', animationDelay: '.19s' }}>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+              UTM キャンペーン TOP 10（30日間）
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {utmRanking.map(([key, count], idx) => {
+                const maxCount = utmRanking[0]?.[1] ?? 1;
+                const barWidth = (count / maxCount) * 100;
+                return (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8 }}>
+                    <span style={{ width: 24, fontSize: '0.75rem', textAlign: 'center', color: '#64748b', fontWeight: 700, fontFamily: mono, flexShrink: 0 }}>
+                      {idx + 1}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontFamily: mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 3 }}>
+                        {key}
+                      </div>
+                      <div style={{ height: 3, background: '#334155', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${barWidth}%`, height: '100%', background: 'linear-gradient(90deg, #38bdf8, #7dd3fc)', borderRadius: 2, transition: 'width .4s' }} />
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700, fontFamily: mono, width: 36, textAlign: 'right', flexShrink: 0 }}>
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ═══════ Search & Filter ═══════ */}
         <div className="admin-card" style={{ background: '#1e293b', borderRadius: 12, padding: '1rem 1.2rem', border: '1px solid #334155', marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.8rem', alignItems: 'center', animationDelay: '.2s' }}>
           <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.5rem', flex: '1 1 300px' }}>
@@ -527,6 +611,9 @@ export default function AdminPage() {
             )}
           </>
         )}
+
+        {/* ═══════ UTM Link Generator ═══════ */}
+        <UtmGenerator />
       </div>
     </div>
   );

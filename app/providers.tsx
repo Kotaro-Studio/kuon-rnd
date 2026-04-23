@@ -7,11 +7,38 @@ import { LangProvider } from '@/context/LangContext';
 function PageviewTracker() {
   const pathname = usePathname();
   useEffect(() => {
+    // Capture optional attribution signals (non-blocking, best-effort)
+    let referrer = '';
+    let utm_source = '';
+    let utm_medium = '';
+    let utm_campaign = '';
+    try {
+      if (typeof document !== 'undefined' && document.referrer) {
+        const r = new URL(document.referrer);
+        // Ignore self-referrals (internal navigation)
+        if (typeof window !== 'undefined' && r.host !== window.location.host) {
+          referrer = r.host;
+        }
+      }
+      if (typeof window !== 'undefined') {
+        const q = new URLSearchParams(window.location.search);
+        utm_source = q.get('utm_source') || '';
+        utm_medium = q.get('utm_medium') || '';
+        utm_campaign = q.get('utm_campaign') || '';
+      }
+    } catch { /* silent */ }
+
     // Fire-and-forget: don't block rendering
     fetch('/api/auth/pageview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: pathname }),
+      body: JSON.stringify({
+        path: pathname,
+        referrer,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+      }),
     }).catch(() => { /* silent */ });
   }, [pathname]);
   return null;
