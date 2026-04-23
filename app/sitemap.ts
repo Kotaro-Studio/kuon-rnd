@@ -20,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'transposer', 'harmony', 'counterpoint', 'master-check', 'analyzer',
     'normalize', 'resampler', 'converter', 'dsd', 'ddp-checker',
     'noise-reduction', 'dual-mono', 'tuner', 'ear-training', 'chord-quiz',
-    'interval-speed', 'metronome', 'sight-reading',
+    'interval-speed', 'metronome', 'sight-reading', 'slowdown',
   ];
 
   const appPages: MetadataRoute.Sitemap = apps.map(slug => ({
@@ -36,7 +36,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'analyzer-lp', 'normalize-lp', 'resampler-lp', 'dsd-lp', 'ddp-checker-lp',
     'tuner-lp', 'ear-training-lp', 'chord-quiz-lp', 'interval-speed-lp',
     'metronome-lp', 'sight-reading-lp', 'player-lp', 'events-lp', 'soundmap-lp',
-    'itadaki-lp',
+    'itadaki-lp', 'slowdown-lp', 'separator-lp',
   ];
 
   const lpPages: MetadataRoute.Sitemap = lps.map(slug => ({

@@ -145,6 +145,13 @@ const HomePage: React.FC = () => {
       badge: { ja: 'NEW Meta Demucs v4', en: 'NEW Meta Demucs v4', es: 'NUEVO Meta Demucs v4', ko: 'NEW Meta Demucs v4', pt: 'NOVO Meta Demucs v4', de: 'NEU Meta Demucs v4' },
     },
     {
+      emoji: '🐢',
+      name: 'SLOWDOWN',
+      desc: { ja: 'ピッチ維持スロー再生 — 耳コピ・練習に', en: 'Pitch-preserving slowdown for transcription', es: 'Reproducción lenta sin cambio de tono', ko: '피치 유지 슬로우 재생', pt: 'Reprodução lenta preservando o tom', de: 'Tonhöhen-erhaltende Verlangsamung' },
+      href: '/slowdown-lp',
+      badge: { ja: 'NEW Transcribe! 代替', en: 'NEW Transcribe! Alternative', es: 'NUEVO Alternativa a Transcribe!', ko: 'NEW Transcribe! 대체', pt: 'NOVO Alternativa ao Transcribe!', de: 'NEU Transcribe!-Alternative' },
+    },
+    {
       emoji: '🎚️',
       name: 'MASTER CHECK',
       desc: { ja: 'ラウドネス測定 + 自動調整', en: 'Loudness measurement + auto-adjust', es: 'Medición de volumen + ajuste automático', ko: '라우드니스 측정 + 자동 조정', pt: 'Medição de volume + ajuste automático', de: 'Lautheitsmessung + Auto-Anpassung' },

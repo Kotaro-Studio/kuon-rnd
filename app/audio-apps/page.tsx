@@ -694,6 +694,32 @@ const apps: AppEntry[] = [
     },
     href: '/separator-lp', accent: '#dc2626', isNew: true,
   },
+  {
+    id: 'slowdown', personas: ['student', 'producer'], tier: 'open',
+    badge: 'SLOW', name: 'KUON SLOWDOWN',
+    tagline: {
+      ja: 'ピッチを変えずに、ゆっくり再生。',
+      en: 'Slow down music without changing pitch.',
+      ko: '피치를 바꾸지 않고 느리게 재생.',
+      pt: 'Reduza a velocidade sem alterar o tom.',
+      es: 'Reduce la velocidad sin cambiar el tono.',
+    },
+    desc: {
+      ja: 'ジャズ耳コピ・クラシック練習・タンゴ分析に。0.25x〜2.0x可変、A/Bループ、半音トランスポーズ、自動キー/BPM検出、小節グリッド、オーバーダブ録音。Transcribe!に代わる次世代ブラウザツール。',
+      en: 'For jazz transcription, classical practice, tango analysis. 0.25x–2.0x, A/B loop, semitone transpose, auto key & BPM, bar grid, overdub recording. Browser-based next-gen alternative to Transcribe!.',
+      ko: '재즈 카피, 클래식 연습, 탱고 분석에. 0.25x~2.0x, A/B 루프, 반음 전조, 자동 키/BPM, 소절 그리드, 오버덥 녹음. Transcribe! 대체 차세대 브라우저 툴.',
+      pt: 'Para transcrição de jazz, prática clássica, análise de tango. 0.25x–2.0x, loop A/B, transposição, detecção automática, grade de compasso, gravação overdub.',
+      es: 'Para transcripción de jazz, práctica clásica, análisis de tango. 0.25x–2.0x, loop A/B, transposición, detección automática, grilla de compases, grabación overdub.',
+    },
+    replaces: {
+      ja: '※ Transcribe! ($39) / Amazing Slow Downer ($50) / Anytune ($15) に代わる無料ブラウザ版',
+      en: 'Free browser alternative to Transcribe! ($39), Amazing Slow Downer ($50), Anytune ($15).',
+      ko: 'Transcribe! ($39), Amazing Slow Downer ($50), Anytune ($15) 대체 무료 브라우저판.',
+      pt: 'Alternativa gratuita ao Transcribe! ($39), Amazing Slow Downer ($50), Anytune ($15).',
+      es: 'Alternativa gratuita a Transcribe! ($39), Amazing Slow Downer ($50), Anytune ($15).',
+    },
+    href: '/slowdown-lp', accent: '#c2410c', isNew: true,
+  },
 
   // ─── Community / Shared (appears across personas) ───
   {
