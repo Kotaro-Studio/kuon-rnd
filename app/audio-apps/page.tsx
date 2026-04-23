@@ -692,7 +692,7 @@ const apps: AppEntry[] = [
       pt: 'Separação de fontes com Demucs v4 (Meta AI). Separe vocais, bateria, baixo, outros.',
       es: 'Separación de fuentes con Demucs v4 (Meta AI). Separa vocales, batería, bajo, otros.',
     },
-    href: '/separator', accent: '#dc2626', isComingSoon: true,
+    href: '/separator-lp', accent: '#dc2626', isNew: true,
   },
 
   // ─── Community / Shared (appears across personas) ───
