@@ -1,0 +1,72 @@
+# ============================================================
+# Cloud Build — KUON SEPARATOR の自動ビルド + デプロイパイプライン
+# ============================================================
+# トリガー: 手動実行 or GitHub push（設定後）
+# 実行コマンド（手動）:
+#   gcloud builds submit --config=cloudbuild.yaml \
+#     --region=asia-northeast1
+# ============================================================
+
+steps:
+  # ── Step 1: Docker イメージのビルド ──
+  # $BUILD_ID は手動実行・トリガー実行の両方で常に設定される
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "--tag"
+      - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/kuon-separator/worker:$BUILD_ID"
+      - "--tag"
+      - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/kuon-separator/worker:latest"
+      - "--cache-from"
+      - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/kuon-separator/worker:latest"
+      - "."
+    id: "build-image"
+
+  # ── Step 2: Artifact Registry にプッシュ ──
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "--all-tags"
+      - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/kuon-separator/worker"
+    id: "push-image"
+    waitFor: ["build-image"]
+
+  # ── Step 3: Cloud Run にデプロイ ──
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "kuon-separator"
+      - "--image=asia-northeast1-docker.pkg.dev/$PROJECT_ID/kuon-separator/worker:$BUILD_ID"
+      - "--region=asia-northeast1"
+      - "--platform=managed"
+      - "--cpu=4"
+      - "--memory=16Gi"
+      - "--timeout=1800"  # 30 分
+      - "--concurrency=1"  # 同時 1 リクエスト（OOM 防止）
+      - "--max-instances=10"  # スケール上限（コスト防御）
+      - "--min-instances=0"   # アイドル時ゼロ課金
+      - "--cpu-boost"          # cold start 高速化
+      - "--execution-environment=gen2"
+      - "--allow-unauthenticated"     # パブリック。認証は共有シークレットで行う
+      - "--set-secrets=SEPARATOR_SECRET=separator-secret:latest,R2_ACCESS_KEY_ID=r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=r2-secret-access-key:latest,R2_ENDPOINT=r2-endpoint:latest"
+      - "--set-env-vars=R2_BUCKET=kuon-rnd-separator,ENVIRONMENT=production"
+    id: "deploy-cloudrun"
+    waitFor: ["push-image"]
+
+# ── 認証モデル ──
+# Cloud Run エンドポイントは --allow-unauthenticated で公開するが、
+# app.main:main.py の _verify_secret() が Authorization: Bearer <SEPARATOR_SECRET>
+# を検証する。SEPARATOR_SECRET は 32 バイトのランダム文字列で Next.js プロキシ
+# だけが保持している。Cloud Run の --max-instances=10 でスケール上限を設け、
+# GCP 予算アラートで異常検知する二重防御。
+
+images:
+  - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/kuon-separator/worker"
+
+options:
+  machineType: "E2_HIGHCPU_8"  # ビルド高速化（デフォルト N1_HIGHCPU_8 より安い）
+  logging: CLOUD_LOGGING_ONLY  # GCS ログバケット不要
+
+timeout: "1800s"  # 30 分（Demucs モデル事前ダウンロードで 5-10 分かかる）

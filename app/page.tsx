@@ -138,6 +138,13 @@ const HomePage: React.FC = () => {
 
   const apps: { emoji: string; name: string; desc: L5; href: string; badge?: L5 }[] = [
     {
+      emoji: '🎛️',
+      name: 'SEPARATOR',
+      desc: { ja: 'AI音源分離 — ボーカル/ドラム/ベース抽出', en: 'AI stem separation — vocals, drums, bass', es: 'Separación de pistas IA — voz, batería, bajo', ko: 'AI 스템 분리 — 보컬/드럼/베이스 추출', pt: 'Separação de stems com IA — voz, bateria, baixo', de: 'KI-Stem-Separation — Vocals, Drums, Bass' },
+      href: '/separator-lp',
+      badge: { ja: 'NEW Meta Demucs v4', en: 'NEW Meta Demucs v4', es: 'NUEVO Meta Demucs v4', ko: 'NEW Meta Demucs v4', pt: 'NOVO Meta Demucs v4', de: 'NEU Meta Demucs v4' },
+    },
+    {
       emoji: '🎚️',
       name: 'MASTER CHECK',
       desc: { ja: 'ラウドネス測定 + 自動調整', en: 'Loudness measurement + auto-adjust', es: 'Medición de volumen + ajuste automático', ko: '라우드니스 측정 + 자동 조정', pt: 'Medição de volume + ajuste automático', de: 'Lautheitsmessung + Auto-Anpassung' },

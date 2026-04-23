@@ -1,0 +1,14 @@
+.gcloudignore
+.git/
+.gitignore
+.env
+.env.local
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+*.log
+.DS_Store
+tests/
+.pytest_cache/

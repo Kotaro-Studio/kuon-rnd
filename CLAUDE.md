@@ -13,9 +13,16 @@
 | 本名 | 服部 洸太郎（Kotaro Hattori）ただしこの情報は公開することはありません |
 | 活動名 | 朝比奈 幸太郎（Kotaro Asahina） |
 | 拠点 | 〒080-2476 北海道帯広市自由が丘5丁目16番地35 こちらも法律上の記載義務のあるページを作成するとき以外に公開することはありません|
-| メール | 369@kotaroasahina.com |
+| メインメール（連絡先） | 369@kotaroasahina.com |
+| Google アカウント（GCP/Gmail ログイン用） | curanzsounds@gmail.com |
+| GCP プロジェクト | kuon-rnd（番号: 342028960302） |
 | YouTube | 朝比奈幸太郎の音響実験室 |
 | 職能 | 音響エンジニア・マイク設計者・GPS/RTK開発者・Webエンジニア・音楽家 |
+
+> **重要**: オーナーが実際にログインする Google アカウントは `curanzsounds@gmail.com`。
+> `369@kotaroasahina.com` はメインの連絡先メールアドレス（独自ドメイン）で、
+> Google ログインには使わない。GCP 操作・Gmail・各種 Google サービスは
+> すべて `curanzsounds@gmail.com` アカウントで行う。
 
 ---
 
@@ -232,13 +239,27 @@ R2 バケット（kuon-rnd-audio）作成済み
 
 ## 6. Cloudflare R2 バケット構成
 
-アカウント: 369@kotaroasahina.com
+アカウント: 369@kotaroasahina.com（Cloudflare ログインメール）
 
 | バケット名      | 用途                        | 使用プロジェクト     | 権限     |
 |---------------|-----------------------------|--------------------|----------|
 | curanz-files  | Curanz Sounds 音声・画像     | curanzsounds.com のみ | 触らない |
 | kuon-rnd-audio | 空音開発 音声サンプル        | kuon-rnd.com のみ   | 操作可   |
 | kuon-rnd-player | 24時間MP3プレーヤー一時保存 | kuon-rnd.com のみ   | 操作可   |
+| kuon-rnd-separator | SEPARATOR ステム出力（24h lifecycle） | kuon-rnd.com / Cloud Run | 操作可 |
+
+### R2 API トークン更新リマインダー
+
+| トークン名 | 発行日 | 有効期限 | 次回更新期限 |
+|-----------|-------|---------|-------------|
+| kuon-rnd-separator | 2026-04-23 | 1 year | 2027-04-16（1週間前にカレンダー登録推奨） |
+
+トークン失効時の更新手順:
+1. Cloudflare R2 Dashboard で新しいトークンを発行（同じ名前・同じ権限）
+2. `gcloud secrets versions add r2-access-key-id --data-file=-` で新しい値を追加
+3. `gcloud secrets versions add r2-secret-access-key --data-file=-` 同上
+4. Cloud Run サービスを再デプロイして最新バージョンの Secret を読み込ませる
+5. Cloudflare Dashboard から古いトークンを削除
 
 ### KV Namespace 構成
 

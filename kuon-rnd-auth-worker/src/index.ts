@@ -172,6 +172,21 @@ function todayStr(): string {
 }
 
 // ─────────────────────────────────────────────
+// Monthly quota table for server-side apps (SEPARATOR, TRANSCRIBER, etc.)
+// Browser-only apps (NORMALIZE, DECLIPPER, etc.) are NOT listed here — they are unlimited.
+// See CLAUDE.md §29 for the design rationale.
+// ─────────────────────────────────────────────
+const APP_QUOTAS: Record<string, Record<'free' | 'student' | 'pro', number>> = {
+  separator: { free: 3, student: 10, pro: 50 },
+  // transcriber: { free: 1, student: 5, pro: 20 },  // future
+  // intonation: { free: 30, student: 300, pro: 1000 }, // future
+};
+
+function quotaFor(appName: string, plan: 'free' | 'student' | 'pro'): number {
+  return APP_QUOTAS[appName]?.[plan] ?? 0;
+}
+
+// ─────────────────────────────────────────────
 // App
 // ─────────────────────────────────────────────
 const app = new Hono<{ Bindings: Env }>();
@@ -581,6 +596,153 @@ app.post('/api/auth/track', async (c) => {
   await c.env.USERS.put(`user:${payload.email}`, JSON.stringify(user));
 
   return c.json({ ok: true, usage: user.appUsage, month });
+});
+
+// ─────────────────────────────────────────────
+// GET /api/auth/quota?app=separator — Read-only quota status
+// Used by UI to show "あと X 回" before user initiates a job.
+// Does NOT consume the quota.
+// ─────────────────────────────────────────────
+app.get('/api/auth/quota', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const appName = c.req.query('app');
+  if (!appName) return c.json({ error: 'Missing app parameter' }, 400);
+
+  if (!APP_QUOTAS[appName]) {
+    return c.json({ error: `App "${appName}" has no quota (may be a browser-only app)` }, 400);
+  }
+
+  const raw = await c.env.USERS.get(`user:${payload.email}`);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+
+  const user: UserData = JSON.parse(raw);
+  const month = currentMonth();
+
+  // Auto-reset for new month (don't persist here — just report reset state)
+  const effectiveUsage = user.appUsageMonth === month ? (user.appUsage[appName] || 0) : 0;
+  const limit = quotaFor(appName, user.plan);
+  const remaining = Math.max(0, limit - effectiveUsage);
+
+  return c.json({
+    app: appName,
+    plan: user.plan,
+    used: effectiveUsage,
+    limit,
+    remaining,
+    month,
+    canUse: remaining > 0,
+  });
+});
+
+// ─────────────────────────────────────────────
+// POST /api/auth/quota/consume — Atomic check + consume
+// Called by the Next.js proxy RIGHT BEFORE forwarding to Cloud Run.
+// Returns 429 with upgrade info if quota exceeded.
+// Returns { ok: true, remaining: N } on success (quota already decremented).
+// ─────────────────────────────────────────────
+app.post('/api/auth/quota/consume', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const { app: appName } = await c.req.json<{ app: string }>();
+  if (!appName) return c.json({ error: 'Missing app name' }, 400);
+
+  if (!APP_QUOTAS[appName]) {
+    return c.json({ error: `App "${appName}" has no quota` }, 400);
+  }
+
+  const raw = await c.env.USERS.get(`user:${payload.email}`);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+
+  const user: UserData = JSON.parse(raw);
+  const month = currentMonth();
+
+  // Reset counters on new month
+  if (user.appUsageMonth !== month) {
+    user.appUsage = {};
+    user.appUsageMonth = month;
+  }
+
+  const currentUsage = user.appUsage[appName] || 0;
+  const limit = quotaFor(appName, user.plan);
+
+  if (currentUsage >= limit) {
+    // Quota exceeded — return 429 with upgrade guidance
+    return c.json({
+      error: 'quota_exceeded',
+      app: appName,
+      plan: user.plan,
+      used: currentUsage,
+      limit,
+      remaining: 0,
+      month,
+      upgradeOptions: user.plan === 'free'
+        ? [
+            { plan: 'student', price: 480, limit: APP_QUOTAS[appName].student },
+            { plan: 'pro', price: 980, limit: APP_QUOTAS[appName].pro },
+          ]
+        : user.plan === 'student'
+          ? [{ plan: 'pro', price: 980, limit: APP_QUOTAS[appName].pro }]
+          : [],
+    }, 429);
+  }
+
+  // Atomic consume
+  user.appUsage[appName] = currentUsage + 1;
+  await c.env.USERS.put(`user:${payload.email}`, JSON.stringify(user));
+
+  return c.json({
+    ok: true,
+    app: appName,
+    plan: user.plan,
+    used: user.appUsage[appName],
+    limit,
+    remaining: limit - user.appUsage[appName],
+    month,
+  });
+});
+
+// ─────────────────────────────────────────────
+// POST /api/auth/quota/refund — Refund a consumed quota (on job failure)
+// Called by Next.js proxy if Cloud Run fails AFTER consume was committed.
+// This prevents users from losing quota when our service errors out.
+// ─────────────────────────────────────────────
+app.post('/api/auth/quota/refund', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const { app: appName } = await c.req.json<{ app: string }>();
+  if (!appName) return c.json({ error: 'Missing app name' }, 400);
+
+  const raw = await c.env.USERS.get(`user:${payload.email}`);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+
+  const user: UserData = JSON.parse(raw);
+  const month = currentMonth();
+
+  // Only refund if still within the same month
+  if (user.appUsageMonth === month && (user.appUsage[appName] || 0) > 0) {
+    user.appUsage[appName] = Math.max(0, user.appUsage[appName] - 1);
+    await c.env.USERS.put(`user:${payload.email}`, JSON.stringify(user));
+  }
+
+  return c.json({
+    ok: true,
+    app: appName,
+    used: user.appUsage[appName] || 0,
+    month,
+  });
 });
 
 // ─────────────────────────────────────────────
