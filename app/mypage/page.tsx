@@ -918,9 +918,9 @@ export default function MyPage() {
                   es: 'Estás en el plan Gratuito. Mejora para desbloquear funciones avanzadas y registros de práctica.',
                 }, lang)
               : t3({
-                  ja: 'プラン変更・支払方法の更新・解約・領収書のダウンロードができます。',
-                  en: 'Change plan, update payment method, cancel, or download receipts.',
-                  es: 'Cambia de plan, actualiza el método de pago, cancela o descarga recibos.',
+                  ja: 'プラン変更・月額/年額の切替・支払方法の更新・解約・領収書のダウンロードができます。プラン乗換は日割り計算で公平に処理されます。',
+                  en: 'Change plan, switch monthly/yearly, update payment method, cancel, or download receipts. Plan changes are pro-rated fairly.',
+                  es: 'Cambia de plan, alterna mensual/anual, actualiza el método de pago, cancela o descarga recibos. Los cambios se prorratean justamente.',
                 }, lang)}
           </p>
           <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>

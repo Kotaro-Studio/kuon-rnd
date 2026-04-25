@@ -275,6 +275,25 @@ async function indexStripeCustomer(env: Env, customerId: string, email: string):
 }
 
 /**
+ * HALF50 (初月 50% オフ) Coupon を既に使用済みかチェックする。
+ * 抜け道防止: 「Symphony HALF50 → 解約 → Concerto HALF50 → ...」の無限ループを禁止。
+ * 一度でも HALF50 を attach した Checkout が完了したら true を返す。
+ */
+async function hasUsedHalf50(env: Env, email: string): Promise<boolean> {
+  const flag = await env.SESSIONS.get(`half50-used:${email}`);
+  return flag === '1';
+}
+
+/**
+ * HALF50 使用済みフラグを立てる。
+ * checkout.session.completed Webhook で discount が含まれていた場合に呼ぶ。
+ * KV TTL なし (永続フラグ)。
+ */
+async function markHalf50Used(env: Env, email: string): Promise<void> {
+  await env.SESSIONS.put(`half50-used:${email}`, '1');
+}
+
+/**
  * 既存の UserData レコードに部分更新を適用して KV に保存する。
  * Stripe Webhook ハンドラから plan/status などを更新する際に使用。
  */
@@ -372,6 +391,13 @@ async function handleCheckoutCompleted(env: Env, event: Stripe.Event): Promise<v
   await updateUserStripe(env, userEmail, {
     stripeCustomerId,
   });
+
+  // HALF50 が attach されていた Checkout が完了した場合、使用済みフラグを立てる。
+  // 今後この email が再 Checkout しても HALF50 は attach されない。
+  if (session.metadata?.half50Applied === '1') {
+    await markHalf50Used(env, userEmail);
+    console.log('[webhook:checkout.completed] HALF50 used flag set for', userEmail);
+  }
 
   console.log('[webhook:checkout.completed]', userEmail, '→', stripeCustomerId);
 }
@@ -2135,15 +2161,21 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     await updateUserStripe(c.env, email, { stripeCustomerId });
   }
 
-  // HALF50 Coupon を attach (monthly + 全プラン対応)
+  // HALF50 Coupon を attach (monthly + 全プラン対応 + 初回のみ)
   // 2026-04-25 切替: FIRST100 (Concerto/Symphony で赤字) → HALF50 (全プラン黒字)
   // annual は対象外 (年額に 50% off は深すぎるため)
+  // 2026-04-26 抜け道塞ぎ: 1 ユーザー 1 回のみ。再加入では attach しない。
   const discounts: { coupon: string }[] = [];
   if (billingCycle === 'monthly') {
-    const couponMap = COUPON_IDS.half50 as Record<string, string>;
-    const couponId = couponMap[planTier];
-    if (couponId) {
-      discounts.push({ coupon: couponId });
+    const alreadyUsed = await hasUsedHalf50(c.env, email);
+    if (!alreadyUsed) {
+      const couponMap = COUPON_IDS.half50 as Record<string, string>;
+      const couponId = couponMap[planTier];
+      if (couponId) {
+        discounts.push({ coupon: couponId });
+      }
+    } else {
+      console.log('[checkout] HALF50 skipped (already used):', email, planTier);
     }
   }
 
@@ -2157,11 +2189,13 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     success_url: 'https://kuon-rnd.com/mypage?checkout=success',
     cancel_url: 'https://kuon-rnd.com/pricing?canceled=true',
     // metadata で Webhook 側のユーザー特定を確実に
+    // half50Applied は checkout.completed Webhook で half50-used フラグを立てる判定用
     metadata: {
       userEmail: email,
       planTier,
       billingCycle,
       pricingRegion: region,
+      half50Applied: discounts.length > 0 ? '1' : '0',
     },
     subscription_data: {
       metadata: {
@@ -2169,6 +2203,7 @@ app.post('/api/auth/stripe/checkout', async (c) => {
         planTier,
         billingCycle,
         pricingRegion: region,
+        half50Applied: discounts.length > 0 ? '1' : '0',
       },
     },
     // 顧客ロケール (Stripe が自動で言語を判定)

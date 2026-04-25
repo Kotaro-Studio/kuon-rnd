@@ -175,6 +175,24 @@ const HomePage: React.FC = () => {
     },
     {
       q: {
+        ja: 'プランの変更や月額・年額の切替はできますか？',
+        en: 'Can I switch between plans or monthly/yearly billing?',
+        es: '¿Puedo cambiar entre planes o facturación mensual/anual?',
+        ko: '플랜 변경 또는 월간/연간 청구 전환이 가능한가요?',
+        pt: 'Posso alternar entre planos ou cobrança mensal/anual?',
+        de: 'Kann ich zwischen Plänen oder monatlicher/jährlicher Abrechnung wechseln?',
+      },
+      a: {
+        ja: 'はい、自由に変更可能です。たとえば「初月は Symphony を半額で試して、翌月から Prelude 年額に切替」も可能。Stripe の日割り計算で公平に切替されます。マイページの「プラン管理」からいつでも操作できます。',
+        en: 'Yes, switch freely. For example: try Symphony at 50% off for month 1, then switch to Prelude annual for month 2 onward. Stripe handles fair pro-rated billing. Manage from "Plan Settings" in My Page.',
+        es: 'Sí, cambia libremente. Por ejemplo: prueba Symphony con 50% de descuento el mes 1, luego cambia a Prelude anual desde el mes 2. Stripe maneja la facturación prorrateada justa. Gestiona desde "Configuración de Plan" en Mi Página.',
+        ko: '네, 자유롭게 변경 가능합니다. 예: 1개월차에 Symphony를 50% 할인으로 체험 후 2개월차부터 Prelude 연간으로 전환. Stripe가 공정한 일할 계산으로 청구합니다.',
+        pt: 'Sim, troque livremente. Exemplo: experimente Symphony com 50% de desconto no mês 1 e mude para Prelude anual a partir do mês 2. Stripe lida com faturamento proporcional justo.',
+        de: 'Ja, jederzeit wechselbar. Beispiel: Symphony im 1. Monat zum halben Preis testen, dann ab Monat 2 zu Prelude jährlich wechseln. Stripe übernimmt die faire anteilige Abrechnung.',
+      },
+    },
+    {
+      q: {
         ja: '対応ファイル形式は？',
         en: 'What file formats are supported?',
         es: '¿Qué formatos de archivo son compatibles?',
@@ -738,6 +756,27 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* プラン乗換自由バナー (顧客のリアル声から実装) */}
+        <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'linear-gradient(135deg, #ecfeff 0%, #f0f9ff 100%)', border: '1px solid #bae6fd', borderRadius: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#0369a1', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 600 }}>
+            🔄 {t5({ ja: 'プランは月単位で自由変更', en: 'Switch Plans Anytime', es: 'Cambia de Plan Cuando Quieras' }, lang)}
+          </div>
+          <div style={{ fontFamily: serif, fontSize: 'clamp(1rem, 2.5vw, 1.35rem)', color: '#0f172a', fontWeight: 400, marginBottom: '0.5rem' }}>
+            {t5({
+              ja: 'まず Symphony を半額で試して、お気に入りなら Prelude 年額へ。',
+              en: 'Try Symphony at 50% off, then switch to Prelude annual when ready.',
+              es: 'Prueba Symphony con 50% de descuento, luego cambia a Prelude anual.',
+            }, lang)}
+          </div>
+          <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.6 }}>
+            {t5({
+              ja: '日割り計算で公平に切替。月額・年額・プラン上下、いつでも変更可能です。',
+              en: 'Fair pro-rated switching. Change between monthly, yearly, or any tier — anytime.',
+              es: 'Cambio prorrateado y justo. Cambia entre mensual, anual o cualquier nivel — en cualquier momento.',
+            }, lang)}
+          </div>
+        </div>
 
         {/* マイク購入者特典バナー */}
         <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: 'white', border: `2px dashed ${ACCENT}`, borderRadius: '12px', textAlign: 'center' }}>
