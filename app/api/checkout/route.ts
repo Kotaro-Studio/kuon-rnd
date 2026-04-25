@@ -35,6 +35,12 @@ export async function POST(request: NextRequest) {
     cancel_url:  `${baseUrl}/microphone`,
     'payment_method_types[0]': 'card',
     'metadata[product]': body.product ?? 'p-86s',
+    // 配送先住所収集 (現状は日本のみ。Step 3 で国際展開時に拡張)
+    'shipping_address_collection[allowed_countries][0]': 'JP',
+    // 請求先住所も完全収集
+    'billing_address_collection': 'required',
+    // 電話番号収集 (ヤマト集荷依頼に必須)
+    'phone_number_collection[enabled]': 'true',
   });
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
