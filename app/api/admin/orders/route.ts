@@ -102,10 +102,11 @@ export async function GET(request: NextRequest) {
 
   // ─── Stripe Checkout Session 一覧を取得 ───
   // 直近 100 件取得 → 30 日以内のマイク注文だけにフィルタ
+  // Stripe Checkout Sessions list:
+  //   customer_details / shipping_details は expand 不要 (自動的にインライン展開される)
+  //   line_items は expand 必要 (デフォルトでは ID のみ)
   const params = new URLSearchParams();
   params.set('limit', '100');
-  params.append('expand[]', 'data.customer_details');
-  params.append('expand[]', 'data.shipping_details');
 
   const stripeRes = await fetch(`https://api.stripe.com/v1/checkout/sessions?${params}`, {
     headers: { Authorization: `Bearer ${stripeKey}` },

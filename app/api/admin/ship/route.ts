@@ -106,8 +106,9 @@ export async function POST(request: NextRequest) {
   const trackingNumber = trackingValid.normalized;
 
   // ─── Stripe Session を取得 ───
+  // customer_details / shipping_details は expand 不要 (自動的にインライン展開される)
   const sessionRes = await fetch(
-    `https://api.stripe.com/v1/checkout/sessions/${body.sessionId}?expand[]=customer_details&expand[]=shipping_details`,
+    `https://api.stripe.com/v1/checkout/sessions/${body.sessionId}`,
     { headers: { Authorization: `Bearer ${stripeKey}` } },
   );
 

@@ -47,8 +47,11 @@ export default function ShipAdminPage() {
     try {
       const res = await fetch('/api/admin/orders');
       if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(err.error || `Failed to fetch orders (${res.status})`);
+        const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+        const msg = err.detail
+          ? `${err.error || 'Error'}: ${err.detail}`
+          : (err.error || `Failed to fetch orders (${res.status})`);
+        setError(msg);
         return;
       }
       const data = (await res.json()) as { orders: Order[] };
