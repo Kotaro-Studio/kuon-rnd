@@ -76,6 +76,12 @@ export default function LoginPage() {
       if (data.user) {
         localStorage.setItem('kuon_user', JSON.stringify(data.user));
       }
+      // 購入意図が保存されていれば / に戻して自動 Checkout 継続させる
+      const pendingSubscribe = localStorage.getItem('kuon_pending_subscribe');
+      if (pendingSubscribe) {
+        router.push('/');
+        return;
+      }
       router.push('/mypage');
     } catch {
       setError(t3({ ja: '通信エラー', en: 'Network error', es: 'Error de red' }, lang));

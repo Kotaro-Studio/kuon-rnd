@@ -67,6 +67,14 @@ function VerifyContent() {
         }
         setUserName(data.user?.name || data.user?.email || '');
         setStatus('success');
+        // 購入意図が保存されていれば / に戻して自動 Checkout 継続させる
+        if (typeof window !== 'undefined') {
+          const pendingSubscribe = localStorage.getItem('kuon_pending_subscribe');
+          if (pendingSubscribe) {
+            // 1.2 秒後に / にリダイレクト (success UI が一瞬表示される)
+            setTimeout(() => { window.location.href = '/'; }, 1200);
+          }
+        }
       } catch {
         setStatus('error');
         setErrorMsg(t3({

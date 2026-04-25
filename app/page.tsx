@@ -34,11 +34,19 @@ const HomePage: React.FC = () => {
   const opusYearly      = 59800;
 
   // Stripe Checkout 起動: 認証チェック → 未ログインなら /auth/login へ → ログイン済みなら Stripe へ
+  // 離脱率削減: 未ログイン時は購入意図を localStorage に保存し、ログイン後に自動で Checkout 継続
   async function handleSubscribe(plan: 'prelude' | 'concerto' | 'symphony' | 'opus', cycle: 'monthly' | 'annual') {
     setSubscribeLoading(plan);
     try {
       const meRes = await fetch('/api/auth/me');
       if (!meRes.ok) {
+        // 未ログイン: 購入意図を保存して /auth/login へ
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            'kuon_pending_subscribe',
+            JSON.stringify({ plan, cycle, ts: Date.now() }),
+          );
+        }
         window.location.href = '/auth/login';
         return;
       }
@@ -64,6 +72,33 @@ const HomePage: React.FC = () => {
       setSubscribeLoading(null);
     }
   }
+
+  // ログイン後にホームページに戻った際、保存された購入意図があれば自動的に Checkout 継続
+  // 30 分以内の意図のみ有効 (古いものはクリア)
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('kuon_pending_subscribe');
+    if (!saved) return;
+    try {
+      const intent = JSON.parse(saved) as { plan?: string; cycle?: string; ts?: number };
+      const validPlans = ['prelude', 'concerto', 'symphony', 'opus'];
+      const validCycles = ['monthly', 'annual'];
+      const stale = !intent.ts || Date.now() - intent.ts > 30 * 60 * 1000;
+      if (stale || !intent.plan || !validPlans.includes(intent.plan) || !intent.cycle || !validCycles.includes(intent.cycle)) {
+        localStorage.removeItem('kuon_pending_subscribe');
+        return;
+      }
+      // 認証チェック → ログイン済みなら自動 Checkout
+      fetch('/api/auth/me').then((r) => {
+        if (!r.ok) return; // まだ未ログイン: 意図はそのまま保持
+        localStorage.removeItem('kuon_pending_subscribe');
+        handleSubscribe(intent.plan as 'prelude' | 'concerto' | 'symphony' | 'opus', intent.cycle as 'monthly' | 'annual');
+      });
+    } catch {
+      localStorage.removeItem('kuon_pending_subscribe');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const faqs = [
     {
@@ -484,11 +519,20 @@ const HomePage: React.FC = () => {
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
               ¥{yearly ? preludeYearly.toLocaleString() : preludeMonthly.toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '0.75rem' }}>
               {yearly
                 ? t5({ ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }, lang)
                 : t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' }, lang)}
             </div>
+            {!yearly && (
+              <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1.25rem', display: 'inline-block' }}>
+                {t5({
+                  ja: `🎁 初月 ¥${Math.round(preludeMonthly / 2).toLocaleString()} (50% OFF)`,
+                  en: `🎁 First month ¥${Math.round(preludeMonthly / 2).toLocaleString()} (50% OFF)`,
+                  es: `🎁 Primer mes ¥${Math.round(preludeMonthly / 2).toLocaleString()} (50% OFF)`,
+                }, lang)}
+              </div>
+            )}
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
@@ -524,11 +568,20 @@ const HomePage: React.FC = () => {
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
               ¥{yearly ? concertoYearly.toLocaleString() : concertoMonthly.toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '0.75rem' }}>
               {yearly
                 ? t5({ ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }, lang)
                 : t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' }, lang)}
             </div>
+            {!yearly && (
+              <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1.25rem', display: 'inline-block' }}>
+                {t5({
+                  ja: `🎁 初月 ¥${Math.round(concertoMonthly / 2).toLocaleString()} (50% OFF)`,
+                  en: `🎁 First month ¥${Math.round(concertoMonthly / 2).toLocaleString()} (50% OFF)`,
+                  es: `🎁 Primer mes ¥${Math.round(concertoMonthly / 2).toLocaleString()} (50% OFF)`,
+                }, lang)}
+              </div>
+            )}
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
@@ -566,11 +619,20 @@ const HomePage: React.FC = () => {
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
               ¥{yearly ? symphonyYearly.toLocaleString() : symphonyMonthly.toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '0.75rem' }}>
               {yearly
                 ? t5({ ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }, lang)
                 : t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' }, lang)}
             </div>
+            {!yearly && (
+              <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1.25rem', display: 'inline-block' }}>
+                {t5({
+                  ja: `🎁 初月 ¥${Math.round(symphonyMonthly / 2).toLocaleString()} (50% OFF)`,
+                  en: `🎁 First month ¥${Math.round(symphonyMonthly / 2).toLocaleString()} (50% OFF)`,
+                  es: `🎁 Primer mes ¥${Math.round(symphonyMonthly / 2).toLocaleString()} (50% OFF)`,
+                }, lang)}
+              </div>
+            )}
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
@@ -608,11 +670,20 @@ const HomePage: React.FC = () => {
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
               ¥{yearly ? opusYearly.toLocaleString() : opusMonthly.toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '0.75rem' }}>
               {yearly
                 ? t5({ ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }, lang)
                 : t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' }, lang)}
             </div>
+            {!yearly && (
+              <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1.25rem', display: 'inline-block' }}>
+                {t5({
+                  ja: `🎁 初月 ¥${Math.round(opusMonthly / 2).toLocaleString()} (50% OFF)`,
+                  en: `🎁 First month ¥${Math.round(opusMonthly / 2).toLocaleString()} (50% OFF)`,
+                  es: `🎁 Primer mes ¥${Math.round(opusMonthly / 2).toLocaleString()} (50% OFF)`,
+                }, lang)}
+              </div>
+            )}
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
