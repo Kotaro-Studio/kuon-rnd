@@ -83,11 +83,11 @@ const COMPARE: CompareTrack[] = [
     recorder:'Zoom F6', isHero:false },
   { id:'B', file:'hikaku/P-86S_DR05.mp3',
     revealName: { ja:'P-86S by 空音開発', en:'P-86S by Kuon R&D', es:'P-86S de Kuon R&D' },
-    revealPrice: { ja:'¥13,900（税込）', en:'$99 USD', es:'€92 EUR' },
+    revealPrice: { ja:'¥13,900（税込）', en:'¥13,900 (tax incl.)', es:'¥13,900 (imp. incl.)' },
     recorder:'Zoom DR-05', isHero:true },
   { id:'C', file:'hikaku/X-86S_F6 M.mp3',
     revealName: { ja:'X-86S by 空音開発', en:'X-86S by Kuon R&D', es:'X-86S de Kuon R&D' },
-    revealPrice: { ja:'¥39,600（税込）', en:'$279 USD', es:'€259 EUR' },
+    revealPrice: { ja:'¥39,600（税込）', en:'¥39,600 (tax incl.)', es:'¥39,600 (imp. incl.)' },
     recorder:'Zoom F6', isHero:false },
 ];
 
@@ -595,6 +595,7 @@ function PianoCompare() {
               </div>
               <p style={{ fontSize:'clamp(0.82rem,1.2vw,0.92rem)', color:'rgba(255,255,255,0.45)', fontFamily:'"Hiragino Mincho ProN","Yu Mincho",serif', lineHeight:'1.8' }}>
                 {t('Mic C（X-86S ¥39,600）が、数十万円のマイクに匹敵する音質を実現しています。','Mic C (X-86S ¥39,600) achieves sound quality on par with microphones costing hundreds of thousands of yen.','Mic C (X-86S ¥39,600) logra una calidad de sonido comparable a micrófonos de cientos de miles de yenes.')}
+
               </p>
               <button onClick={()=>setRevealed(false)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', cursor:'pointer', fontSize:'0.72rem', fontFamily:'"Helvetica Neue",Arial,sans-serif', marginTop:'1rem', textDecoration:'underline' }}>
                 {t('隠す','Hide','Ocultar')}
@@ -684,8 +685,9 @@ function SamplePlayer({ src, label, desc, mic, recorder }:{
     es: 'Comprar Ahora',
   } as Record<Lang,string>)[lang];
 
-  const priceP86S: (Partial<Record<Lang,string>> & { en: string }) = { ja:'¥13,900', en:'$99', ko:'$99', pt:'$99', es:'€92' };
-  const priceX86S: (Partial<Record<Lang,string>> & { en: string }) = { ja:'¥39,600', en:'$279', ko:'$279', pt:'$279', es:'€259' };
+  // 2026-04-25: 日本円のみ表示に統一 (Stripe Live の P-86S Price ¥13,900 と整合)
+  const priceP86S: (Partial<Record<Lang,string>> & { en: string }) = { ja:'¥13,900', en:'¥13,900', ko:'¥13,900', pt:'¥13,900', es:'¥13,900' };
+  const priceX86S: (Partial<Record<Lang,string>> & { en: string }) = { ja:'¥39,600', en:'¥39,600', ko:'¥39,600', pt:'¥39,600', es:'¥39,600' };
   const price   = mic === 'P-86S' ? (priceP86S[lang] ?? priceP86S.en) : (priceX86S[lang] ?? priceX86S.en);
   const product = mic === 'P-86S' ? 'p-86s' : 'x-86s';
 
@@ -949,7 +951,7 @@ export default function MicrophonePage() {
               {t('100万円の機材はどれ？↓','Which is the $10K mic? ↓','¿Cuál es el de $10K? ↓')}
             </a>
             <BuyButton product="p-86s" lang={lang} style={ctaPrimary()}>
-              {t('購入する — ¥13,900','Buy Now — $99','Comprar — €92')}
+              {t('購入する — ¥13,900','Buy Now — ¥13,900','Comprar — ¥13,900')}
             </BuyButton>
           </div>
         </div>
@@ -1165,10 +1167,10 @@ export default function MicrophonePage() {
               {/* Mini CTAs */}
               <div style={{ display:'flex', gap:'0.75rem', justifyContent:'center', flexWrap:'wrap', marginTop:'1.5rem' }}>
                 <BuyButton product="p-86s" lang={lang} style={{ ...ctaPrimary('sm'), fontSize:'0.8rem' }}>
-                  {t('P-86S を購入する — ¥13,900','Buy P-86S — $99','Comprar P-86S — €92')}
+                  {t('P-86S を購入する — ¥13,900','Buy P-86S — ¥13,900','Comprar P-86S — ¥13,900')}
                 </BuyButton>
                 <BuyButton product="x-86s" lang={lang} style={{ ...ctaOutline('sm'), fontSize:'0.8rem' }}>
-                  {t('X-86S を購入する — ¥39,600','Buy X-86S — $279','Comprar X-86S — €259')}
+                  {t('X-86S を購入する — ¥39,600','Buy X-86S — ¥39,600','Comprar X-86S — ¥39,600')}
                 </BuyButton>
               </div>
             </div>
@@ -1215,10 +1217,10 @@ export default function MicrophonePage() {
               {/* Mini CTAs */}
               <div style={{ display:'flex', gap:'0.75rem', justifyContent:'center', flexWrap:'wrap', marginTop:'1.5rem' }}>
                 <BuyButton product="p-86s" lang={lang} style={{ ...ctaPrimary('sm'), fontSize:'0.8rem' }}>
-                  {t('P-86S を購入する — ¥13,900','Buy P-86S — $99','Comprar P-86S — €92')}
+                  {t('P-86S を購入する — ¥13,900','Buy P-86S — ¥13,900','Comprar P-86S — ¥13,900')}
                 </BuyButton>
                 <BuyButton product="x-86s" lang={lang} style={{ ...ctaOutline('sm'), fontSize:'0.8rem' }}>
-                  {t('X-86S を購入する — ¥39,600','Buy X-86S — $279','Comprar X-86S — €259')}
+                  {t('X-86S を購入する — ¥39,600','Buy X-86S — ¥39,600','Comprar X-86S — ¥39,600')}
                 </BuyButton>
               </div>
             </div>

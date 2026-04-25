@@ -1673,11 +1673,11 @@ function MicBundleCTA({ lang }: { lang: Lang }) {
           color: '#78350f', lineHeight: 1.7, margin: 0,
         }}>
           {t5({
-            ja: '音大生だった朝比奈幸太郎が手はんだで作る、数十万円クラスの録音クオリティ。¥16,900。KUON NORMALIZE を含む PRO 特典付き。',
-            en: 'Handmade by Kotaro Asahina with his own solder — delivering the quality of $2,000+ microphones. ¥16,900, ships worldwide. PRO benefits including KUON NORMALIZE included.',
-            ko: '음대생이었던 아사히나 코타로가 손납땜으로 제작. 수십만 엔급 녹음 품질. ¥16,900.',
-            pt: 'Feito à mão por Kotaro Asahina — qualidade de microfones de US$ 2.000+. ¥16,900. Envio internacional.',
-            es: 'Hecho a mano por Kotaro Asahina — calidad de micrófonos de $2,000+. ¥16,900. Envío internacional.',
+            ja: '音大生だった朝比奈幸太郎が手はんだで作る、数十万円クラスの録音クオリティ。¥13,900。KUON NORMALIZE を含む PRO 特典付き。',
+            en: 'Handmade by Kotaro Asahina with his own solder — delivering the quality of $2,000+ microphones. ¥13,900, ships worldwide. PRO benefits including KUON NORMALIZE included.',
+            ko: '음대생이었던 아사히나 코타로가 손납땜으로 제작. 수십만 엔급 녹음 품질. ¥13,900.',
+            pt: 'Feito à mão por Kotaro Asahina — qualidade de microfones de US$ 2.000+. ¥13,900. Envio internacional.',
+            es: 'Hecho a mano por Kotaro Asahina — calidad de micrófonos de $2,000+. ¥13,900. Envío internacional.',
           }, lang)}
         </p>
       </div>

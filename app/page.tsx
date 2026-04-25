@@ -353,7 +353,7 @@ const HomePage: React.FC = () => {
             </div>
             <div style={{ padding: '2rem' }}>
               <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'P-86S ステレオマイクロフォン', en: 'P-86S Stereo Microphone', es: 'Micrófono Estéreo P-86S', ko: 'P-86S 스테레오 마이크로폰', pt: 'Microfone Estéreo P-86S', de: 'P-86S Stereo-Mikrofon' }, lang)}</h3>
-              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥16,900</div>
+              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥13,900</div>
               <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
                 <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'プラグインパワー対応', en: 'Plug-in power compatible', es: 'Compatible con alimentación plug-in', ko: '플러그인 전원 호환', pt: 'Compatível com alimentação plug-in', de: 'Plug-in-Power-kompatibel' }, lang)}</li>
                 <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '1本でABステレオ', en: 'Single-body AB stereo', es: 'Estéreo AB de un solo cuerpo', ko: '단일 바디 AB 스테레오', pt: 'Estéreo AB de corpo único', de: 'AB-Stereo aus einem Gehäuse' }, lang)}</li>
@@ -408,7 +408,7 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* 7. PRICING */}
-      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+      <section id="pricing" style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%', scrollMarginTop: '80px' }}>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
           {t5({ ja: 'はじめ方', en: 'Choose your plan', es: 'Elige tu plan', ko: '계획 선택', pt: 'Escolha seu plano', de: 'Wähle deinen Plan' }, lang)}
         </h2>
@@ -556,53 +556,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 7.5 CERTIFICATION */}
-      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'linear-gradient(135deg, #0b1220 0%, #1e293b 100%)', color: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%', borderRadius: 'clamp(0px, 2vw, 24px)' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ display: 'inline-block', padding: '0.5rem 1.25rem', border: `1px solid ${ACCENT}`, borderRadius: '999px', fontSize: '0.75rem', letterSpacing: '0.15em', color: ACCENT, marginBottom: '1.5rem' }}>
-            {t5({ ja: '— KUON CERTIFICATION —', en: '— KUON CERTIFICATION —', es: '— KUON CERTIFICATION —', ko: '— KUON CERTIFICATION —', pt: '— KUON CERTIFICATION —', de: '— KUON CERTIFICATION —' }, lang)}
-          </div>
-          <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, marginBottom: '1.25rem', color: 'white', letterSpacing: '0.02em', lineHeight: 1.3 }}>
-            {t5({ ja: '実力を、公式に。', en: 'Make your skill official.', es: 'Haz oficial tu talento.', ko: '실력을 공식적으로.', pt: 'Torne seu talento oficial.', de: 'Machen Sie Ihr Können offiziell.' }, lang)}
-          </h2>
-          <p style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)', lineHeight: 1.85, color: '#cbd5e1', marginBottom: '2.5rem', maxWidth: '680px', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all' }}>
-            {t5({
-              ja: '学歴も国籍も年齢も問わない、音楽家のための独立した国際認定制度。Bronze から Platinum まで、4段階の認定で、あなたの実力を世界に示します。',
-              en: 'An independent international certification open to all — no degree, no nationality, no age barrier. Four tiers from Bronze to Platinum to prove your skill to the world.',
-              es: 'Una certificación internacional independiente abierta a todos — sin título, sin nacionalidad, sin barrera de edad. Cuatro niveles, de Bronze a Platinum.',
-              ko: '학력·국적·연령을 묻지 않는 음악가를 위한 독립 국제 인증. Bronze부터 Platinum까지 4단계 인증으로 실력을 세계에 증명합니다.',
-              pt: 'Uma certificação internacional independente aberta a todos — sem diploma, sem nacionalidade, sem barreira de idade. Quatro níveis, de Bronze a Platinum.',
-              de: 'Eine unabhängige internationale Zertifizierung, offen für alle — ohne Abschluss, ohne Nationalität, ohne Altersgrenze. Vier Stufen von Bronze bis Platinum.',
-            }, lang)}
-          </p>
-          <div style={{ display: 'flex', gap: '2.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
-            {[
-              { tier: 'Bronze', color: '#b45309', fee: '¥9,800' },
-              { tier: 'Silver', color: '#94a3b8', fee: '¥14,800' },
-              { tier: 'Gold', color: '#d4a017', fee: '¥19,800' },
-              { tier: 'Platinum', color: '#e2e8f0', fee: '¥39,800' },
-            ].map((t) => (
-              <div key={t.tier} style={{ textAlign: 'center', minWidth: 90 }}>
-                <div style={{ fontFamily: serif, fontSize: '1.25rem', color: t.color, letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.tier}</div>
-                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t.fee}</div>
-              </div>
-            ))}
-          </div>
-          <Link href="/certification" style={{ display: 'inline-block', padding: '1rem 2.5rem', background: ACCENT, color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 500, letterSpacing: '0.05em', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(139,92,246,0.4)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-            {t5({ ja: '認定制度を見る →', en: 'Explore certification →', es: 'Ver certificación →', ko: '인증 제도 보기 →', pt: 'Ver certificação →', de: 'Zertifizierung ansehen →' }, lang)}
-          </Link>
-          <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '1.25rem', fontStyle: 'italic' }}>
-            {t5({
-              ja: 'ウェイトリスト登録で受験料25%割引',
-              en: 'Join the waitlist for 25% off your first exam',
-              es: 'Únete a la lista de espera para 25% de descuento',
-              ko: '웨이트리스트 등록으로 첫 시험 25% 할인',
-              pt: 'Entre na lista de espera para 25% de desconto',
-              de: '25 % Rabatt auf die erste Prüfung bei Warteliste-Anmeldung',
-            }, lang)}
-          </p>
-        </div>
-      </section>
+      {/* 7.5 CERTIFICATION — REMOVED 2026-04-25 (認定制度を採用しない決定 / CLAUDE.md §37.5) */}
 
       {/* 8. FAQ */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
@@ -641,7 +595,7 @@ const HomePage: React.FC = () => {
         <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '2rem', letterSpacing: '0.05em' }}>
           {t5({ ja: '音響エンジニア / マイク設計者 / 音楽プロデューサー', en: 'Audio Engineer / Microphone Designer / Music Producer', es: 'Ingeniero de Audio / Diseñador de Micrófonos / Productor Musical', ko: '오디오 엔지니어 / 마이크 설계자 / 음악 프로듀서', pt: 'Engenheiro de Áudio / Designer de Microfones / Produtor Musical', de: 'Tontechniker / Mikrofondesigner / Musikproduzent' }, lang)}
         </p>
-        <blockquote style={{ fontFamily: serif, fontSize: 'clamp(1rem, 2vw, 1.15rem)', lineHeight: 2.0, color: '#334155', maxWidth: '700px', margin: '0 auto 2rem', padding: '1.5rem 2rem', background: '#f8fafc', borderRadius: '12px', borderLeft: `4px solid ${ACCENT}`, textAlign: 'left', wordBreak: 'keep-all', fontStyle: 'normal' }}>
+        <blockquote style={{ fontFamily: serif, fontSize: 'clamp(1rem, 2vw, 1.15rem)', lineHeight: 2.0, color: '#334155', maxWidth: '700px', margin: '0 auto 2rem', padding: 'clamp(1rem, 3vw, 1.5rem) clamp(1.25rem, 4vw, 2rem)', background: '#f8fafc', borderRadius: '12px', borderLeft: `4px solid ${ACCENT}`, textAlign: 'left', overflowWrap: 'break-word', fontStyle: 'normal', boxSizing: 'border-box' }}>
           {t5({
             ja: '世界の音楽文化が発展し、音楽家がより創造性に集中できる世界を。エンジニアがより表現に専念できるように。音楽家同士が国境を越えて繋がり、世界のあらゆる場所で文化と表現、そして何より芸術が芽を出すような世界にしたい。——その想いで空音開発を立ち上げました。',
             en: 'I want a world where musical culture thrives, where musicians can focus purely on creativity, where engineers can dedicate themselves to expression, and where artists connect across borders — so that culture, expression, and above all, art can flourish everywhere. That is why I founded Kuon R&D.',

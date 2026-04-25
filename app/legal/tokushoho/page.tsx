@@ -40,7 +40,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: '販売価格',
-        value: 'P-86S: ¥16,900（税込）、X-86S: ¥39,600（税込）。Kuon メンバーシップは月額 ¥780〜¥5,980（税込）、年額プランあり。その他の価格は各商品ページをご参照ください。',
+        value: 'P-86S: ¥13,900（税込）、X-86S: ¥39,600（税込）。Kuon メンバーシップは月額 ¥780〜¥5,980（税込）、年額プランあり。その他の価格は各商品ページをご参照ください。',
       },
       {
         label: 'お支払い方法',
@@ -114,7 +114,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Sales Price',
-        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
+        value: 'P-86S: ¥13,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
       },
       {
         label: 'Payment Methods',
@@ -188,7 +188,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: '판매 가격',
-        value: 'P-86S: ¥16,900 (세금 포함), X-86S: ¥39,600 (세금 포함). Kuon 멤버십: 월 ¥780–¥5,980 (세금 포함), 연간 요금제 제공. 기타 가격은 각 상품 페이지를 참조하세요.',
+        value: 'P-86S: ¥13,900 (세금 포함), X-86S: ¥39,600 (세금 포함). Kuon 멤버십: 월 ¥780–¥5,980 (세금 포함), 연간 요금제 제공. 기타 가격은 각 상품 페이지를 참조하세요.',
       },
       {
         label: '결제 방법',
@@ -262,7 +262,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Sales Price',
-        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
+        value: 'P-86S: ¥13,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
       },
       {
         label: 'Payment Methods',
@@ -336,7 +336,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Sales Price',
-        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
+        value: 'P-86S: ¥13,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
       },
       {
         label: 'Payment Methods',

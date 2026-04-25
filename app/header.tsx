@@ -25,6 +25,7 @@ const MENU: MenuItem[] = [
   { href: '/soundmap',          label: { ja: '地球音マップ',     en: 'Sound Map',  ko: '지구의 소리', pt: 'Sons da Terra', es: 'Sonidos',  de: 'Klangkarte' } },
   { href: '/events-lp',         label: { ja: 'ライブ情報',       en: "Today's Live", ko: '공연 정보', pt: 'Ao Vivo',   es: 'En Vivo',    de: 'Live-Events' } },
   { href: '/#discover',         label: { ja: 'スカウト',         en: 'Discover',   ko: '디스커버',  pt: 'Descobrir',  es: 'Descubrir',  de: 'Entdecken'  } },
+  { href: '/#pricing',          label: { ja: 'プラン',           en: 'Plans',      ko: '플랜',      pt: 'Planos',     es: 'Planes',     de: 'Pläne'      } },
 ];
 
 const CONTACT: L3 = { ja: 'コンタクト', en: 'Contact', ko: '문의', pt: 'Contato', es: 'Contacto', de: 'Kontakt' };

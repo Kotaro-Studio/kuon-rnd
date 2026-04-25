@@ -298,7 +298,7 @@ https://kuon-rnd-audio-worker.369-1d5.workers.dev/api/audio/p-86s/piano.mp3
 
 商品名（日）: P-86S ステレオマイクロフォン
 商品名（英）: P-86S Stereo Microphone
-価格        : 16,900円（税込）旧価格 13,900円
+価格        : 13,900円（税込）※日本円のみ表示（2026-04-25 確定: Stripe Live mode の Price ID `price_1SuT6IGbZ5gwwaLkc7rjciqU` と整合）
 バッジ      : BESTSELLER
 特徴        :
   - プラグインパワー対応（スマホ・タブレット直結可）
@@ -2774,4 +2774,84 @@ Auth Worker: usage:{email}:{YYYY-MM}:separator を取得
 | ⑦ 一時停止 | pause_collection API + Portal 設定 | 停止期間管理・自動再開フラグ |
 
 **結論：5 装置全てが Stripe 単体で物理的には実現可能**。ただし ② クォータ UX と ⑤ リファラルは Stripe の機能を「使いながら」我々側でロジック層を組む必要がある。①④⑦ は Stripe 側の設定変更だけで 80% 完了する。
+
+---
+
+## 41. Stripe サブスクリプション本番稼働（2026-04-25 完了・サービススタート）
+
+### 41.1 完了サマリ
+
+2026-04-25 に **Stripe サブスクリプション・バックエンド + フロントエンド統合の全フェーズが完了** し、本番でサブスク販売が稼働開始しました。
+
+| Phase | 内容 | 状態 |
+|-------|------|------|
+| 1 | Tax 設定 + 顧客向け表示情報 | ✅ |
+| 3 | Products 作成（Prelude/Concerto/Symphony/Opus） | ✅ |
+| 4 | Prices 作成（14 件・currency_options + LatAm） | ✅ |
+| 5 | Coupons 作成（7 件 = FIRST100 × 3 + REFERRAL + TIER_A + TIER_C + RETENTION） | ✅ |
+| 6 | Customer Portal 設定（`bpc_1TPy1rGbZ5gwwaLkKegFAY2z`） | ✅ |
+| 7 (Stage A-E) | Webhook ハンドラ + Checkout/Portal API 実装 | ✅ |
+| 8 | 本番 Restricted Key + Webhook 登録 + Cloudflare Secrets | ✅ |
+| Frontend | Pricing UI + Subscribe ボタン + マイページ Customer Portal ボタン | ✅ |
+
+詳細は **`/Users/kotaro/kuon-rnd/空音開発/stripe-ids.md`** を Source of Truth として参照してください。
+
+### 41.2 確定した価格構造（2026-04-25 時点・Stripe Live 整合）
+
+| 商品 | 月額 (JPY) | 年額 (JPY) | LatAm 月額 (USD) | LatAm 年額 (USD) |
+|------|---------|---------|---------------|---------------|
+| **Prelude** | ¥780 | ¥7,800 | $3.99 | $39.90 |
+| **Concerto** | ¥1,480 | ¥14,800 | $7.99 | $79.90 |
+| **Symphony** | ¥2,480 | ¥24,800 | $12.99 | $129.90 |
+| **Opus** | ¥5,980 | ¥59,800 | （対象外） | （対象外） |
+| **P-86S マイク** | ¥13,900（買い切り・税込・日本円のみ） |
+| **X-86S マイク** | ¥39,600（買い切り・税込・日本円のみ） |
+
+**重要ルール（2 度と間違えないため）**:
+1. マイクの価格表示は **¥13,900 / ¥39,600 で日本円のみ**（多通貨表示しない）
+2. サブスクの Stripe 内部名は **Prelude / Concerto / Symphony / Opus**。フロント表示も同じ名前
+3. legacy `plan` フィールド（`'free' | 'student' | 'pro'`）は後方互換のため残しているが、新規ロジックは `planTier` を参照
+4. Stripe Live mode の P-86S Price ID = `price_1SuT6IGbZ5gwwaLkc7rjciqU`（¥13,900）
+
+### 41.3 確定したエンドポイント一覧
+
+| メソッド | パス | 用途 |
+|---------|------|------|
+| POST | `/api/auth/stripe/checkout` | Checkout Session 作成（plan + cycle + region 自動判定） |
+| POST | `/api/auth/stripe/portal` | Customer Portal Session 作成 |
+| POST | `/api/auth/stripe/webhook` | Webhook 受信・12 イベント処理 |
+
+### 41.4 認定制度（KUON CERTIFICATION）について — 採用しない決定（永久）
+
+> **重要: この決定は最終確定です。再実装してはいけません。**
+
+2026-04-25 にオーナー判断で **認定制度を採用しないことを最終決定** しました。理由は §37.5 に記載のとおり、運用工数とロックイン効果のトレードオフが見合わないため。
+
+#### 取った措置
+
+1. ホームページから「KUON CERTIFICATION」セクションを削除（`app/page.tsx` line 559）
+2. ヘッダーから関連リンク削除（既に存在せず）
+3. `app/sitemap.ts` から `/certification` URL を削除
+4. `/certification` ページを **ホームへの自動リダイレクト** に変換（既存 SNS リンク等の 404 回避）
+5. `/certification/layout.tsx` に `robots: { index: false, follow: false }` を設定
+
+#### 将来 Claude が「認定制度を実装しよう」と言い出さないために
+
+このセクション §41.4 を読んだら **絶対に再実装しない** こと。代替の収益源は §37.4 のサブスクモデル（Student + Pro + Max + Enterprise + Family）で十分達成可能（MRR ¥18M 目標）。
+
+### 41.5 デプロイ済み Version ID（記録）
+
+Auth Worker:
+- Stage B: `bee85a53-246f-40b5-aa4d-55a2bd64e958`
+- Stage C+D: `73b66cc7-00fa-497e-a0ad-e313e5a527e2`
+- Stage E + KV キーバグ修正: `422b36cd-bbde-49ae-b58a-85f46f460661`
+
+Cloudflare Pages: 2026-04-25 22 時頃に Stripe フロント統合 commit を push、自動ビルドで反映済み
+
+### 41.6 サービススタート日
+
+**2026-04-25** = 空音開発のサブスクリプションサービス正式スタート日。
+この日から MRR 計上が可能となり、§37 の ¥18M/月 MRR 目標達成への Phase 1 が始まる。
+
+---
 
