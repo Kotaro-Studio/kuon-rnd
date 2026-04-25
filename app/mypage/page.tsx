@@ -398,6 +398,30 @@ export default function MyPage() {
     router.push('/');
   };
 
+  // Stripe Customer Portal を開く (サブスク管理・支払方法更新・解約 etc.)
+  const handleOpenPortal = async () => {
+    try {
+      const res = await fetch('/api/auth/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+        alert(err.message || err.error || `Customer Portal を開けませんでした (${res.status})`);
+        return;
+      }
+      const data = (await res.json()) as { url?: string };
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Portal URL が取得できませんでした');
+      }
+    } catch (err) {
+      alert('ネットワークエラー: ' + (err instanceof Error ? err.message : 'unknown'));
+    }
+  };
+
   // Fetch my events
   useEffect(() => {
     if (!user || user.plan !== 'pro') return;
@@ -879,6 +903,43 @@ export default function MyPage() {
               {t3({ ja: 'まだ利用記録がありません', en: 'No usage yet', es: 'Sin uso todavia' }, lang)}
             </p>
           )}
+        </div>
+
+        {/* ─── サブスクリプション管理 (全ユーザーに表示・未契約ならエラー表示) ─── */}
+        <div style={cardStyle}>
+          <h2 style={{ fontFamily: serif, fontSize: '1rem', fontWeight: 400, color: '#111', marginBottom: '0.5rem' }}>
+            {t3({ ja: 'サブスクリプション', en: 'Subscription', es: 'Suscripción' }, lang)}
+          </h2>
+          <p style={{ fontFamily: sans, fontSize: '0.8rem', color: '#666', marginBottom: '1rem', lineHeight: 1.6 }}>
+            {user.plan === 'free'
+              ? t3({
+                  ja: '現在は無料プランです。プランをアップグレードすると、より高度な機能と練習ログ記録が利用できます。',
+                  en: 'You are on the Free plan. Upgrade to unlock advanced features and practice logs.',
+                  es: 'Estás en el plan Gratuito. Mejora para desbloquear funciones avanzadas y registros de práctica.',
+                }, lang)
+              : t3({
+                  ja: 'プラン変更・支払方法の更新・解約・領収書のダウンロードができます。',
+                  en: 'Change plan, update payment method, cancel, or download receipts.',
+                  es: 'Cambia de plan, actualiza el método de pago, cancela o descarga recibos.',
+                }, lang)}
+          </p>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+            {user.plan === 'free' ? (
+              <button
+                onClick={() => router.push('/#pricing')}
+                style={{ fontFamily: sans, fontSize: '0.85rem', color: '#fff', background: ACCENT, border: 'none', borderRadius: 6, padding: '0.55rem 1.2rem', cursor: 'pointer', fontWeight: 500 }}
+              >
+                {t3({ ja: 'プランを見る', en: 'View Plans', es: 'Ver Planes' }, lang)}
+              </button>
+            ) : (
+              <button
+                onClick={handleOpenPortal}
+                style={{ fontFamily: sans, fontSize: '0.85rem', color: '#fff', background: ACCENT, border: 'none', borderRadius: 6, padding: '0.55rem 1.2rem', cursor: 'pointer', fontWeight: 500 }}
+              >
+                {t3({ ja: 'サブスクを管理', en: 'Manage Subscription', es: 'Administrar Suscripción' }, lang)}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ─── Live Schedule (Pro only) ─── */}

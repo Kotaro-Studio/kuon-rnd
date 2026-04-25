@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-04-25T04:13:08.460Z",
+  "mode": "live",
+  "coupons": [
+    {
+      "id": "FIRST100_PRELUDE",
+      "status": "created",
+      "stripeId": "FIRST100_PRELUDE"
+    },
+    {
+      "id": "FIRST100_CONCERTO",
+      "status": "created",
+      "stripeId": "FIRST100_CONCERTO"
+    },
+    {
+      "id": "FIRST100_SYMPHONY",
+      "status": "created",
+      "stripeId": "FIRST100_SYMPHONY"
+    },
+    {
+      "id": "REFERRAL_1MONTH_FREE",
+      "status": "exists"
+    },
+    {
+      "id": "TIER_A_PARTNER_50",
+      "status": "exists"
+    },
+    {
+      "id": "TIER_C_GRADUATE_25",
+      "status": "exists"
+    },
+    {
+      "id": "RETENTION_50_3MONTHS",
+      "status": "exists"
+    }
+  ]
+}

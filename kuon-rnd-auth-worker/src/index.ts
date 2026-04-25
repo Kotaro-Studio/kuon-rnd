@@ -1,5 +1,18 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import Stripe from 'stripe';
+import {
+  PRODUCT_IDS,
+  PRICE_IDS,
+  COUPON_IDS,
+  PORTAL_CONFIG_ID,
+  planFromProductId,
+  isLatamCountry,
+  type PlanTier,
+  type SubscriptionStatus,
+  type BillingCycle,
+  type PricingRegion,
+} from './stripe-prices';
 
 // ─────────────────────────────────────────────
 // Types
@@ -11,6 +24,9 @@ interface Env {
   RESEND_API_KEY: string;
   GOOGLE_CLIENT_ID: string;
   ENVIRONMENT: string;
+  // ── Stripe (Phase 7 — added 2026-04-25) ──
+  STRIPE_SECRET_KEY: string;       // rk_live_... (Restricted Key with subscription scopes)
+  STRIPE_WEBHOOK_SECRET: string;   // whsec_... (Webhook endpoint signing secret)
 }
 
 interface UserData {
@@ -45,6 +61,17 @@ interface UserData {
   availableForWork: boolean;
   experienceLevel: string;   // "student" | "amateur" | "semi-pro" | "professional"
   spokenLanguages: string;   // comma-separated: "ja,en,es"
+  // ── Stripe subscription (Phase 7 — added 2026-04-25) ──
+  // 旧 plan フィールドは backward compat のため残す。新規ロジックは planTier を参照する。
+  planTier: PlanTier;                       // 'free' | 'prelude' | 'concerto' | 'symphony' | 'opus'
+  stripeSubscriptionId: string;             // sub_... or '' if no active sub
+  subscriptionStatus: SubscriptionStatus;   // 'none' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'unpaid' | 'paused'
+  subscriptionPriceId: string;              // price_... or ''
+  billingCycle: BillingCycle | '';          // 'monthly' | 'annual' | ''
+  pricingRegion: PricingRegion | '';        // 'global' | 'latam' | ''
+  currentPeriodStart: number;               // unix timestamp (seconds)
+  currentPeriodEnd: number;                 // unix timestamp (seconds)
+  cancelAtPeriodEnd: boolean;               // true if user requested cancellation at period end
 }
 
 interface PageviewData {
@@ -184,6 +211,306 @@ const APP_QUOTAS: Record<string, Record<'free' | 'student' | 'pro', number>> = {
 
 function quotaFor(appName: string, plan: 'free' | 'student' | 'pro'): number {
   return APP_QUOTAS[appName]?.[plan] ?? 0;
+}
+
+// ─────────────────────────────────────────────
+// Stripe helpers (Phase 7 — added 2026-04-25)
+// ─────────────────────────────────────────────
+
+/**
+ * Stripe SDK インスタンスを生成 (Cloudflare Workers 互換)。
+ * apiVersion は Phase 4/5 スクリプトと一致させる。
+ */
+function getStripe(env: Env): Stripe {
+  return new Stripe(env.STRIPE_SECRET_KEY, {
+    apiVersion: '2026-04-22.dahlia',
+    httpClient: Stripe.createFetchHttpClient(),
+  });
+}
+
+/**
+ * KV から取得した user データに Stripe フィールドが無い場合、デフォルト値で補完する。
+ * Lazy migration 方式: 既存ユーザーは次回書き込み時に自動的に新フィールドが追加される。
+ */
+function ensureStripeFields(raw: unknown): UserData {
+  const partial = raw as Partial<UserData>;
+  return {
+    ...(partial as UserData),
+    planTier:             partial.planTier             ?? 'free',
+    stripeSubscriptionId: partial.stripeSubscriptionId ?? '',
+    subscriptionStatus:   partial.subscriptionStatus   ?? 'none',
+    subscriptionPriceId:  partial.subscriptionPriceId  ?? '',
+    billingCycle:         partial.billingCycle         ?? '',
+    pricingRegion:        partial.pricingRegion        ?? '',
+    currentPeriodStart:   partial.currentPeriodStart   ?? 0,
+    currentPeriodEnd:     partial.currentPeriodEnd     ?? 0,
+    cancelAtPeriodEnd:    partial.cancelAtPeriodEnd    ?? false,
+  };
+}
+
+/**
+ * Stripe Customer ID から user (email + UserData) を逆引きする。
+ * Webhook イベントは多くの場合 customer ID しか含まないため、この逆引きが必須。
+ * KV インデックス: SESSIONS namespace の `stripe-customer:{customerId}` → email
+ */
+async function getUserByStripeCustomerId(
+  env: Env,
+  customerId: string,
+): Promise<{ email: string; user: UserData } | null> {
+  const email = await env.SESSIONS.get(`stripe-customer:${customerId}`);
+  if (!email) return null;
+  // KV USERS のキーは `user:${email}` 形式 (既存コード規約)
+  const raw = await env.USERS.get(`user:${email}`);
+  if (!raw) return null;
+  const user = ensureStripeFields(JSON.parse(raw));
+  return { email, user };
+}
+
+/**
+ * Stripe Customer ID と email を紐づける逆引きインデックスを KV に保存する。
+ * checkout.session.completed イベント等で初回のみ呼ぶ。
+ */
+async function indexStripeCustomer(env: Env, customerId: string, email: string): Promise<void> {
+  await env.SESSIONS.put(`stripe-customer:${customerId}`, email);
+}
+
+/**
+ * 既存の UserData レコードに部分更新を適用して KV に保存する。
+ * Stripe Webhook ハンドラから plan/status などを更新する際に使用。
+ */
+async function updateUserStripe(
+  env: Env,
+  email: string,
+  updates: Partial<UserData>,
+): Promise<UserData | null> {
+  // KV USERS のキーは `user:${email}` 形式 (既存コード規約)
+  const userKey = `user:${email}`;
+  const raw = await env.USERS.get(userKey);
+  if (!raw) return null;
+  const current = ensureStripeFields(JSON.parse(raw));
+  const merged: UserData = { ...current, ...updates };
+  await env.USERS.put(userKey, JSON.stringify(merged));
+  return merged;
+}
+
+/**
+ * Price ID から地域 (Global / LatAm) を逆引きする。
+ * stripe-prices.ts の PRICE_IDS マップに対して全件検索。
+ * 見つからない場合は '' (未確定) を返す。
+ */
+function inferRegionFromPriceId(priceId: string): PricingRegion | '' {
+  for (const planKey of Object.keys(PRICE_IDS) as Array<keyof typeof PRICE_IDS>) {
+    const prices = PRICE_IDS[planKey];
+    for (const [key, value] of Object.entries(prices)) {
+      if (value === priceId) {
+        return key.endsWith('_latam') ? 'latam' : 'global';
+      }
+    }
+  }
+  return '';
+}
+
+/**
+ * 新 PlanTier ('prelude' 等) を旧 plan フィールド ('free' | 'student' | 'pro') にマッピング。
+ * legacy quotaFor() / JWT plan / admin/plan エンドポイントとの後方互換のため。
+ */
+function legacyPlanFromTier(tier: PlanTier): 'free' | 'student' | 'pro' {
+  switch (tier) {
+    case 'prelude':  return 'free';      // ¥780 entry-level: free quota を維持
+    case 'concerto': return 'student';
+    case 'symphony': return 'pro';
+    case 'opus':     return 'pro';
+    case 'free':
+    default:         return 'free';
+  }
+}
+
+/**
+ * Stripe オブジェクトの customer フィールド (string | object) から ID 文字列を取り出す。
+ */
+function extractCustomerId(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null): string {
+  if (!customer) return '';
+  return typeof customer === 'string' ? customer : customer.id;
+}
+
+// ─────────────────────────────────────────────
+// Stripe Webhook event handlers (Phase 7 — Stage D)
+//
+// すべて冪等性確保 (同じイベントが二度届いても結果が同じ) + 失敗時 console.error → 200 で握りつぶす。
+// これは Stripe webhook のリトライポリシー (24時間で 8 回再送) を抑止するため。
+// 重要なエラーは Cloudflare ログから検知する。
+// ─────────────────────────────────────────────
+
+/**
+ * Checkout 完了時: Stripe Customer ID と Kuon ユーザー (email) を紐付ける。
+ * 後続の customer.subscription.created で planTier 等が確定する。
+ */
+async function handleCheckoutCompleted(env: Env, event: Stripe.Event): Promise<void> {
+  const session = event.data.object as Stripe.Checkout.Session;
+  const stripeCustomerId = extractCustomerId(session.customer);
+
+  // ユーザー email の特定: metadata 優先 → customer_email → customer_details.email
+  const userEmail =
+    session.metadata?.userEmail ||
+    session.customer_email ||
+    session.customer_details?.email ||
+    '';
+
+  if (!userEmail) {
+    console.error('[webhook:checkout.completed] no email in session', session.id);
+    return;
+  }
+  if (!stripeCustomerId) {
+    console.error('[webhook:checkout.completed] no customer in session', session.id);
+    return;
+  }
+
+  // 逆引きインデックスを保存 (今後の Webhook で customer ID → email を引けるように)
+  await indexStripeCustomer(env, stripeCustomerId, userEmail);
+
+  // ユーザーレコードに stripeCustomerId を設定 (planTier は subscription.created で確定)
+  await updateUserStripe(env, userEmail, {
+    stripeCustomerId,
+  });
+
+  console.log('[webhook:checkout.completed]', userEmail, '→', stripeCustomerId);
+}
+
+/**
+ * subscription.created / updated / paused / resumed の共通処理。
+ * Stripe からは sub.status が現在の正しい値で送られてくるため、
+ * paused/resumed も同じハンドラで処理可能。
+ */
+async function handleSubscriptionEvent(env: Env, event: Stripe.Event): Promise<void> {
+  const sub = event.data.object as Stripe.Subscription;
+  const stripeCustomerId = extractCustomerId(sub.customer);
+
+  const lookup = await getUserByStripeCustomerId(env, stripeCustomerId);
+  if (!lookup) {
+    console.error('[webhook:subscription]', event.type, '— no user for customer', stripeCustomerId);
+    return;
+  }
+
+  const item = sub.items.data[0];
+  if (!item) {
+    console.error('[webhook:subscription]', event.type, '— no items', sub.id);
+    return;
+  }
+
+  const productId =
+    typeof item.price.product === 'string' ? item.price.product : item.price.product.id;
+  const planTier = planFromProductId(productId);
+  const cycle: BillingCycle = item.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
+  const region = inferRegionFromPriceId(item.price.id);
+
+  // current_period_start/end は Stripe API でトップレベルにある場合とアイテム側にある場合がある
+  const subAny = sub as unknown as Record<string, unknown>;
+  const itemAny = item as unknown as Record<string, unknown>;
+  const periodStart = (subAny.current_period_start as number | undefined)
+    ?? (itemAny.current_period_start as number | undefined)
+    ?? 0;
+  const periodEnd = (subAny.current_period_end as number | undefined)
+    ?? (itemAny.current_period_end as number | undefined)
+    ?? 0;
+
+  await updateUserStripe(env, lookup.email, {
+    planTier,
+    stripeSubscriptionId: sub.id,
+    subscriptionStatus: sub.status as SubscriptionStatus,
+    subscriptionPriceId: item.price.id,
+    billingCycle: cycle,
+    pricingRegion: region,
+    currentPeriodStart: periodStart,
+    currentPeriodEnd: periodEnd,
+    cancelAtPeriodEnd: sub.cancel_at_period_end,
+    plan: legacyPlanFromTier(planTier),
+  });
+
+  console.log(
+    '[webhook:subscription]',
+    event.type,
+    lookup.email,
+    'plan=', planTier,
+    'cycle=', cycle,
+    'region=', region,
+    'status=', sub.status,
+    'cancelAtEnd=', sub.cancel_at_period_end,
+  );
+}
+
+/**
+ * subscription.deleted: 解約完了 → planTier='free' に戻す。
+ */
+async function handleSubscriptionDeleted(env: Env, event: Stripe.Event): Promise<void> {
+  const sub = event.data.object as Stripe.Subscription;
+  const stripeCustomerId = extractCustomerId(sub.customer);
+
+  const lookup = await getUserByStripeCustomerId(env, stripeCustomerId);
+  if (!lookup) {
+    console.error('[webhook:subscription.deleted] no user for customer', stripeCustomerId);
+    return;
+  }
+
+  await updateUserStripe(env, lookup.email, {
+    planTier: 'free',
+    stripeSubscriptionId: '',
+    subscriptionStatus: 'canceled',
+    subscriptionPriceId: '',
+    billingCycle: '',
+    pricingRegion: '',
+    cancelAtPeriodEnd: false,
+    plan: 'free',
+  });
+
+  console.log('[webhook:subscription.deleted]', lookup.email, 'reverted to free');
+}
+
+/**
+ * invoice.paid: 支払い成功記録。
+ * 現状は log のみ。LTV トラッキングは後日実装。
+ */
+async function handleInvoicePaid(env: Env, event: Stripe.Event): Promise<void> {
+  const invoice = event.data.object as Stripe.Invoice;
+  const stripeCustomerId = extractCustomerId(invoice.customer ?? null);
+  console.log(
+    '[webhook:invoice.paid]',
+    stripeCustomerId,
+    'amount=', invoice.amount_paid,
+    'currency=', invoice.currency,
+  );
+}
+
+/**
+ * invoice.payment_failed: 支払い失敗 → ログ記録。
+ * 将来は dunning email 送信や status='past_due' フラグを付与。
+ */
+async function handleInvoicePaymentFailed(env: Env, event: Stripe.Event): Promise<void> {
+  const invoice = event.data.object as Stripe.Invoice;
+  const stripeCustomerId = extractCustomerId(invoice.customer ?? null);
+  console.error(
+    '[webhook:invoice.payment_failed]',
+    stripeCustomerId,
+    'amount_due=', invoice.amount_due,
+    'currency=', invoice.currency,
+  );
+}
+
+/**
+ * subscription_schedule.* の 4 種を一括処理。
+ * Phase 6 で「請求期間の終了時まで待ってから更新する」を選択したことにより、
+ * ダウングレード時に Stripe が Schedule を生成する。
+ * 実際のプラン変更は customer.subscription.updated で処理されるため、ここは log のみ。
+ */
+async function handleSubscriptionSchedule(env: Env, event: Stripe.Event): Promise<void> {
+  const schedule = event.data.object as Stripe.SubscriptionSchedule;
+  const stripeCustomerId = extractCustomerId(schedule.customer);
+  console.log(
+    '[webhook:schedule]',
+    event.type,
+    'customer=', stripeCustomerId,
+    'schedule_id=', schedule.id,
+    'status=', schedule.status,
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -331,6 +658,16 @@ app.post('/api/auth/verify', async (c) => {
       availableForWork: false,
       experienceLevel: '',
       spokenLanguages: '',
+      // Stripe subscription defaults (Phase 7)
+      planTier: 'free',
+      stripeSubscriptionId: '',
+      subscriptionStatus: 'none',
+      subscriptionPriceId: '',
+      billingCycle: '',
+      pricingRegion: '',
+      currentPeriodStart: 0,
+      currentPeriodEnd: 0,
+      cancelAtPeriodEnd: false,
     };
   }
 
@@ -431,6 +768,16 @@ app.post('/api/auth/google', async (c) => {
       availableForWork: false,
       experienceLevel: '',
       spokenLanguages: '',
+      // Stripe subscription defaults (Phase 7)
+      planTier: 'free',
+      stripeSubscriptionId: '',
+      subscriptionStatus: 'none',
+      subscriptionPriceId: '',
+      billingCycle: '',
+      pricingRegion: '',
+      currentPeriodStart: 0,
+      currentPeriodEnd: 0,
+      cancelAtPeriodEnd: false,
     };
   }
 
@@ -543,7 +890,7 @@ app.put('/api/auth/profile', async (c) => {
     'experienceLevel', 'spokenLanguages',
   ];
   for (const f of strFields) {
-    if (updates[f] !== undefined) (user as Record<string, unknown>)[f] = updates[f];
+    if (updates[f] !== undefined) (user as unknown as Record<string, unknown>)[f] = updates[f];
   }
   if (updates.showBirthDate !== undefined) user.showBirthDate = updates.showBirthDate;
   if (updates.availableForWork !== undefined) user.availableForWork = updates.availableForWork;
@@ -1464,7 +1811,7 @@ app.put('/api/auth/events/:id', async (c) => {
   ];
   for (const field of updatableFields) {
     if (updates[field] !== undefined) {
-      (event as Record<string, unknown>)[field] = updates[field];
+      (event as unknown as Record<string, unknown>)[field] = updates[field];
     }
   }
   event.updatedAt = new Date().toISOString();
@@ -1606,6 +1953,295 @@ app.get('/api/auth/venues/search', async (c) => {
   venues.sort((a, b) => b.usageCount - a.usageCount);
 
   return c.json({ venues: venues.slice(0, 20) });
+});
+
+// ─────────────────────────────────────────────
+// Stripe Webhook (Phase 7 — Stage C scaffolding)
+//
+// 受信イベントを署名検証 → ディスパッチする雛形。
+// 各 case 内のハンドラ本体は Stage D で実装する。
+// 現状は受信ログ出力のみで KV への書き込みは行わない。
+//
+// Stripe Dashboard で本エンドポイントを登録する手順:
+//   1. https://dashboard.stripe.com → 開発者 → Webhook
+//   2. + エンドポイントを追加
+//   3. URL: https://kuon-rnd-auth-worker.369-1d5.workers.dev/api/auth/stripe/webhook
+//   4. イベント選択: 下記 case で扱う 13 種すべて
+//   5. 発行された whsec_... を `wrangler secret put STRIPE_WEBHOOK_SECRET` で登録
+// ─────────────────────────────────────────────
+app.post('/api/auth/stripe/webhook', async (c) => {
+  const sig = c.req.header('stripe-signature');
+  if (!sig) return c.text('Missing stripe-signature header', 400);
+
+  const rawBody = await c.req.text();
+  const stripe = getStripe(c.env);
+
+  let event: Stripe.Event;
+  try {
+    // Cloudflare Workers requires async version (uses Web Crypto API)
+    event = await stripe.webhooks.constructEventAsync(
+      rawBody,
+      sig,
+      c.env.STRIPE_WEBHOOK_SECRET,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown';
+    console.error('[stripe-webhook] signature verify failed:', message);
+    return c.text(`Webhook Error: ${message}`, 400);
+  }
+
+  console.log('[stripe-webhook] received:', event.type, event.id);
+
+  try {
+    switch (event.type) {
+      // ── Checkout 完了: 顧客と Stripe Customer ID を紐付け ──
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(c.env, event);
+        break;
+
+      // ── サブスク ライフサイクル (created/updated/paused/resumed は同一ハンドラで処理) ──
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.paused':
+      case 'customer.subscription.resumed':
+        await handleSubscriptionEvent(c.env, event);
+        break;
+      case 'customer.subscription.deleted':
+        await handleSubscriptionDeleted(c.env, event);
+        break;
+
+      // ── 請求書ライフサイクル ──
+      case 'invoice.paid':
+        await handleInvoicePaid(c.env, event);
+        break;
+      case 'invoice.payment_failed':
+        await handleInvoicePaymentFailed(c.env, event);
+        break;
+
+      // ── Subscription Schedule (Phase 6 ダウングレード対応) ──
+      case 'subscription_schedule.created':
+      case 'subscription_schedule.updated':
+      case 'subscription_schedule.released':
+      case 'subscription_schedule.canceled':
+        await handleSubscriptionSchedule(c.env, event);
+        break;
+
+      default:
+        console.log('[stripe-webhook] unhandled event type:', event.type);
+    }
+  } catch (err) {
+    // ハンドラ内で投げられた例外はここでキャッチし、200 で握りつぶす。
+    // Stripe にリトライさせると同じ失敗を繰り返すため、ログに残して握り潰す方が安全。
+    const message = err instanceof Error ? err.message : 'unknown';
+    console.error('[stripe-webhook] handler error:', event.type, message);
+  }
+
+  // 200 を返さないと Stripe がリトライし続けるため、内部処理失敗でも 200 を返す。
+  // 失敗の検知は console.error で Cloudflare ログから行う。
+  return c.json({ received: true });
+});
+
+// ─────────────────────────────────────────────
+// Stripe Checkout / Portal セッション作成 API (Phase 7 — Stage E)
+//
+// フロントエンド (kuon-rnd.com) から呼ばれる能動的なエンドポイント。
+// Webhook (受動的) とは逆の、購入フロー開始 / マイページから Portal 起動の側。
+// ─────────────────────────────────────────────
+
+/**
+ * POST /api/auth/stripe/checkout
+ *
+ * リクエスト body:
+ *   { plan: 'prelude'|'concerto'|'symphony'|'opus', cycle: 'monthly'|'annual' }
+ *
+ * 機能:
+ *   1. JWT で認証
+ *   2. プラン + cycle を検証
+ *   3. CF-IPCountry から地域判定 (LatAm or Global)
+ *   4. 該当 Price ID を選択 (LatAm 顧客なら _latam を、それ以外は _global)
+ *   5. ユーザーの stripeCustomerId が無ければ Stripe Customer を作成
+ *   6. monthly + Opus 以外なら FIRST100 Coupon を attach
+ *   7. Checkout Session を作成 (metadata.userEmail を付与: Webhook で email 特定するため)
+ *   8. URL を返す
+ */
+app.post('/api/auth/stripe/checkout', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const email = payload.email;
+  const userKey = `user:${email}`;
+  const raw = await c.env.USERS.get(userKey);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+
+  const user = ensureStripeFields(JSON.parse(raw));
+
+  // 既存サブスクをチェック (アクティブなら Customer Portal へ誘導)
+  if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
+    return c.json({
+      error: 'Already subscribed',
+      message: 'プラン変更はマイページの Customer Portal から行ってください',
+    }, 409);
+  }
+
+  // リクエスト body 検証
+  const body = await c.req.json<{ plan?: string; cycle?: string }>().catch(() => ({} as { plan?: string; cycle?: string }));
+  const plan = body.plan;
+  const cycle = body.cycle;
+
+  if (!plan || !['prelude', 'concerto', 'symphony', 'opus'].includes(plan)) {
+    return c.json({ error: 'Invalid plan' }, 400);
+  }
+  if (!cycle || !['monthly', 'annual'].includes(cycle)) {
+    return c.json({ error: 'Invalid cycle' }, 400);
+  }
+  const planTier = plan as Exclude<PlanTier, 'free'>;
+  const billingCycle = cycle as BillingCycle;
+
+  // 地域判定: CF-IPCountry が MX/CL/CO/PE/UY なら LatAm、それ以外は Global
+  const cfCountry = c.req.header('X-CF-Country') || '';
+  const region: PricingRegion = isLatamCountry(cfCountry) ? 'latam' : 'global';
+
+  // Price ID を取得 (Opus は LatAm 対象外なので getPriceId 内で global に fallback)
+  const priceMap = PRICE_IDS[planTier];
+  const priceKey = `${billingCycle}_${region}` as keyof typeof priceMap;
+  let priceId: string | undefined = (priceMap as Record<string, string>)[priceKey];
+  // Opus + latam の場合は global にフォールバック
+  if (!priceId && planTier === 'opus' && region === 'latam') {
+    priceId = priceMap[`${billingCycle}_global` as 'monthly_global' | 'annual_global'];
+  }
+  if (!priceId) {
+    return c.json({ error: 'Price not found', plan, cycle, region }, 500);
+  }
+
+  const stripe = getStripe(c.env);
+
+  // Stripe Customer を取得 or 新規作成
+  let stripeCustomerId = user.stripeCustomerId;
+  if (!stripeCustomerId) {
+    const customer = await stripe.customers.create({
+      email,
+      name: user.name || undefined,
+      metadata: {
+        userEmail: email,
+        kuonUserId: email,
+      },
+    });
+    stripeCustomerId = customer.id;
+    // 即座に逆引きインデックスを保存 (Webhook より早く来る場合に備える)
+    await indexStripeCustomer(c.env, stripeCustomerId, email);
+    await updateUserStripe(c.env, email, { stripeCustomerId });
+  }
+
+  // FIRST100 Coupon を attach (monthly + (prelude|concerto|symphony) のみ)
+  // Opus は対象外、annual も対象外 (§40 設計)
+  const discounts: { coupon: string }[] = [];
+  if (billingCycle === 'monthly' && planTier !== 'opus') {
+    const couponMap = COUPON_IDS.first100 as Record<string, string>;
+    const couponId = couponMap[planTier];
+    if (couponId) {
+      discounts.push({ coupon: couponId });
+    }
+  }
+
+  // Checkout Session 作成
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    customer: stripeCustomerId,
+    line_items: [{ price: priceId, quantity: 1 }],
+    discounts: discounts.length > 0 ? discounts : undefined,
+    // success/cancel URL: フロントエンドの Next.js ページに戻す
+    success_url: 'https://kuon-rnd.com/mypage?checkout=success',
+    cancel_url: 'https://kuon-rnd.com/pricing?canceled=true',
+    // metadata で Webhook 側のユーザー特定を確実に
+    metadata: {
+      userEmail: email,
+      planTier,
+      billingCycle,
+      pricingRegion: region,
+    },
+    subscription_data: {
+      metadata: {
+        userEmail: email,
+        planTier,
+        billingCycle,
+        pricingRegion: region,
+      },
+    },
+    // 顧客ロケール (Stripe が自動で言語を判定)
+    locale: 'auto',
+    // 利用規約・プライバシー同意 (任意)
+    // consent_collection: { terms_of_service: 'required' },
+  });
+
+  console.log(
+    '[checkout]',
+    email, '→', stripeCustomerId,
+    'plan=', planTier,
+    'cycle=', billingCycle,
+    'region=', region,
+    'priceId=', priceId,
+    'coupons=', discounts.map((d) => d.coupon).join(','),
+  );
+
+  return c.json({
+    url: session.url,
+    sessionId: session.id,
+  });
+});
+
+/**
+ * POST /api/auth/stripe/portal
+ *
+ * リクエスト body:
+ *   { returnUrl?: string }   // 任意、デフォルトは /mypage
+ *
+ * 機能:
+ *   1. JWT で認証
+ *   2. ユーザーの stripeCustomerId を取得
+ *   3. 無ければ 404 (まだサブスク未契約)
+ *   4. Customer Portal Session を作成 (PORTAL_CONFIG_ID で設定済みポータルを使用)
+ *   5. URL を返す
+ */
+app.post('/api/auth/stripe/portal', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const email = payload.email;
+  const userKey = `user:${email}`;
+  const raw = await c.env.USERS.get(userKey);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+
+  const user = ensureStripeFields(JSON.parse(raw));
+
+  if (!user.stripeCustomerId) {
+    return c.json({
+      error: 'No subscription',
+      message: 'サブスクリプションを契約していません。先にプランを購入してください。',
+    }, 404);
+  }
+
+  const body = await c.req.json<{ returnUrl?: string }>().catch(() => ({} as { returnUrl?: string }));
+  const returnUrl = body.returnUrl || 'https://kuon-rnd.com/mypage';
+
+  const stripe = getStripe(c.env);
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: user.stripeCustomerId,
+    return_url: returnUrl,
+    configuration: PORTAL_CONFIG_ID,
+  });
+
+  console.log('[portal]', email, '→', user.stripeCustomerId);
+
+  return c.json({
+    url: session.url,
+  });
 });
 
 export default app;

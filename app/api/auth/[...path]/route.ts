@@ -50,6 +50,10 @@ async function handler(request: Request, { params }: { params: Promise<{ path: s
     headers['X-CF-Country'] = request.headers.get('CF-IPCountry') || '';
     headers['X-CF-City'] = request.headers.get('CF-Visitor-City') || request.headers.get('CF-IPCity') || '';
   }
+  // Stripe Checkout: pass CF country code for LatAm price detection
+  if (pathStr === 'stripe/checkout') {
+    headers['X-CF-Country'] = request.headers.get('CF-IPCountry') || '';
+  }
 
   // ── Build body ──
   let body: BodyInit | null = null;

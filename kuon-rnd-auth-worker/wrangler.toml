@@ -15,5 +15,8 @@ id = "8dac677d30ff44368936f366c792d4de"
 ENVIRONMENT = "production"
 
 # Secrets (set via `wrangler secret put`):
-# AUTH_SECRET   — JWT signing key (generate: openssl rand -hex 32)
-# RESEND_API_KEY — for sending magic link emails
+# AUTH_SECRET           — JWT signing key (generate: openssl rand -hex 32)
+# RESEND_API_KEY        — for sending magic link emails
+# GOOGLE_CLIENT_ID      — Google OAuth credential validation
+# STRIPE_SECRET_KEY     — rk_live_... (Restricted Key with subscription scopes) [Phase 7]
+# STRIPE_WEBHOOK_SECRET — whsec_... (Webhook endpoint signing secret) [Phase 7]

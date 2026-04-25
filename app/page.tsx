@@ -17,13 +17,47 @@ const HomePage: React.FC = () => {
   const { lang } = useLang();
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [yearly, setYearly] = useState(false);
+  const [subscribeLoading, setSubscribeLoading] = useState<string | null>(null);
 
-  // Student: ¥480/mo → ¥4,800/yr (2ヶ月無料 = 月換算¥400)
-  // Pro:     ¥980/mo → ¥9,800/yr (2ヶ月無料 = 月換算¥817)
-  const studentMonthly = 480;
-  const studentYearly  = 4800;
-  const proMonthly     = 980;
-  const proYearly      = 9800;
+  // Stripe Live mode の Price と整合 (stripe-ids.md 参照)
+  // Prelude: ¥780/mo → ¥7,800/yr (2ヶ月無料 = 月換算¥650)
+  // Concerto: ¥1,480/mo → ¥14,800/yr (2ヶ月無料 = 月換算¥1,234)
+  const preludeMonthly  = 780;
+  const preludeYearly   = 7800;
+  const concertoMonthly = 1480;
+  const concertoYearly  = 14800;
+
+  // Stripe Checkout 起動: 認証チェック → 未ログインなら /auth/login へ → ログイン済みなら Stripe へ
+  async function handleSubscribe(plan: 'prelude' | 'concerto', cycle: 'monthly' | 'annual') {
+    setSubscribeLoading(plan);
+    try {
+      const meRes = await fetch('/api/auth/me');
+      if (!meRes.ok) {
+        window.location.href = '/auth/login';
+        return;
+      }
+      const checkoutRes = await fetch('/api/auth/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, cycle }),
+      });
+      if (!checkoutRes.ok) {
+        const err = (await checkoutRes.json().catch(() => ({}))) as { error?: string; message?: string };
+        alert(err.message || err.error || `購入処理に失敗しました (${checkoutRes.status})`);
+        return;
+      }
+      const data = (await checkoutRes.json()) as { url?: string };
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Checkout URL が取得できませんでした');
+      }
+    } catch (err) {
+      alert('ネットワークエラー: ' + (err instanceof Error ? err.message : 'unknown'));
+    } finally {
+      setSubscribeLoading(null);
+    }
+  }
 
   const faqs = [
     {
@@ -440,9 +474,9 @@ const HomePage: React.FC = () => {
             <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: ACCENT, color: 'white', padding: '0.375rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>
               {t5({ ja: 'おすすめ', en: 'POPULAR', es: 'POPULAR', ko: '인기', pt: 'POPULAR', de: 'BELIEBT' }, lang)}
             </div>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Student', en: 'Student', es: 'Estudiante', ko: '학생', pt: 'Estudante', de: 'Student' }, lang)}</h3>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Prelude', en: 'Prelude', es: 'Prelude', ko: 'Prelude', pt: 'Prelude', de: 'Prelude' }, lang)}</h3>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
-              ¥{yearly ? studentYearly.toLocaleString() : studentMonthly.toLocaleString()}
+              ¥{yearly ? preludeYearly.toLocaleString() : preludeMonthly.toLocaleString()}
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
               {yearly
@@ -452,12 +486,12 @@ const HomePage: React.FC = () => {
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
-                  ja: `月換算 ¥${Math.round(studentYearly / 12).toLocaleString()}`,
-                  en: `¥${Math.round(studentYearly / 12).toLocaleString()} / mo equivalent`,
-                  es: `¥${Math.round(studentYearly / 12).toLocaleString()} / mes`,
-                  ko: `월 환산 ¥${Math.round(studentYearly / 12).toLocaleString()}`,
-                  pt: `equivalente a ¥${Math.round(studentYearly / 12).toLocaleString()} / mês`,
-                  de: `entspricht ¥${Math.round(studentYearly / 12).toLocaleString()} / Monat`,
+                  ja: `月換算 ¥${Math.round(preludeYearly / 12).toLocaleString()}`,
+                  en: `¥${Math.round(preludeYearly / 12).toLocaleString()} / mo equivalent`,
+                  es: `¥${Math.round(preludeYearly / 12).toLocaleString()} / mes`,
+                  ko: `월 환산 ¥${Math.round(preludeYearly / 12).toLocaleString()}`,
+                  pt: `equivalente a ¥${Math.round(preludeYearly / 12).toLocaleString()} / mês`,
+                  de: `entspricht ¥${Math.round(preludeYearly / 12).toLocaleString()} / Monat`,
                 }, lang)}
               </div>
             )}
@@ -466,14 +500,23 @@ const HomePage: React.FC = () => {
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'サーバーアプリ無制限', en: 'Unlimited server apps', es: 'Aplicaciones de servidor ilimitadas', ko: '무제한 서버 앱', pt: 'Aplicativos de servidor ilimitados', de: 'Unbegrenzte Server-Apps' }, lang)}</li>
               <li>✓ {t5({ ja: '練習ログ記録', en: 'Practice logs', es: 'Registros de práctica', ko: '연습 기록', pt: 'Registros de prática', de: 'Übungsprotokolle' }, lang)}</li>
             </ul>
-            <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-              {t5({ ja: '登録する', en: 'Sign Up', es: 'Registrarse', ko: '가입', pt: 'Inscrever-se', de: 'Registrieren' }, lang)}
-            </Link>
+            <button
+              type="button"
+              disabled={subscribeLoading !== null}
+              onClick={() => handleSubscribe('prelude', yearly ? 'annual' : 'monthly')}
+              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'prelude' ? 0.6 : 1, transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {subscribeLoading === 'prelude'
+                ? t5({ ja: '処理中...', en: 'Processing...', es: 'Procesando...', ko: '처리 중...', pt: 'Processando...', de: 'Verarbeitung...' }, lang)
+                : t5({ ja: '購入する', en: 'Subscribe', es: 'Suscribirse', ko: '구독', pt: 'Assinar', de: 'Abonnieren' }, lang)}
+            </button>
           </div>
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Pro', en: 'Pro', es: 'Pro', ko: '프로', pt: 'Pro', de: 'Pro' }, lang)}</h3>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Concerto', en: 'Concerto', es: 'Concerto', ko: 'Concerto', pt: 'Concerto', de: 'Concerto' }, lang)}</h3>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
-              ¥{yearly ? proYearly.toLocaleString() : proMonthly.toLocaleString()}
+              ¥{yearly ? concertoYearly.toLocaleString() : concertoMonthly.toLocaleString()}
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
               {yearly
@@ -483,12 +526,12 @@ const HomePage: React.FC = () => {
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
-                  ja: `月換算 ¥${Math.round(proYearly / 12).toLocaleString()}`,
-                  en: `¥${Math.round(proYearly / 12).toLocaleString()} / mo equivalent`,
-                  es: `¥${Math.round(proYearly / 12).toLocaleString()} / mes`,
-                  ko: `월 환산 ¥${Math.round(proYearly / 12).toLocaleString()}`,
-                  pt: `equivalente a ¥${Math.round(proYearly / 12).toLocaleString()} / mês`,
-                  de: `entspricht ¥${Math.round(proYearly / 12).toLocaleString()} / Monat`,
+                  ja: `月換算 ¥${Math.round(concertoYearly / 12).toLocaleString()}`,
+                  en: `¥${Math.round(concertoYearly / 12).toLocaleString()} / mo equivalent`,
+                  es: `¥${Math.round(concertoYearly / 12).toLocaleString()} / mes`,
+                  ko: `월 환산 ¥${Math.round(concertoYearly / 12).toLocaleString()}`,
+                  pt: `equivalente a ¥${Math.round(concertoYearly / 12).toLocaleString()} / mês`,
+                  de: `entspricht ¥${Math.round(concertoYearly / 12).toLocaleString()} / Monat`,
                 }, lang)}
               </div>
             )}
@@ -497,9 +540,18 @@ const HomePage: React.FC = () => {
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ライブ投稿', en: 'Post live events', es: 'Publicar eventos en vivo', ko: '라이브 포스팅', pt: 'Postar eventos ao vivo', de: 'Live-Events posten' }, lang)}</li>
               <li>✓ {t5({ ja: '優先サポート', en: 'Priority support', es: 'Soporte prioritario', ko: '우선 지원', pt: 'Suporte prioritário', de: 'Prioritäts-Support' }, lang)}</li>
             </ul>
-            <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-              {t5({ ja: '登録する', en: 'Sign Up', es: 'Registrarse', ko: '가입', pt: 'Inscrever-se', de: 'Registrieren' }, lang)}
-            </Link>
+            <button
+              type="button"
+              disabled={subscribeLoading !== null}
+              onClick={() => handleSubscribe('concerto', yearly ? 'annual' : 'monthly')}
+              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'concerto' ? 0.6 : 1, transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {subscribeLoading === 'concerto'
+                ? t5({ ja: '処理中...', en: 'Processing...', es: 'Procesando...', ko: '처리 중...', pt: 'Processando...', de: 'Verarbeitung...' }, lang)
+                : t5({ ja: '購入する', en: 'Subscribe', es: 'Suscribirse', ko: '구독', pt: 'Assinar', de: 'Abonnieren' }, lang)}
+            </button>
           </div>
         </div>
       </section>

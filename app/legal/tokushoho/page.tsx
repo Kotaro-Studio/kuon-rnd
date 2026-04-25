@@ -20,7 +20,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
     items: [
       {
         label: '販売業者名',
-        value: '屋号 Curanz Sounds（決済表記：Kotaro Studio Mic）',
+        value: '屋号 Kuon R&D（決済表記：KUON-RND.COM）',
       },
       {
         label: '運営統括責任者',
@@ -32,51 +32,51 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'メールアドレス',
-        value: <a href="mailto:432@kotarohattori.com" style={{ color: '#0066cc' }}>432@kotarohattori.com</a>,
+        value: <a href="mailto:369@kotaroasahina.com" style={{ color: '#0066cc' }}>369@kotaroasahina.com</a>,
       },
       {
         label: '販売商品',
-        value: 'P-86S ステレオマイクロフォン、X-86S プロフェッショナルステレオマイクロフォン、オーディオプロセッシングツール',
+        value: 'P-86S ステレオマイクロフォン、X-86S プロフェッショナルステレオマイクロフォン、Kuon メンバーシップ（PRELUDE / CONCERTO / SYMPHONY / OPUS）、オーディオ処理・音楽学習ツール',
       },
       {
         label: '販売価格',
-        value: 'P-86S: ¥16,900（税込）、X-86S: ¥39,600（税込）。その他の価格は各ページをご参照ください。',
+        value: 'P-86S: ¥16,900（税込）、X-86S: ¥39,600（税込）。Kuon メンバーシップは月額 ¥780〜¥5,980（税込）、年額プランあり。その他の価格は各商品ページをご参照ください。',
       },
       {
         label: 'お支払い方法',
-        value: 'クレジットカード、Apple Pay、Google Pay（Stripe決済）',
+        value: 'クレジットカード、Apple Pay、Google Pay（Stripe 決済）',
       },
       {
         label: 'お支払い時期',
-        value: '決済確認時に処理されます。',
+        value: '単発購入：決済確認時に処理されます。サブスクリプション：契約時にお支払いが発生し、契約期間ごと（毎月または毎年）に自動更新されます。',
       },
       {
         label: '配送方法',
-        value: '日本国内郵便（レターパック等）、国際配送',
+        value: 'ハードウェア商品：日本国内郵便（レターパック等）、国際郵便（EMS / 国際小包）。デジタル商品・サブスクリプション：オンライン即時提供（Web ブラウザ）。',
       },
       {
         label: '配送に要する日数',
-        value: '決済確認後 1〜3 営業日以内（受注生産品は製作完了後に発送）',
+        value: 'ハードウェア：決済確認後 1〜3 営業日以内に発送（受注生産品は製作完了後に発送）。デジタル商品：決済確認後即時利用可能。',
       },
       {
         label: '返品・交換について',
-        value: '初期不良のみ 3 日以内にご連絡いただければ、良品交換または返金で対応いたします。顧客過失による破損・不具合は返品対象外です。',
+        value: 'ハードウェア商品：初期不良のみ 3 日以内にご連絡いただければ良品交換または返金で対応いたします。顧客過失による破損・不具合は返品対象外です。デジタル商品・サブスクリプション：その性質上、返品・返金はお受けできません。',
       },
       {
         label: '購入制限',
-        value: 'お一人様 3 点までのご購入とさせていただきます（ハンドメイド製造のため）',
+        value: 'マイクロフォン：お一人様 3 点まで（ハンドメイド製造のため）。サブスクリプション：制限なし。',
       },
       {
         label: '特定商品の引き渡し時期',
-        value: '決済確認後、発送日は個別にご案内いたします。',
+        value: 'ハードウェア：決済確認後、発送日は個別にご案内いたします。サブスクリプション：決済確認直後にアカウントへ機能が解放されます。',
       },
       {
-        label: '不良品への対応',
-        value: '不良品到着の場合は、5日以内に 432@kotarohattori.com までご連絡ください。交換または返金で対応いたします。',
+        label: '不良品・障害への対応',
+        value: 'ハードウェア不良品到着の場合は 5 日以内に 369@kotaroasahina.com までご連絡ください。交換または返金で対応いたします。サブスクリプションサービスに障害が生じた場合は同アドレスまでご連絡ください。',
       },
       {
-        label: 'キャンセル・解除',
-        value: 'ご注文後のキャンセルはお受けできません。ただし重大な問題がある場合はご相談ください。',
+        label: 'キャンセル・解約',
+        value: 'ハードウェア：ご注文後のキャンセルはお受けできません（重大な問題がある場合はご相談ください）。サブスクリプション：マイページからいつでも解約手続きが可能です。解約後も次回更新日までサービスをご利用いただけます。日割り返金は行いません。',
       },
       {
         label: 'プライバシーポリシー',
@@ -94,7 +94,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
     items: [
       {
         label: 'Business Name',
-        value: 'Curanz Sounds (Payment Description: Kotaro Studio Mic)',
+        value: 'Kuon R&D (Payment Description: KUON-RND.COM)',
       },
       {
         label: 'Representative',
@@ -106,15 +106,15 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Email',
-        value: <a href="mailto:432@kotarohattori.com" style={{ color: '#0066cc' }}>432@kotarohattori.com</a>,
+        value: <a href="mailto:369@kotaroasahina.com" style={{ color: '#0066cc' }}>369@kotaroasahina.com</a>,
       },
       {
         label: 'Products Sold',
-        value: 'P-86S Stereo Microphone, X-86S Professional Stereo Microphone, Audio Processing Tools',
+        value: 'P-86S Stereo Microphone, X-86S Professional Stereo Microphone, Kuon Membership (PRELUDE / CONCERTO / SYMPHONY / OPUS), Audio Processing & Music Learning Tools',
       },
       {
         label: 'Sales Price',
-        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). See each page for other prices.',
+        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
       },
       {
         label: 'Payment Methods',
@@ -122,35 +122,35 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Payment Timing',
-        value: 'Payment is processed upon confirmation.',
+        value: 'One-time purchase: charged upon confirmation. Subscription: charged at signup and auto-renewed each billing cycle (monthly or annually).',
       },
       {
         label: 'Shipping Method',
-        value: 'Japan Post (Letter Pack, etc.), International Shipping',
+        value: 'Hardware: Japan Post (Letter Pack, etc.) and international mail (EMS / international parcel). Digital products & subscriptions: instant online delivery via web browser.',
       },
       {
         label: 'Delivery Time',
-        value: '1–3 business days after payment confirmation (Handmade items shipped after production completion)',
+        value: 'Hardware: shipped within 1–3 business days after payment confirmation (handmade items shipped after production). Digital products: available immediately upon payment confirmation.',
       },
       {
         label: 'Returns & Exchanges',
-        value: 'We accept returns for defects only, if reported within 3 days of receipt. Replacement or refund will be provided. Damage due to customer negligence is not eligible for return.',
+        value: 'Hardware: returns accepted for defects only, if reported within 3 days of receipt (replacement or refund). Damage due to customer negligence is not eligible. Digital products & subscriptions: due to their nature, returns and refunds are not accepted.',
       },
       {
         label: 'Purchase Limit',
-        value: 'Maximum 3 items per customer (due to handmade manufacturing)',
+        value: 'Microphones: maximum 3 items per customer (due to handmade manufacturing). Subscriptions: no limit.',
       },
       {
         label: 'Delivery Date',
-        value: 'Delivery date will be notified individually after payment confirmation.',
+        value: 'Hardware: delivery date will be notified individually after payment confirmation. Subscriptions: features are unlocked on the account immediately upon payment confirmation.',
       },
       {
-        label: 'Defective Product Response',
-        value: 'Please contact 432@kotarohattori.com within 5 days of receiving a defective product. We will respond with replacement or refund.',
+        label: 'Defective Product / Service Issues',
+        value: 'For defective hardware, please contact 369@kotaroasahina.com within 5 days of receipt. We will respond with replacement or refund. For subscription service issues, please contact the same address.',
       },
       {
         label: 'Cancellation & Termination',
-        value: 'Orders cannot be cancelled after placement. Please contact us for exceptional circumstances.',
+        value: 'Hardware: orders cannot be cancelled after placement (please contact us for exceptional circumstances). Subscriptions: cancel anytime from your account page. Service remains available until the next renewal date. Pro-rated refunds are not provided.',
       },
       {
         label: 'Privacy Policy',
@@ -168,7 +168,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
     items: [
       {
         label: '판매 사업자명',
-        value: 'Curanz Sounds (결제 표기: Kotaro Studio Mic)',
+        value: 'Kuon R&D (결제 표기: KUON-RND.COM)',
       },
       {
         label: '대표자',
@@ -180,51 +180,51 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: '이메일',
-        value: <a href="mailto:432@kotarohattori.com" style={{ color: '#0066cc' }}>432@kotarohattori.com</a>,
+        value: <a href="mailto:369@kotaroasahina.com" style={{ color: '#0066cc' }}>369@kotaroasahina.com</a>,
       },
       {
         label: '판매 상품',
-        value: 'P-86S 스테레오 마이크로폰, X-86S 프로페셔널 스테레오 마이크로폰, 오디오 처리 도구',
+        value: 'P-86S 스테레오 마이크로폰, X-86S 프로페셔널 스테레오 마이크로폰, Kuon 멤버십 (PRELUDE / CONCERTO / SYMPHONY / OPUS), 오디오 처리 및 음악 학습 도구',
       },
       {
         label: '판매 가격',
-        value: 'P-86S: ¥16,900 (세금 포함), X-86S: ¥39,600 (세금 포함). 기타 가격은 각 페이지를 참조하세요.',
+        value: 'P-86S: ¥16,900 (세금 포함), X-86S: ¥39,600 (세금 포함). Kuon 멤버십: 월 ¥780–¥5,980 (세금 포함), 연간 요금제 제공. 기타 가격은 각 상품 페이지를 참조하세요.',
       },
       {
         label: '결제 방법',
-        value: '신용카드, Apple Pay, Google Pay (Stripe을 통한)',
+        value: '신용카드, Apple Pay, Google Pay (Stripe 결제)',
       },
       {
         label: '결제 시기',
-        value: '결제 확인 시 처리됩니다.',
+        value: '단발 구매: 결제 확인 시 처리됩니다. 구독: 가입 시 결제되며 결제 주기마다 (월간 또는 연간) 자동 갱신됩니다.',
       },
       {
         label: '배송 방법',
-        value: '일본 우편 (레터팩 등), 국제 배송',
+        value: '하드웨어: 일본 우편 (레터팩 등), 국제 우편 (EMS / 국제 소포). 디지털 상품 및 구독: 웹 브라우저를 통해 즉시 온라인 제공.',
       },
       {
         label: '배송 소요 시간',
-        value: '결제 확인 후 1-3 영업일 이내 (수제 상품은 제작 완료 후 발송)',
+        value: '하드웨어: 결제 확인 후 1-3 영업일 이내 발송 (수제 상품은 제작 완료 후 발송). 디지털 상품: 결제 확인 후 즉시 이용 가능.',
       },
       {
         label: '반품 및 교환',
-        value: '결함만 수령 후 3일 이내에 신고할 경우 반품/교환을 받습니다. 교환 또는 환불로 대응합니다. 고객 과실로 인한 손상은 반품 대상이 아닙니다.',
+        value: '하드웨어: 결함만 수령 후 3일 이내 신고 시 교환 또는 환불 대응. 고객 과실로 인한 손상은 반품 대상이 아닙니다. 디지털 상품 및 구독: 그 성격상 반품 및 환불을 받지 않습니다.',
       },
       {
         label: '구매 제한',
-        value: '수제 생산으로 인해 고객당 최대 3개까지',
+        value: '마이크로폰: 수제 생산으로 인해 고객당 최대 3개까지. 구독: 제한 없음.',
       },
       {
         label: '배송 날짜',
-        value: '배송 날짜는 결제 확인 후 개별적으로 안내됩니다.',
+        value: '하드웨어: 배송 날짜는 결제 확인 후 개별적으로 안내됩니다. 구독: 결제 확인 직후 계정에 기능이 활성화됩니다.',
       },
       {
-        label: '불량품 대응',
-        value: '불량품을 수령한 경우 5일 이내에 432@kotarohattori.com으로 연락하세요. 교환 또는 환불로 대응합니다.',
+        label: '불량품 / 서비스 장애 대응',
+        value: '하드웨어 불량품 수령 시 5일 이내에 369@kotaroasahina.com으로 연락하세요. 교환 또는 환불로 대응합니다. 구독 서비스 장애 시에도 동일한 주소로 문의하세요.',
       },
       {
-        label: '취소 및 해제',
-        value: '주문 후 취소는 받지 않습니다. 특별한 경우는 문의하세요.',
+        label: '취소 및 해지',
+        value: '하드웨어: 주문 후 취소는 받지 않습니다 (특별한 경우 문의 바랍니다). 구독: 마이페이지에서 언제든지 해지할 수 있으며 다음 갱신일까지 서비스를 이용할 수 있습니다. 일할 환불은 제공되지 않습니다.',
       },
       {
         label: '개인정보보호정책',
@@ -242,7 +242,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
     items: [
       {
         label: 'Business Name',
-        value: 'Curanz Sounds (Payment Description: Kotaro Studio Mic)',
+        value: 'Kuon R&D (Payment Description: KUON-RND.COM)',
       },
       {
         label: 'Representative',
@@ -254,15 +254,15 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Email',
-        value: <a href="mailto:432@kotarohattori.com" style={{ color: '#0066cc' }}>432@kotarohattori.com</a>,
+        value: <a href="mailto:369@kotaroasahina.com" style={{ color: '#0066cc' }}>369@kotaroasahina.com</a>,
       },
       {
         label: 'Products Sold',
-        value: 'P-86S Stereo Microphone, X-86S Professional Stereo Microphone, Audio Processing Tools',
+        value: 'P-86S Stereo Microphone, X-86S Professional Stereo Microphone, Kuon Membership (PRELUDE / CONCERTO / SYMPHONY / OPUS), Audio Processing & Music Learning Tools',
       },
       {
         label: 'Sales Price',
-        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). See each page for other prices.',
+        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
       },
       {
         label: 'Payment Methods',
@@ -270,35 +270,35 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Payment Timing',
-        value: 'Payment is processed upon confirmation.',
+        value: 'One-time purchase: charged upon confirmation. Subscription: charged at signup and auto-renewed each billing cycle (monthly or annually).',
       },
       {
         label: 'Shipping Method',
-        value: 'Japan Post (Letter Pack, etc.), International Shipping',
+        value: 'Hardware: Japan Post (Letter Pack, etc.) and international mail (EMS / international parcel). Digital products & subscriptions: instant online delivery via web browser.',
       },
       {
         label: 'Delivery Time',
-        value: '1–3 business days after payment confirmation (Handmade items shipped after production completion)',
+        value: 'Hardware: shipped within 1–3 business days after payment confirmation (handmade items shipped after production). Digital products: available immediately upon payment confirmation.',
       },
       {
         label: 'Returns & Exchanges',
-        value: 'We accept returns for defects only, if reported within 3 days of receipt. Replacement or refund will be provided. Damage due to customer negligence is not eligible for return.',
+        value: 'Hardware: returns accepted for defects only, if reported within 3 days of receipt (replacement or refund). Damage due to customer negligence is not eligible. Digital products & subscriptions: due to their nature, returns and refunds are not accepted.',
       },
       {
         label: 'Purchase Limit',
-        value: 'Maximum 3 items per customer (due to handmade manufacturing)',
+        value: 'Microphones: maximum 3 items per customer (due to handmade manufacturing). Subscriptions: no limit.',
       },
       {
         label: 'Delivery Date',
-        value: 'Delivery date will be notified individually after payment confirmation.',
+        value: 'Hardware: delivery date will be notified individually after payment confirmation. Subscriptions: features are unlocked on the account immediately upon payment confirmation.',
       },
       {
-        label: 'Defective Product Response',
-        value: 'Please contact 432@kotarohattori.com within 5 days of receiving a defective product. We will respond with replacement or refund.',
+        label: 'Defective Product / Service Issues',
+        value: 'For defective hardware, please contact 369@kotaroasahina.com within 5 days of receipt. We will respond with replacement or refund. For subscription service issues, please contact the same address.',
       },
       {
         label: 'Cancellation & Termination',
-        value: 'Orders cannot be cancelled after placement. Please contact us for exceptional circumstances.',
+        value: 'Hardware: orders cannot be cancelled after placement (please contact us for exceptional circumstances). Subscriptions: cancel anytime from your account page. Service remains available until the next renewal date. Pro-rated refunds are not provided.',
       },
       {
         label: 'Privacy Policy',
@@ -316,7 +316,7 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
     items: [
       {
         label: 'Business Name',
-        value: 'Curanz Sounds (Payment Description: Kotaro Studio Mic)',
+        value: 'Kuon R&D (Payment Description: KUON-RND.COM)',
       },
       {
         label: 'Representative',
@@ -328,15 +328,15 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Email',
-        value: <a href="mailto:432@kotarohattori.com" style={{ color: '#0066cc' }}>432@kotarohattori.com</a>,
+        value: <a href="mailto:369@kotaroasahina.com" style={{ color: '#0066cc' }}>369@kotaroasahina.com</a>,
       },
       {
         label: 'Products Sold',
-        value: 'P-86S Stereo Microphone, X-86S Professional Stereo Microphone, Audio Processing Tools',
+        value: 'P-86S Stereo Microphone, X-86S Professional Stereo Microphone, Kuon Membership (PRELUDE / CONCERTO / SYMPHONY / OPUS), Audio Processing & Music Learning Tools',
       },
       {
         label: 'Sales Price',
-        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). See each page for other prices.',
+        value: 'P-86S: ¥16,900 (tax included), X-86S: ¥39,600 (tax included). Kuon Membership: ¥780–¥5,980 per month (tax included), annual plans available. See each product page for other prices.',
       },
       {
         label: 'Payment Methods',
@@ -344,35 +344,35 @@ const content: Partial<Record<Lang, TokushohContent>> & { en: TokushohContent } 
       },
       {
         label: 'Payment Timing',
-        value: 'Payment is processed upon confirmation.',
+        value: 'One-time purchase: charged upon confirmation. Subscription: charged at signup and auto-renewed each billing cycle (monthly or annually).',
       },
       {
         label: 'Shipping Method',
-        value: 'Japan Post (Letter Pack, etc.), International Shipping',
+        value: 'Hardware: Japan Post (Letter Pack, etc.) and international mail (EMS / international parcel). Digital products & subscriptions: instant online delivery via web browser.',
       },
       {
         label: 'Delivery Time',
-        value: '1–3 business days after payment confirmation (Handmade items shipped after production completion)',
+        value: 'Hardware: shipped within 1–3 business days after payment confirmation (handmade items shipped after production). Digital products: available immediately upon payment confirmation.',
       },
       {
         label: 'Returns & Exchanges',
-        value: 'We accept returns for defects only, if reported within 3 days of receipt. Replacement or refund will be provided. Damage due to customer negligence is not eligible for return.',
+        value: 'Hardware: returns accepted for defects only, if reported within 3 days of receipt (replacement or refund). Damage due to customer negligence is not eligible. Digital products & subscriptions: due to their nature, returns and refunds are not accepted.',
       },
       {
         label: 'Purchase Limit',
-        value: 'Maximum 3 items per customer (due to handmade manufacturing)',
+        value: 'Microphones: maximum 3 items per customer (due to handmade manufacturing). Subscriptions: no limit.',
       },
       {
         label: 'Delivery Date',
-        value: 'Delivery date will be notified individually after payment confirmation.',
+        value: 'Hardware: delivery date will be notified individually after payment confirmation. Subscriptions: features are unlocked on the account immediately upon payment confirmation.',
       },
       {
-        label: 'Defective Product Response',
-        value: 'Please contact 432@kotarohattori.com within 5 days of receiving a defective product. We will respond with replacement or refund.',
+        label: 'Defective Product / Service Issues',
+        value: 'For defective hardware, please contact 369@kotaroasahina.com within 5 days of receipt. We will respond with replacement or refund. For subscription service issues, please contact the same address.',
       },
       {
         label: 'Cancellation & Termination',
-        value: 'Orders cannot be cancelled after placement. Please contact us for exceptional circumstances.',
+        value: 'Hardware: orders cannot be cancelled after placement (please contact us for exceptional circumstances). Subscriptions: cancel anytime from your account page. Service remains available until the next renewal date. Pro-rated refunds are not provided.',
       },
       {
         label: 'Privacy Policy',
