@@ -5,6 +5,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import {
+  currencyForLang,
+  getPrice,
+  formatPrice,
+  formatMonthlyEquivalent,
+  formatHalfPrice,
+  PLAN_QUOTAS,
+} from '@/app/lib/pricing-display';
 
 const serif = '"Shippori Mincho", "Noto Serif JP", "Yu Mincho", "YuMincho", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -19,19 +27,28 @@ const HomePage: React.FC = () => {
   const [yearly, setYearly] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState<string | null>(null);
 
-  // Stripe Live mode の Price と整合 (stripe-ids.md 参照)
-  // Prelude:  ¥780/mo  → ¥7,800/yr   (2ヶ月無料 = 月換算¥650)
-  // Concerto: ¥1,480/mo → ¥14,800/yr (2ヶ月無料 = 月換算¥1,234)
-  // Symphony: ¥2,480/mo → ¥24,800/yr (2ヶ月無料 = 月換算¥2,067)
-  // Opus:     ¥5,980/mo → ¥59,800/yr (2ヶ月無料 = 月換算¥4,984)
-  const preludeMonthly  = 780;
-  const preludeYearly   = 7800;
-  const concertoMonthly = 1480;
-  const concertoYearly  = 14800;
-  const symphonyMonthly = 2480;
-  const symphonyYearly  = 24800;
-  const opusMonthly     = 5980;
-  const opusYearly      = 59800;
+  // 多通貨対応: 言語に応じて表示通貨が切替わる (Stripe Phase 4 currency_options と整合)
+  // ja → JPY / en → USD / es → USD (LatAm) / de → EUR / ko & pt → USD
+  // 実際の課金は Stripe Checkout 側で CF-IPCountry に応じて決まる。
+  const currency = currencyForLang(lang);
+  const preludeMonthlyAmount  = getPrice('prelude',  'monthly', currency);
+  const preludeYearlyAmount   = getPrice('prelude',  'annual',  currency);
+  const concertoMonthlyAmount = getPrice('concerto', 'monthly', currency);
+  const concertoYearlyAmount  = getPrice('concerto', 'annual',  currency);
+  const symphonyMonthlyAmount = getPrice('symphony', 'monthly', currency);
+  const symphonyYearlyAmount  = getPrice('symphony', 'annual',  currency);
+  const opusMonthlyAmount     = getPrice('opus',     'monthly', currency);
+  const opusYearlyAmount      = getPrice('opus',     'annual',  currency);
+
+  // 表示用の整形済み文字列 (¥780 / $7.99 / €7.49 等)
+  const preludeMonthlyDisp  = formatPrice(preludeMonthlyAmount,  currency);
+  const preludeYearlyDisp   = formatPrice(preludeYearlyAmount,   currency);
+  const concertoMonthlyDisp = formatPrice(concertoMonthlyAmount, currency);
+  const concertoYearlyDisp  = formatPrice(concertoYearlyAmount,  currency);
+  const symphonyMonthlyDisp = formatPrice(symphonyMonthlyAmount, currency);
+  const symphonyYearlyDisp  = formatPrice(symphonyYearlyAmount,  currency);
+  const opusMonthlyDisp     = formatPrice(opusMonthlyAmount,     currency);
+  const opusYearlyDisp      = formatPrice(opusYearlyAmount,      currency);
 
   // Stripe Checkout 起動: 認証チェック → 未ログインなら /auth/login へ → ログイン済みなら Stripe へ
   // 離脱率削減: 未ログイン時は購入意図を localStorage に保存し、ログイン後に自動で Checkout 継続
@@ -304,7 +321,7 @@ const HomePage: React.FC = () => {
     {
       emoji: '🎓',
       title: { ja: '音大生', en: 'Music Students', es: 'Estudiantes de Música', ko: '음악학생', pt: 'Estudantes de Música', de: 'Musikstudierende' },
-      desc: { ja: '和声分析、リズム訓練、聴音テスト。学割¥480/月で、音大4年間の成長を記録。', en: 'Harmony analysis, rhythm training, ear tests. Student plan ¥480/mo to track 4 years of growth.', es: 'Análisis de armonía, entrenamiento de ritmo, pruebas auditivas. Plan de estudiante ¥480/mes para registrar 4 años de crecimiento.', ko: '화성 분석, 리듬 훈련, 청음 테스트. 학생 플랜 ¥480/월로 4년간의 성장을 기록합니다.', pt: 'Análise de harmonia, treinamento de ritmo, testes auditivos. Plano de estudante ¥480/mês para rastrear 4 anos de crescimento.', de: 'Harmonielehre, Rhythmustraining, Gehörtests. Studi-Tarif ¥480/Monat — dokumentiert 4 Jahre Wachstum.' },
+      desc: { ja: '和声分析、リズム訓練、聴音テスト。Prelude プランで音大4年間の成長を記録。', en: 'Harmony analysis, rhythm training, ear tests. Prelude plan tracks 4 years of growth.', es: 'Análisis de armonía, entrenamiento de ritmo, pruebas auditivas. Plan Prelude para registrar 4 años de crecimiento.', ko: '화성 분석, 리듬 훈련, 청음 테스트. Prelude 플랜으로 4년간의 성장을 기록합니다.', pt: 'Análise de harmonia, treinamento de ritmo, testes auditivos. Plano Prelude para rastrear 4 anos de crescimento.', de: 'Harmonielehre, Rhythmustraining, Gehörtests. Prelude-Tarif dokumentiert 4 Jahre Wachstum.' },
     },
     {
       emoji: '🎛️',
@@ -412,7 +429,17 @@ const HomePage: React.FC = () => {
             </div>
             <div style={{ padding: '2rem' }}>
               <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'P-86S ステレオマイクロフォン', en: 'P-86S Stereo Microphone', es: 'Micrófono Estéreo P-86S', ko: 'P-86S 스테레오 마이크로폰', pt: 'Microfone Estéreo P-86S', de: 'P-86S Stereo-Mikrofon' }, lang)}</h3>
-              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥13,900</div>
+              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>¥13,900</div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '1.5rem', letterSpacing: '0.03em' }}>
+                {t5({
+                  ja: '日本国内発送のみ',
+                  en: 'Shipping within Japan only',
+                  es: 'Envío solo dentro de Japón',
+                  ko: '일본 국내 배송 전용',
+                  pt: 'Envio apenas dentro do Japão',
+                  de: 'Nur Versand innerhalb Japans',
+                }, lang)}
+              </div>
               <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
                 <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'プラグインパワー対応', en: 'Plug-in power compatible', es: 'Compatible con alimentación plug-in', ko: '플러그인 전원 호환', pt: 'Compatível com alimentação plug-in', de: 'Plug-in-Power-kompatibel' }, lang)}</li>
                 <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '1本でABステレオ', en: 'Single-body AB stereo', es: 'Estéreo AB de un solo cuerpo', ko: '단일 바디 AB 스테레오', pt: 'Estéreo AB de corpo único', de: 'AB-Stereo aus einem Gehäuse' }, lang)}</li>
@@ -430,7 +457,17 @@ const HomePage: React.FC = () => {
             </div>
             <div style={{ padding: '2rem' }}>
               <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'X-86S プロフェッショナル', en: 'X-86S Professional', es: 'X-86S Profesional', ko: 'X-86S 프로페셔널', pt: 'X-86S Profissional', de: 'X-86S Professional' }, lang)}</h3>
-              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥39,600</div>
+              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>¥39,600</div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '1.5rem', letterSpacing: '0.03em' }}>
+                {t5({
+                  ja: '日本国内発送のみ',
+                  en: 'Shipping within Japan only',
+                  es: 'Envío solo dentro de Japón',
+                  ko: '일본 국내 배송 전용',
+                  pt: 'Envio apenas dentro do Japão',
+                  de: 'Nur Versand innerhalb Japans',
+                }, lang)}
+              </div>
               <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
                 <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'ミニXLR端子', en: 'Mini XLR connector', es: 'Conector XLR mini', ko: '미니 XLR 커넥터', pt: 'Conector XLR mini', de: 'Mini-XLR-Anschluss' }, lang)}</li>
                 <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '48Vファンタム電源', en: '48V phantom power', es: 'Alimentación fantasma 48V', ko: '48V 팬텀 전원', pt: 'Alimentação fantasma 48V', de: '48V Phantomspeisung' }, lang)}</li>
@@ -520,9 +557,12 @@ const HomePage: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
             <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Free', en: 'Free', es: 'Gratis', ko: '무료', pt: 'Gratuito', de: 'Kostenlos' }, lang)}</h3>
-            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>¥0</div>
+            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>{formatPrice(0, currency)}</div>
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.free.separator, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.free.transcriber, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.free.intonation, lang)}</li>
               <li>✓ {t5({ ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ahora, sin registro', ko: '지금 사용, 가입 불필요', pt: 'Use agora, sem inscrição', de: 'Sofort nutzen, keine Registrierung' }, lang)}</li>
             </ul>
             <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -535,7 +575,7 @@ const HomePage: React.FC = () => {
             </div>
             <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Prelude', en: 'Prelude', es: 'Prelude', ko: 'Prelude', pt: 'Prelude', de: 'Prelude' }, lang)}</h3>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
-              ¥{yearly ? preludeYearly.toLocaleString() : preludeMonthly.toLocaleString()}
+              {yearly ? preludeYearlyDisp : preludeMonthlyDisp}
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '0.75rem' }}>
               {yearly
@@ -545,27 +585,32 @@ const HomePage: React.FC = () => {
             {!yearly && (
               <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1.25rem', display: 'inline-block' }}>
                 {t5({
-                  ja: `🎁 初月 ¥${Math.round(preludeMonthly / 2).toLocaleString()} (50% OFF)`,
-                  en: `🎁 First month ¥${Math.round(preludeMonthly / 2).toLocaleString()} (50% OFF)`,
-                  es: `🎁 Primer mes ¥${Math.round(preludeMonthly / 2).toLocaleString()} (50% OFF)`,
+                  ja: `🎁 初月 ${formatHalfPrice(preludeMonthlyAmount, currency)} (50% OFF)`,
+                  en: `🎁 First month ${formatHalfPrice(preludeMonthlyAmount, currency)} (50% OFF)`,
+                  es: `🎁 Primer mes ${formatHalfPrice(preludeMonthlyAmount, currency)} (50% OFF)`,
+                  ko: `🎁 첫달 ${formatHalfPrice(preludeMonthlyAmount, currency)} (50% OFF)`,
+                  pt: `🎁 Primeiro mês ${formatHalfPrice(preludeMonthlyAmount, currency)} (50% OFF)`,
+                  de: `🎁 Erster Monat ${formatHalfPrice(preludeMonthlyAmount, currency)} (50% OFF)`,
                 }, lang)}
               </div>
             )}
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
-                  ja: `月換算 ¥${Math.round(preludeYearly / 12).toLocaleString()}`,
-                  en: `¥${Math.round(preludeYearly / 12).toLocaleString()} / mo equivalent`,
-                  es: `¥${Math.round(preludeYearly / 12).toLocaleString()} / mes`,
-                  ko: `월 환산 ¥${Math.round(preludeYearly / 12).toLocaleString()}`,
-                  pt: `equivalente a ¥${Math.round(preludeYearly / 12).toLocaleString()} / mês`,
-                  de: `entspricht ¥${Math.round(preludeYearly / 12).toLocaleString()} / Monat`,
+                  ja: `月換算 ${formatMonthlyEquivalent(preludeYearlyAmount, currency)}`,
+                  en: `${formatMonthlyEquivalent(preludeYearlyAmount, currency)} / mo equivalent`,
+                  es: `${formatMonthlyEquivalent(preludeYearlyAmount, currency)} / mes`,
+                  ko: `월 환산 ${formatMonthlyEquivalent(preludeYearlyAmount, currency)}`,
+                  pt: `equivalente a ${formatMonthlyEquivalent(preludeYearlyAmount, currency)} / mês`,
+                  de: `entspricht ${formatMonthlyEquivalent(preludeYearlyAmount, currency)} / Monat`,
                 }, lang)}
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'サーバーアプリ無制限', en: 'Unlimited server apps', es: 'Aplicaciones de servidor ilimitadas', ko: '무제한 서버 앱', pt: 'Aplicativos de servidor ilimitados', de: 'Unbegrenzte Server-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.prelude.separator, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.prelude.transcriber, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.prelude.intonation, lang)}</li>
               <li>✓ {t5({ ja: '練習ログ記録', en: 'Practice logs', es: 'Registros de práctica', ko: '연습 기록', pt: 'Registros de prática', de: 'Übungsprotokolle' }, lang)}</li>
             </ul>
             <button
@@ -584,7 +629,7 @@ const HomePage: React.FC = () => {
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
             <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Concerto', en: 'Concerto', es: 'Concerto', ko: 'Concerto', pt: 'Concerto', de: 'Concerto' }, lang)}</h3>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
-              ¥{yearly ? concertoYearly.toLocaleString() : concertoMonthly.toLocaleString()}
+              {yearly ? concertoYearlyDisp : concertoMonthlyDisp}
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '0.75rem' }}>
               {yearly
@@ -594,26 +639,32 @@ const HomePage: React.FC = () => {
             {!yearly && (
               <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1.25rem', display: 'inline-block' }}>
                 {t5({
-                  ja: `🎁 初月 ¥${Math.round(concertoMonthly / 2).toLocaleString()} (50% OFF)`,
-                  en: `🎁 First month ¥${Math.round(concertoMonthly / 2).toLocaleString()} (50% OFF)`,
-                  es: `🎁 Primer mes ¥${Math.round(concertoMonthly / 2).toLocaleString()} (50% OFF)`,
+                  ja: `🎁 初月 ${formatHalfPrice(concertoMonthlyAmount, currency)} (50% OFF)`,
+                  en: `🎁 First month ${formatHalfPrice(concertoMonthlyAmount, currency)} (50% OFF)`,
+                  es: `🎁 Primer mes ${formatHalfPrice(concertoMonthlyAmount, currency)} (50% OFF)`,
+                  ko: `🎁 첫달 ${formatHalfPrice(concertoMonthlyAmount, currency)} (50% OFF)`,
+                  pt: `🎁 Primeiro mês ${formatHalfPrice(concertoMonthlyAmount, currency)} (50% OFF)`,
+                  de: `🎁 Erster Monat ${formatHalfPrice(concertoMonthlyAmount, currency)} (50% OFF)`,
                 }, lang)}
               </div>
             )}
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
-                  ja: `月換算 ¥${Math.round(concertoYearly / 12).toLocaleString()}`,
-                  en: `¥${Math.round(concertoYearly / 12).toLocaleString()} / mo equivalent`,
-                  es: `¥${Math.round(concertoYearly / 12).toLocaleString()} / mes`,
-                  ko: `월 환산 ¥${Math.round(concertoYearly / 12).toLocaleString()}`,
-                  pt: `equivalente a ¥${Math.round(concertoYearly / 12).toLocaleString()} / mês`,
-                  de: `entspricht ¥${Math.round(concertoYearly / 12).toLocaleString()} / Monat`,
+                  ja: `月換算 ${formatMonthlyEquivalent(concertoYearlyAmount, currency)}`,
+                  en: `${formatMonthlyEquivalent(concertoYearlyAmount, currency)} / mo equivalent`,
+                  es: `${formatMonthlyEquivalent(concertoYearlyAmount, currency)} / mes`,
+                  ko: `월 환산 ${formatMonthlyEquivalent(concertoYearlyAmount, currency)}`,
+                  pt: `equivalente a ${formatMonthlyEquivalent(concertoYearlyAmount, currency)} / mês`,
+                  de: `entspricht ${formatMonthlyEquivalent(concertoYearlyAmount, currency)} / Monat`,
                 }, lang)}
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全機能アクセス', en: 'Full access', es: 'Acceso completo', ko: '전체 액세스', pt: 'Acesso completo', de: 'Voller Zugriff' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.concerto.separator, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.concerto.transcriber, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.concerto.intonation, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ライブ投稿', en: 'Post live events', es: 'Publicar eventos en vivo', ko: '라이브 포스팅', pt: 'Postar eventos ao vivo', de: 'Live-Events posten' }, lang)}</li>
               <li>✓ {t5({ ja: '優先サポート', en: 'Priority support', es: 'Soporte prioritario', ko: '우선 지원', pt: 'Suporte prioritário', de: 'Prioritäts-Support' }, lang)}</li>
             </ul>
@@ -635,7 +686,7 @@ const HomePage: React.FC = () => {
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
             <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>Symphony</h3>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
-              ¥{yearly ? symphonyYearly.toLocaleString() : symphonyMonthly.toLocaleString()}
+              {yearly ? symphonyYearlyDisp : symphonyMonthlyDisp}
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '0.75rem' }}>
               {yearly
@@ -645,28 +696,33 @@ const HomePage: React.FC = () => {
             {!yearly && (
               <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1.25rem', display: 'inline-block' }}>
                 {t5({
-                  ja: `🎁 初月 ¥${Math.round(symphonyMonthly / 2).toLocaleString()} (50% OFF)`,
-                  en: `🎁 First month ¥${Math.round(symphonyMonthly / 2).toLocaleString()} (50% OFF)`,
-                  es: `🎁 Primer mes ¥${Math.round(symphonyMonthly / 2).toLocaleString()} (50% OFF)`,
+                  ja: `🎁 初月 ${formatHalfPrice(symphonyMonthlyAmount, currency)} (50% OFF)`,
+                  en: `🎁 First month ${formatHalfPrice(symphonyMonthlyAmount, currency)} (50% OFF)`,
+                  es: `🎁 Primer mes ${formatHalfPrice(symphonyMonthlyAmount, currency)} (50% OFF)`,
+                  ko: `🎁 첫달 ${formatHalfPrice(symphonyMonthlyAmount, currency)} (50% OFF)`,
+                  pt: `🎁 Primeiro mês ${formatHalfPrice(symphonyMonthlyAmount, currency)} (50% OFF)`,
+                  de: `🎁 Erster Monat ${formatHalfPrice(symphonyMonthlyAmount, currency)} (50% OFF)`,
                 }, lang)}
               </div>
             )}
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
-                  ja: `月換算 ¥${Math.round(symphonyYearly / 12).toLocaleString()}`,
-                  en: `¥${Math.round(symphonyYearly / 12).toLocaleString()} / mo equivalent`,
-                  es: `¥${Math.round(symphonyYearly / 12).toLocaleString()} / mes`,
-                  ko: `월 환산 ¥${Math.round(symphonyYearly / 12).toLocaleString()}`,
-                  pt: `equivalente a ¥${Math.round(symphonyYearly / 12).toLocaleString()} / mês`,
-                  de: `entspricht ¥${Math.round(symphonyYearly / 12).toLocaleString()} / Monat`,
+                  ja: `月換算 ${formatMonthlyEquivalent(symphonyYearlyAmount, currency)}`,
+                  en: `${formatMonthlyEquivalent(symphonyYearlyAmount, currency)} / mo equivalent`,
+                  es: `${formatMonthlyEquivalent(symphonyYearlyAmount, currency)} / mes`,
+                  ko: `월 환산 ${formatMonthlyEquivalent(symphonyYearlyAmount, currency)}`,
+                  pt: `equivalente a ${formatMonthlyEquivalent(symphonyYearlyAmount, currency)} / mês`,
+                  de: `entspricht ${formatMonthlyEquivalent(symphonyYearlyAmount, currency)} / Monat`,
                 }, lang)}
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '上位プラン: より大量のサーバー処理', en: 'Heavy server processing', es: 'Procesamiento intensivo' }, lang)}</li>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'Concerto の全機能 + 拡張クォータ', en: 'All Concerto features + expanded quota', es: 'Todo Concerto + cuota ampliada' }, lang)}</li>
-              <li>✓ {t5({ ja: '優先処理キュー', en: 'Priority processing queue', es: 'Cola prioritaria' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.symphony.separator, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.symphony.transcriber, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.symphony.intonation, lang)}</li>
+              <li>✓ {t5({ ja: '優先処理キュー', en: 'Priority processing queue', es: 'Cola prioritaria', ko: '우선 처리 대기열', pt: 'Fila prioritária', de: 'Prioritätswarteschlange' }, lang)}</li>
             </ul>
             <button
               type="button"
@@ -686,7 +742,7 @@ const HomePage: React.FC = () => {
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
             <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>Opus</h3>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
-              ¥{yearly ? opusYearly.toLocaleString() : opusMonthly.toLocaleString()}
+              {yearly ? opusYearlyDisp : opusMonthlyDisp}
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '0.75rem' }}>
               {yearly
@@ -696,28 +752,33 @@ const HomePage: React.FC = () => {
             {!yearly && (
               <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1.25rem', display: 'inline-block' }}>
                 {t5({
-                  ja: `🎁 初月 ¥${Math.round(opusMonthly / 2).toLocaleString()} (50% OFF)`,
-                  en: `🎁 First month ¥${Math.round(opusMonthly / 2).toLocaleString()} (50% OFF)`,
-                  es: `🎁 Primer mes ¥${Math.round(opusMonthly / 2).toLocaleString()} (50% OFF)`,
+                  ja: `🎁 初月 ${formatHalfPrice(opusMonthlyAmount, currency)} (50% OFF)`,
+                  en: `🎁 First month ${formatHalfPrice(opusMonthlyAmount, currency)} (50% OFF)`,
+                  es: `🎁 Primer mes ${formatHalfPrice(opusMonthlyAmount, currency)} (50% OFF)`,
+                  ko: `🎁 첫달 ${formatHalfPrice(opusMonthlyAmount, currency)} (50% OFF)`,
+                  pt: `🎁 Primeiro mês ${formatHalfPrice(opusMonthlyAmount, currency)} (50% OFF)`,
+                  de: `🎁 Erster Monat ${formatHalfPrice(opusMonthlyAmount, currency)} (50% OFF)`,
                 }, lang)}
               </div>
             )}
             {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
-                  ja: `月換算 ¥${Math.round(opusYearly / 12).toLocaleString()}`,
-                  en: `¥${Math.round(opusYearly / 12).toLocaleString()} / mo equivalent`,
-                  es: `¥${Math.round(opusYearly / 12).toLocaleString()} / mes`,
-                  ko: `월 환산 ¥${Math.round(opusYearly / 12).toLocaleString()}`,
-                  pt: `equivalente a ¥${Math.round(opusYearly / 12).toLocaleString()} / mês`,
-                  de: `entspricht ¥${Math.round(opusYearly / 12).toLocaleString()} / Monat`,
+                  ja: `月換算 ${formatMonthlyEquivalent(opusYearlyAmount, currency)}`,
+                  en: `${formatMonthlyEquivalent(opusYearlyAmount, currency)} / mo equivalent`,
+                  es: `${formatMonthlyEquivalent(opusYearlyAmount, currency)} / mes`,
+                  ko: `월 환산 ${formatMonthlyEquivalent(opusYearlyAmount, currency)}`,
+                  pt: `equivalente a ${formatMonthlyEquivalent(opusYearlyAmount, currency)} / mês`,
+                  de: `entspricht ${formatMonthlyEquivalent(opusYearlyAmount, currency)} / Monat`,
                 }, lang)}
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '業務利用・教室・スタジオ向け', en: 'For business, schools, studios', es: 'Negocios, escuelas, estudios' }, lang)}</li>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '最大クォータ + 商用利用可', en: 'Max quota + commercial use', es: 'Cuota máxima + uso comercial' }, lang)}</li>
-              <li>✓ {t5({ ja: '専用サポート', en: 'Dedicated support', es: 'Soporte dedicado' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '業務利用・教室・スタジオ向け', en: 'For business, schools, studios', es: 'Negocios, escuelas, estudios', ko: '업무·교실·스튜디오용', pt: 'Para empresas, escolas, estúdios', de: 'Für Unternehmen, Schulen, Studios' }, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.opus.separator, lang)}</li>
+              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.opus.transcriber, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.opus.intonation, lang)}</li>
+              <li>✓ {t5({ ja: '専用サポート', en: 'Dedicated support', es: 'Soporte dedicado', ko: '전용 지원', pt: 'Suporte dedicado', de: 'Dedizierter Support' }, lang)}</li>
             </ul>
             <button
               type="button"
@@ -749,9 +810,12 @@ const HomePage: React.FC = () => {
             </div>
             <div style={{ fontSize: '0.85rem', color: '#9a3412' }}>
               {t5({
-                ja: 'Prelude ¥390 / Concerto ¥740 / Symphony ¥1,240 / Opus ¥2,990。いつでも解約可能。',
-                en: 'Prelude ¥390 / Concerto ¥740 / Symphony ¥1,240 / Opus ¥2,990. Cancel anytime.',
-                es: 'Prelude ¥390 / Concerto ¥740 / Symphony ¥1,240 / Opus ¥2,990. Cancela en cualquier momento.',
+                ja: `Prelude ${formatHalfPrice(preludeMonthlyAmount, currency)} / Concerto ${formatHalfPrice(concertoMonthlyAmount, currency)} / Symphony ${formatHalfPrice(symphonyMonthlyAmount, currency)} / Opus ${formatHalfPrice(opusMonthlyAmount, currency)}。いつでも解約可能。`,
+                en: `Prelude ${formatHalfPrice(preludeMonthlyAmount, currency)} / Concerto ${formatHalfPrice(concertoMonthlyAmount, currency)} / Symphony ${formatHalfPrice(symphonyMonthlyAmount, currency)} / Opus ${formatHalfPrice(opusMonthlyAmount, currency)}. Cancel anytime.`,
+                es: `Prelude ${formatHalfPrice(preludeMonthlyAmount, currency)} / Concerto ${formatHalfPrice(concertoMonthlyAmount, currency)} / Symphony ${formatHalfPrice(symphonyMonthlyAmount, currency)} / Opus ${formatHalfPrice(opusMonthlyAmount, currency)}. Cancela en cualquier momento.`,
+                ko: `Prelude ${formatHalfPrice(preludeMonthlyAmount, currency)} / Concerto ${formatHalfPrice(concertoMonthlyAmount, currency)} / Symphony ${formatHalfPrice(symphonyMonthlyAmount, currency)} / Opus ${formatHalfPrice(opusMonthlyAmount, currency)}. 언제든지 해지 가능.`,
+                pt: `Prelude ${formatHalfPrice(preludeMonthlyAmount, currency)} / Concerto ${formatHalfPrice(concertoMonthlyAmount, currency)} / Symphony ${formatHalfPrice(symphonyMonthlyAmount, currency)} / Opus ${formatHalfPrice(opusMonthlyAmount, currency)}. Cancele a qualquer momento.`,
+                de: `Prelude ${formatHalfPrice(preludeMonthlyAmount, currency)} / Concerto ${formatHalfPrice(concertoMonthlyAmount, currency)} / Symphony ${formatHalfPrice(symphonyMonthlyAmount, currency)} / Opus ${formatHalfPrice(opusMonthlyAmount, currency)}. Jederzeit kündbar.`,
               }, lang)}
             </div>
           </div>
