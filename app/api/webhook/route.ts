@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
   }
 
   const event = JSON.parse(body) as {
+    id: string;
     type: string;
     data: { object: SessionLike };
   };
@@ -101,13 +102,17 @@ export async function POST(request: NextRequest) {
   // ───────────────────────────────────────────
   // 顧客メール + オーナー通知メール を並行送信
   // 顧客メールは shipping_details.address.country で言語自動切替 (JP→日本語、それ以外→英語)
+  //
+  // 冪等性: Stripe は仕様上同一イベントを複数回送信することがあるため、
+  // event.id を冪等性キーにすることで Resend が重複送信を防止する。
+  // 同じ event.id で 24 時間以内に再送されても、Resend はメールを再送しない。
   // ───────────────────────────────────────────
   const customerMail = buildCustomerEmail(customerEmail, session);
   const ownerMail = buildOwnerNotificationEmail(session);
 
   const [customerRes, ownerRes] = await Promise.all([
-    sendViaResend(resendApiKey, customerMail),
-    sendViaResend(resendApiKey, ownerMail),
+    sendViaResend(resendApiKey, customerMail, `${event.id}:customer`),
+    sendViaResend(resendApiKey, ownerMail, `${event.id}:owner`),
   ]);
 
   if (!customerRes.ok) {

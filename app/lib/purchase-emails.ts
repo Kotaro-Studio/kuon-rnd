@@ -131,6 +131,7 @@ function buildCustomerEmailJa(customerEmail: string, productName: string) {
     from: '空音開発 Kuon R&D <noreply@kotaroasahina.com>',
     to: customerEmail,
     subject: `【空音開発】${productName} ご購入ありがとうございます — KUON NORMALIZE パスワード`,
+    reply_to: '369@kotaroasahina.com',
     html: `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <h1 style="font-size: 22px; color: #0c4a6e; margin-bottom: 8px;">
@@ -217,9 +218,13 @@ function buildCustomerEmailEn(
   productFullEn: string,
 ) {
   return {
-    from: 'Kuon R&D <noreply@kotaroasahina.com>',
+    // From 表示名を日本語版と統一 (スパム判定回避: 同一送信者として扱われやすくする)
+    from: '空音開発 Kuon R&D <noreply@kotaroasahina.com>',
     to: customerEmail,
-    subject: `Thank you for your ${productShort} purchase — Kuon R&D`,
+    // 件名に [Kuon R&D] プレフィックスを付けて公式メールであることを明示
+    subject: `[Kuon R&D] ${productShort} order confirmation & KUON NORMALIZE access`,
+    // Reply-To を設定: スパム判定の重要要素
+    reply_to: '369@kotaroasahina.com',
     html: `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <h1 style="font-size: 22px; color: #0c4a6e; margin-bottom: 8px;">
@@ -475,15 +480,23 @@ ${isInternational ? `🌐 国際発送 — EMS/DHL 推奨
 
 export async function sendViaResend(
   apiKey: string,
-  email: { from: string; to: string; subject: string; html: string; text?: string },
+  email: { from: string; to: string; subject: string; html: string; text?: string; reply_to?: string },
+  idempotencyKey?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    };
+    // 冪等性キー: 同じキーを 24 時間以内に使うと、Resend は再送せず最初の送信結果を返す
+    // - Stripe Webhook が同一イベントを複数回送信しても、メールは 1 回しか送られない
+    // - テストでも同一キーなら重複送信なし
+    if (idempotencyKey) {
+      headers['Idempotency-Key'] = idempotencyKey;
+    }
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(email),
     });
     if (!res.ok) {

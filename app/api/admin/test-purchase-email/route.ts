@@ -123,17 +123,21 @@ export async function POST(request: NextRequest) {
 
   const tasks: Promise<{ ok: boolean; error?: string; label: string }>[] = [];
 
+  // 冪等性キー: fakeSession.id が Date.now() ベースなのでテスト毎に一意
+  // ただし同じ秒に 2 回叩いた場合は同一キーになるため、Resend が重複を排除してくれる
+  const idempotencyBase = fakeSession.id || 'test-' + Date.now();
+
   if (type === 'customer' || type === 'both') {
     // session の country で自動的に言語切替 (JP→日本語、それ以外→英語)
     const mail = buildCustomerEmail(OWNER_EMAIL, fakeSession);
     tasks.push(
-      sendViaResend(resendApiKey, mail).then((r) => ({ ...r, label: 'customer' })),
+      sendViaResend(resendApiKey, mail, `${idempotencyBase}:customer`).then((r) => ({ ...r, label: 'customer' })),
     );
   }
   if (type === 'owner' || type === 'both') {
     const mail = buildOwnerNotificationEmail(fakeSession);
     tasks.push(
-      sendViaResend(resendApiKey, mail).then((r) => ({ ...r, label: 'owner' })),
+      sendViaResend(resendApiKey, mail, `${idempotencyBase}:owner`).then((r) => ({ ...r, label: 'owner' })),
     );
   }
 
