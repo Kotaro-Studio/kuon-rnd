@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // ─────────────────────────────────────────────
 // Typography / Colors
@@ -174,6 +175,7 @@ export default function PlayerUploadPage() {
   // Render
   // ─────────────────────────────────────────────
   return (
+    <AuthGate appName="player-upload">
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e5e5e5', padding: 'clamp(16px, 4vw, 40px)' }}>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         {/* Header */}
@@ -450,5 +452,6 @@ export default function PlayerUploadPage() {
         )}
       </div>
     </div>
+    </AuthGate>
   );
 }

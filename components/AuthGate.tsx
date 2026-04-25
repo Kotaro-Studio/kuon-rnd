@@ -13,26 +13,36 @@ type L3 = Partial<Record<Lang, string>> & { en: string };
 const t3 = (m: L3, lang: Lang) => m[lang] ?? m.en;
 
 /**
- * AuthGate — 初回は無料で通過、2回目以降はログインを要求するゲートコンポーネント
+ * AuthGate — ログイン認証ゲート
  *
  * 使い方:
  *   <AuthGate appName="declipper">
  *     <YourAppContent />
  *   </AuthGate>
  *
- * 仕組み:
- * 1. localStorage の `kuon_first_visit_{appName}` をチェック
- * 2. 初回 → フラグをセットして children を表示（無料体験）
- * 3. 2回目以降 → kuon_user（localStorage）があれば通過、なければ登録モーダルを表示
+ * モード (2026-04-26 厳格化):
+ * - strict (default true): 初回から即ログイン要求
+ *   → ほとんどのブラウザアプリで使用
+ * - strict=false: 初回は無料体験 → 2回目以降ゲート (旧仕様)
+ *   → 一部のお試し型アプリで使用
  *
- * 聖域: /normalize は AuthGate を使用しない（kuon パスワードで保護）
+ * 仕組み (strict=true):
+ *   1. localStorage の kuon_user をチェック
+ *   2. ログイン済み → 通過 + 利用トラッキング
+ *   3. 未ログイン → 即ゲート表示
+ *
+ * 聖域:
+ *   - FREE_NO_LOGIN_APPS (pricing-display.ts) は AuthGate を使用しない
+ *   - /normalize は AuthGate ではなく kuon パスワードで保護
  */
 interface AuthGateProps {
   appName: string;
   children: ReactNode;
+  /** true=即ログイン要求 (default), false=初回無料 */
+  strict?: boolean;
 }
 
-export function AuthGate({ appName, children }: AuthGateProps) {
+export function AuthGate({ appName, children, strict = true }: AuthGateProps) {
   const { lang } = useLang();
   const [status, setStatus] = useState<'loading' | 'free' | 'authenticated' | 'gate'>('loading');
 
@@ -41,7 +51,6 @@ export function AuthGate({ appName, children }: AuthGateProps) {
 
     const firstVisitKey = `kuon_first_visit_${appName}`;
     const userJson = localStorage.getItem('kuon_user');
-    const hasVisited = localStorage.getItem(firstVisitKey);
 
     // ユーザーがログイン済み
     if (userJson) {
@@ -51,7 +60,14 @@ export function AuthGate({ appName, children }: AuthGateProps) {
       return;
     }
 
-    // 初回訪問 → 無料で通過
+    // strict モード: 初回から即ゲート
+    if (strict) {
+      setStatus('gate');
+      return;
+    }
+
+    // legacy モード: 初回は無料体験
+    const hasVisited = localStorage.getItem(firstVisitKey);
     if (!hasVisited) {
       localStorage.setItem(firstVisitKey, Date.now().toString());
       setStatus('free');
@@ -60,7 +76,7 @@ export function AuthGate({ appName, children }: AuthGateProps) {
 
     // 2回目以降 & 未ログイン → ゲート表示
     setStatus('gate');
-  }, [appName]);
+  }, [appName, strict]);
 
   if (status === 'loading') {
     return (

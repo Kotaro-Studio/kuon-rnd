@@ -12,6 +12,7 @@ import {
   formatMonthlyEquivalent,
   formatHalfPrice,
   PLAN_QUOTAS,
+  PLAN_SUBTITLES,
 } from '@/app/lib/pricing-display';
 
 const serif = '"Shippori Mincho", "Noto Serif JP", "Yu Mincho", "YuMincho", serif';
@@ -556,7 +557,8 @@ const HomePage: React.FC = () => {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Free', en: 'Free', es: 'Gratis', ko: '무료', pt: 'Gratuito', de: 'Kostenlos' }, lang)}</h3>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.15rem', color: '#0f172a' }}>{t5({ ja: 'Free', en: 'Free', es: 'Gratis', ko: '무료', pt: 'Gratuito', de: 'Kostenlos' }, lang)}</h3>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.85rem', textTransform: 'uppercase', fontWeight: 500 }}>{t5(PLAN_SUBTITLES.free, lang)}</div>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>{formatPrice(0, currency)}</div>
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
@@ -573,7 +575,8 @@ const HomePage: React.FC = () => {
             <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: ACCENT, color: 'white', padding: '0.375rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>
               {t5({ ja: 'おすすめ', en: 'POPULAR', es: 'POPULAR', ko: '인기', pt: 'POPULAR', de: 'BELIEBT' }, lang)}
             </div>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Prelude', en: 'Prelude', es: 'Prelude', ko: 'Prelude', pt: 'Prelude', de: 'Prelude' }, lang)}</h3>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.15rem', color: '#0f172a' }}>{t5({ ja: 'Prelude', en: 'Prelude', es: 'Prelude', ko: 'Prelude', pt: 'Prelude', de: 'Prelude' }, lang)}</h3>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.85rem', textTransform: 'uppercase', fontWeight: 500 }}>{t5(PLAN_SUBTITLES.prelude, lang)}</div>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
               {yearly ? preludeYearlyDisp : preludeMonthlyDisp}
             </div>
@@ -627,7 +630,8 @@ const HomePage: React.FC = () => {
             </button>
           </div>
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'Concerto', en: 'Concerto', es: 'Concerto', ko: 'Concerto', pt: 'Concerto', de: 'Concerto' }, lang)}</h3>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.15rem', color: '#0f172a' }}>{t5({ ja: 'Concerto', en: 'Concerto', es: 'Concerto', ko: 'Concerto', pt: 'Concerto', de: 'Concerto' }, lang)}</h3>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.85rem', textTransform: 'uppercase', fontWeight: 500 }}>{t5(PLAN_SUBTITLES.concerto, lang)}</div>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
               {yearly ? concertoYearlyDisp : concertoMonthlyDisp}
             </div>
@@ -684,7 +688,8 @@ const HomePage: React.FC = () => {
 
           {/* Symphony — Advanced */}
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>Symphony</h3>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.15rem', color: '#0f172a' }}>Symphony</h3>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.85rem', textTransform: 'uppercase', fontWeight: 500 }}>{t5(PLAN_SUBTITLES.symphony, lang)}</div>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
               {yearly ? symphonyYearlyDisp : symphonyMonthlyDisp}
             </div>
@@ -740,7 +745,8 @@ const HomePage: React.FC = () => {
 
           {/* Opus — Business / Enterprise */}
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
-            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>Opus</h3>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.15rem', color: '#0f172a' }}>Opus</h3>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.85rem', textTransform: 'uppercase', fontWeight: 500 }}>{t5(PLAN_SUBTITLES.opus, lang)}</div>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
               {yearly ? opusYearlyDisp : opusMonthlyDisp}
             </div>

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // ============================================================================
 // TYPES
@@ -659,6 +660,7 @@ export default function CounterpointPage() {
   const warnCount = errors.filter(e => e.severity === 'warning').length;
 
   return (
+    <AuthGate appName="counterpoint">
     <div style={containerStyle}>
       {/* Header */}
       <header style={{ textAlign: 'center', marginBottom: 28 }}>
@@ -870,5 +872,6 @@ export default function CounterpointPage() {
         KUON COUNTERPOINT — 空音開発 Kuon R&D
       </footer>
     </div>
+    </AuthGate>
   );
 }

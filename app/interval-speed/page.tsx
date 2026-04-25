@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
+import { AuthGate } from '@/components/AuthGate';
 
 // ============================================================================
 // TYPES
@@ -445,7 +446,7 @@ export default function IntervalSpeedPage() {
   const currentBest = stats.bestRecords[difficulty];
 
   return (
-    <>
+    <AuthGate appName="interval-speed">
     <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="history" />
     <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: sans, paddingBottom: 80 }}>
       {/* Header */}
@@ -775,7 +776,7 @@ export default function IntervalSpeedPage() {
         }
       `}</style>
     </div>
-    </>
+    </AuthGate>
   );
 }
 

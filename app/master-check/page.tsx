@@ -3,7 +3,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
-import { AuthGate } from '@/components/AuthGate';
 import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ─────────────────────────────────────────────
@@ -837,7 +836,7 @@ export default function MasterCheckPage() {
 
   // ─── Render ───
   return (
-    <AuthGate appName="master-check">
+    <>
     <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="download" />
     <div style={containerStyle}>
       {/* Hero */}
@@ -1162,6 +1161,6 @@ export default function MasterCheckPage() {
         </p>
       )}
     </div>
-    </AuthGate>
+    </>
   );
 }

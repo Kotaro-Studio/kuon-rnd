@@ -3,7 +3,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
-import { AuthGate } from '@/components/AuthGate';
 
 // ─────────────────────────────────────────────
 // Types
@@ -1057,7 +1056,6 @@ export default function DdpCheckerPage() {
   // Render
   // ─────────────────────────────────────────────
   return (
-    <AuthGate appName="ddp-checker">
     <div style={containerStyle}>
       {/* ── Hero ── */}
       <div style={heroStyle} className="hero-enter-1">
@@ -1486,6 +1484,5 @@ export default function DdpCheckerPage() {
         </p>
       )}
     </div>
-    </AuthGate>
   );
 }

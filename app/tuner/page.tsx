@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -656,6 +657,7 @@ export default function TunerPage() {
   const isPerfect = Math.abs(centsValue) <= 2;
 
   return (
+    <AuthGate appName="tuner">
     <div style={{
       fontFamily: sans,
       backgroundColor: '#0a0a0a',
@@ -1265,5 +1267,6 @@ export default function TunerPage() {
         }
       `}</style>
     </div>
+    </AuthGate>
   );
 }

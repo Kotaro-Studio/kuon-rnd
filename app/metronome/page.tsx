@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
+import { AuthGate } from '@/components/AuthGate';
 
 // ============================================================================
 // TYPES
@@ -1111,7 +1112,7 @@ export default function MetronomePage() {
 
   // ── Render ──
   return (
-    <>
+    <AuthGate appName="metronome">
     <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="advanced" />
     <main style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: sans, color: '#1e293b' }}>
       <div style={{ maxWidth: 600, margin: '0 auto', padding: 'clamp(20px,5vw,40px) clamp(14px,4vw,24px)' }}>
@@ -1672,6 +1673,6 @@ export default function MetronomePage() {
         </div>
       </div>
     </main>
-    </>
+    </AuthGate>
   );
 }

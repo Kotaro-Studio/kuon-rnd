@@ -4,6 +4,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
+import { AuthGate } from '@/components/AuthGate';
 
 // ─── Design Tokens ───
 const serif = '"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif';
@@ -341,7 +342,7 @@ export default function TransposerPage() {
   );
 
   return (
-    <>
+    <AuthGate appName="transposer">
     <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="presets" />
     <main style={{ background: BG, minHeight: '100vh', fontFamily: sans, color: '#1e293b' }}>
       {/* ─── Hero ─── */}
@@ -529,6 +530,6 @@ export default function TransposerPage() {
 
       </div>
     </main>
-    </>
+    </AuthGate>
   );
 }

@@ -47,3 +47,6 @@ next-env.d.ts
 # Cloudflare Wrangler local state
 .wrangler/
 .dev.vars
+
+# Backup files from sed -i edits
+*.bak

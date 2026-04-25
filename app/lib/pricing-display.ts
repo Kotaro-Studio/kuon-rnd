@@ -193,11 +193,68 @@ export function formatHalfPrice(
 }
 
 // ============================================================
-// CLAUDE.md §38.4 のクォータ仕様
+// プラン名サブタイトル (Pattern A: Standard / Pro / Premium / Max)
+// Apple ナミング (MacBook Standard/Pro/Max) と整合・階層が瞬時に伝わる
 // ============================================================
-// LP 表示用のサーバーアプリ制限値。
-// 学習系 (ブラウザ完結) は無制限のままで OK。
-// サーバー処理系は明確な制限を設ける必要がある (収益保護の根幹)。
+
+export type PlanSubtitle = { ja: string; en: string; es: string; ko: string; pt: string; de: string };
+
+export const PLAN_SUBTITLES: Record<PlanTier | 'free', PlanSubtitle> = {
+  free: {
+    ja: 'はじめに触れる',
+    en: 'Try the basics',
+    es: 'Comenzar',
+    ko: '시작하기',
+    pt: 'Começar',
+    de: 'Erste Schritte',
+  },
+  prelude: {
+    ja: 'Standard / 個人スタンダード',
+    en: 'Standard',
+    es: 'Standard / Estándar Individual',
+    ko: 'Standard / 개인 스탠다드',
+    pt: 'Standard / Padrão Individual',
+    de: 'Standard / Einzelperson',
+  },
+  concerto: {
+    ja: 'Pro / 個人プロ',
+    en: 'Pro',
+    es: 'Pro / Profesional Individual',
+    ko: 'Pro / 개인 프로',
+    pt: 'Pro / Profissional Individual',
+    de: 'Pro / Profi-Einzelperson',
+  },
+  symphony: {
+    ja: 'Premium / 個人プレミアム',
+    en: 'Premium',
+    es: 'Premium / Premium Individual',
+    ko: 'Premium / 개인 프리미엄',
+    pt: 'Premium / Premium Individual',
+    de: 'Premium / Premium-Einzelperson',
+  },
+  opus: {
+    ja: 'Max / 業務・教室',
+    en: 'Max / Business · Schools',
+    es: 'Max / Negocios · Escuelas',
+    ko: 'Max / 업무·교실',
+    pt: 'Max / Negócios · Escolas',
+    de: 'Max / Geschäft · Schulen',
+  },
+};
+
+// ============================================================
+// クォータ仕様 (選択肢 C ハイブリッド・2026-04-26 確定)
+// ============================================================
+// 設計思想:
+//   - Free: サーバーアプリは「使えない」(¥0 で集客装置に徹する・GCP コスト 0)
+//   - Prelude: 最悪粗利 75% を厳守 (大量加入時の損失防止)
+//   - Concerto/Symphony: 最悪 50%+、平均 80%+ (競合比 圧倒的 + 収益安全)
+//   - Opus: 最悪 30% 弱 (商用大口想定・コスト変動を許容)
+//
+// コスト前提 (CLAUDE.md §38.3):
+//   AI音源分離: ¥6/回 / 譜起こし: ¥5/回 / ピッチ分析: ¥1/回
+//
+// 「ほぼ無制限」表記は実上限を内蔵 (顧客には可視化しない・コスト保護のみ)
 // ============================================================
 
 export type QuotaLabels = {
@@ -209,46 +266,46 @@ export type QuotaLabels = {
 export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
   free: {
     separator: {
-      ja: 'AI音源分離: 月3回',
-      en: 'AI separation: 3/mo',
-      es: 'Separación IA: 3/mes',
-      ko: 'AI 분리: 월 3회',
-      pt: 'Separação IA: 3/mês',
-      de: 'KI-Trennung: 3/Mo',
+      ja: 'AI音源分離: 有料プランで利用可',
+      en: 'AI separation: paid plans only',
+      es: 'Separación IA: solo planes pagos',
+      ko: 'AI 분리: 유료 플랜 전용',
+      pt: 'Separação IA: apenas planos pagos',
+      de: 'KI-Trennung: nur in Bezahlplänen',
     },
     transcriber: {
-      ja: '譜起こし: 月3回',
-      en: 'Transcription: 3/mo',
-      es: 'Transcripción: 3/mes',
-      ko: '채보: 월 3회',
-      pt: 'Transcrição: 3/mês',
-      de: 'Notation: 3/Mo',
+      ja: '譜起こし: 有料プランで利用可',
+      en: 'Transcription: paid plans only',
+      es: 'Transcripción: solo planes pagos',
+      ko: '채보: 유료 플랜 전용',
+      pt: 'Transcrição: apenas planos pagos',
+      de: 'Notation: nur in Bezahlplänen',
     },
     intonation: {
-      ja: 'ピッチ分析: 月3回',
-      en: 'Pitch analysis: 3/mo',
-      es: 'Análisis tonal: 3/mes',
-      ko: '피치 분석: 월 3회',
-      pt: 'Análise tonal: 3/mês',
-      de: 'Tonhöhenanalyse: 3/Mo',
+      ja: 'ピッチ分析: 有料プランで利用可',
+      en: 'Pitch analysis: paid plans only',
+      es: 'Análisis tonal: solo planes pagos',
+      ko: '피치 분석: 유료 플랜 전용',
+      pt: 'Análise tonal: apenas planos pagos',
+      de: 'Tonhöhenanalyse: nur in Bezahlplänen',
     },
   },
   prelude: {
     separator: {
-      ja: 'AI音源分離: 月20回',
-      en: 'AI separation: 20/mo',
-      es: 'Separación IA: 20/mes',
-      ko: 'AI 분리: 월 20회',
-      pt: 'Separação IA: 20/mês',
-      de: 'KI-Trennung: 20/Mo',
+      ja: 'AI音源分離: 月15回',
+      en: 'AI separation: 15/mo',
+      es: 'Separación IA: 15/mes',
+      ko: 'AI 분리: 월 15회',
+      pt: 'Separação IA: 15/mês',
+      de: 'KI-Trennung: 15/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月20回',
-      en: 'Transcription: 20/mo',
-      es: 'Transcripción: 20/mes',
-      ko: '채보: 월 20회',
-      pt: 'Transcrição: 20/mês',
-      de: 'Notation: 20/Mo',
+      ja: '譜起こし: 月15回',
+      en: 'Transcription: 15/mo',
+      es: 'Transcripción: 15/mes',
+      ko: '채보: 월 15회',
+      pt: 'Transcrição: 15/mês',
+      de: 'Notation: 15/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: 月30回',
@@ -261,20 +318,20 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
   },
   concerto: {
     separator: {
-      ja: 'AI音源分離: 月150回',
-      en: 'AI separation: 150/mo',
-      es: 'Separación IA: 150/mes',
-      ko: 'AI 분리: 월 150회',
-      pt: 'Separação IA: 150/mês',
-      de: 'KI-Trennung: 150/Mo',
+      ja: 'AI音源分離: 月60回',
+      en: 'AI separation: 60/mo',
+      es: 'Separación IA: 60/mes',
+      ko: 'AI 분리: 월 60회',
+      pt: 'Separação IA: 60/mês',
+      de: 'KI-Trennung: 60/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月100回',
-      en: 'Transcription: 100/mo',
-      es: 'Transcripción: 100/mes',
-      ko: '채보: 월 100회',
-      pt: 'Transcrição: 100/mês',
-      de: 'Notation: 100/Mo',
+      ja: '譜起こし: 月40回',
+      en: 'Transcription: 40/mo',
+      es: 'Transcripción: 40/mes',
+      ko: '채보: 월 40회',
+      pt: 'Transcrição: 40/mês',
+      de: 'Notation: 40/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: ほぼ無制限',
@@ -287,20 +344,20 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
   },
   symphony: {
     separator: {
-      ja: 'AI音源分離: 月250回',
-      en: 'AI separation: 250/mo',
-      es: 'Separación IA: 250/mes',
-      ko: 'AI 분리: 월 250회',
-      pt: 'Separação IA: 250/mês',
-      de: 'KI-Trennung: 250/Mo',
+      ja: 'AI音源分離: 月120回',
+      en: 'AI separation: 120/mo',
+      es: 'Separación IA: 120/mes',
+      ko: 'AI 분리: 월 120회',
+      pt: 'Separação IA: 120/mês',
+      de: 'KI-Trennung: 120/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月200回',
-      en: 'Transcription: 200/mo',
-      es: 'Transcripción: 200/mes',
-      ko: '채보: 월 200회',
-      pt: 'Transcrição: 200/mês',
-      de: 'Notation: 200/Mo',
+      ja: '譜起こし: 月80回',
+      en: 'Transcription: 80/mo',
+      es: 'Transcripción: 80/mes',
+      ko: '채보: 월 80회',
+      pt: 'Transcrição: 80/mês',
+      de: 'Notation: 80/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: 無制限 + 優先処理',
@@ -313,20 +370,20 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
   },
   opus: {
     separator: {
-      ja: 'AI音源分離: 月800回',
-      en: 'AI separation: 800/mo',
-      es: 'Separación IA: 800/mes',
-      ko: 'AI 분리: 월 800회',
-      pt: 'Separação IA: 800/mês',
-      de: 'KI-Trennung: 800/Mo',
+      ja: 'AI音源分離: 月500回',
+      en: 'AI separation: 500/mo',
+      es: 'Separación IA: 500/mes',
+      ko: 'AI 분리: 월 500회',
+      pt: 'Separação IA: 500/mês',
+      de: 'KI-Trennung: 500/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月500回',
-      en: 'Transcription: 500/mo',
-      es: 'Transcripción: 500/mes',
-      ko: '채보: 월 500회',
-      pt: 'Transcrição: 500/mês',
-      de: 'Notation: 500/Mo',
+      ja: '譜起こし: 月250回',
+      en: 'Transcription: 250/mo',
+      es: 'Transcripción: 250/mes',
+      ko: '채보: 월 250회',
+      pt: 'Transcrição: 250/mês',
+      de: 'Notation: 250/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: 無制限 + 商用利用可',
@@ -338,3 +395,40 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
     },
   },
 };
+
+// ============================================================
+// Auth ガード対象アプリの allowlist (登録不要で使えるアプリ群)
+// ============================================================
+// 「太っ腹に開放」されている無料アプリ群。
+// これら以外のブラウザアプリは AuthGate で登録必須化する。
+//
+// 選定基準: SEO 流入が多い + 学習系 + 集客の入口になるもの
+// 将来的にこのリストは縮小・拡大される可能性がある。
+// ============================================================
+
+export const FREE_NO_LOGIN_APPS = [
+  // SEO 強い差別化ツール
+  'master-check',
+  'dsd',
+  'ddp-checker',
+  'normalize',     // マイク購入者特典 (パスワード kuon で別途保護)
+  'converter',
+  // 学習系・教育系 (個人練習に直結・登録ハードルを上げない)
+  'slowdown',
+  'ear-training',
+  'chord-quiz',
+  'sight-reading',
+  // ANALOG-TOOLS 系 (専門ニッチ集客)
+  'analog-tools',
+  'analog-machine-speed',
+  'tape-time',
+  'tape-remaining',
+  'jazz-time',
+  'voltage-db',
+] as const;
+
+export type FreeNoLoginApp = typeof FREE_NO_LOGIN_APPS[number];
+
+export function isFreeNoLoginApp(appName: string): boolean {
+  return (FREE_NO_LOGIN_APPS as readonly string[]).includes(appName);
+}

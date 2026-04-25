@@ -3,7 +3,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
-import { AuthGate } from '@/components/AuthGate';
 import { RegistrationNudge, useRegistrationNudge } from '@/components/RegistrationNudge';
 
 // ─────────────────────────────────────────────
@@ -504,7 +503,7 @@ export default function ConverterPage() {
 
   // ─── Render ────────────────────────────────
   return (
-    <AuthGate appName="converter">
+    <>
     <RegistrationNudge show={showNudge} onClose={() => setShowNudge(false)} feature="download" />
     <div style={pageStyle}>
       {/* Hero */}
@@ -739,6 +738,6 @@ export default function ConverterPage() {
         </p>
       </div>
     </div>
-    </AuthGate>
+    </>
   );
 }

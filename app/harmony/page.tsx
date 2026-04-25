@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { AuthGate } from '@/components/AuthGate';
 
 // ============================================================================
 // TYPES
@@ -692,6 +693,7 @@ export default function HarmonyPage() {
   const warnCount = errors.filter(e => e.severity === 'warning').length;
 
   return (
+    <AuthGate appName="harmony">
     <div style={containerStyle}>
       {/* Header */}
       <header style={headerStyle}>
@@ -891,5 +893,6 @@ export default function HarmonyPage() {
         KUON HARMONY — 空音開発 Kuon R&D
       </footer>
     </div>
+    </AuthGate>
   );
 }
