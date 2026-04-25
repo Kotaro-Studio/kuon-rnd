@@ -2821,6 +2821,35 @@ Auth Worker: usage:{email}:{YYYY-MM}:separator を取得
 | POST | `/api/auth/stripe/portal` | Customer Portal Session 作成 |
 | POST | `/api/auth/stripe/webhook` | Webhook 受信・12 イベント処理 |
 
+### 41.4-bis マイクの販売範囲: 日本国内のみ（暫定・2026-04-25 確定）
+
+**決定**: P-86S / X-86S マイクは **日本国内のみ販売** とする。
+
+**理由**:
+- サブスク事業立ち上げ期で為替リスク・国際物流の運用負荷を最小化したい
+- Stripe Checkout の `shipping_address_collection[allowed_countries][0]: 'JP'` で技術的にも JP のみに制限済み
+- 海外売上が出始めても、まずはサブスクの月額数千円ベースで安定収益を確立する方が優先
+
+**将来の拡張トリガー**:
+- **サブスク登録者数が 100 人を超えた段階** で海外発送設計を再検討
+- その時点で:
+  - EMS / DHL の単価交渉（量が出れば法人レート適用可能）
+  - 通関書類自動生成
+  - Stripe Price に `currency_options` 追加（USD/EUR/GBP 等のローカル通貨表示）
+  - 関税前払いオプション（DDP 配送）の検討
+
+**コード上の関連箇所** (将来変更時の参照):
+- `app/api/checkout/route.ts` line: `shipping_address_collection[allowed_countries][0]: 'JP'`
+- `app/lib/purchase-emails.ts`: 英語版テンプレート (`buildCustomerEmailEn`) は既に実装済み・現状未使用
+- `app/lib/shipping-emails.ts`: 発送通知メール（日本語版・国内のみ想定）
+
+**現状確認 (2026-04-25)**:
+- マイクページ表示: ¥13,900 (日本円のみ・全言語)
+- Stripe Checkout: `JP` のみ受付
+- 顧客メール: 日本語のみ送信
+- オーナー通知: 日本語のみ・ヤマト集荷情報含む
+- 発送通知: ヤマト追跡番号のみ対応 (国際追跡番号は将来対応)
+
 ### 41.4 認定制度（KUON CERTIFICATION）について — 採用しない決定（永久）
 
 > **重要: この決定は最終確定です。再実装してはいけません。**
