@@ -2,6 +2,11 @@
 // 共有モジュール — 以下から import:
 //   - /api/webhook/route.ts (本番購入時の通知)
 //   - /api/admin/test-purchase-email/route.ts (オーナー用テスト送信)
+//
+// 顧客メールは購入者の配送先国コードで自動的に言語切替:
+//   - JP → 日本語
+//   - その他 → 英語
+// オーナー通知メールは常に日本語 (件名で国際/国内を識別)
 
 export interface SessionLike {
   id?: string;
@@ -40,43 +45,88 @@ export interface SessionLike {
 // 商品判定
 // ─────────────────────────────────────────────
 
-const PRODUCT_KEY_NAMES: Record<string, string> = {
-  'p-86s': 'P-86S ステレオマイクロフォン',
-  'x-86s': 'X-86S プロフェッショナルステレオマイクロフォン',
-};
-const PRICE_ID_NAMES: Record<string, string> = {
-  'price_1SuT6IGbZ5gwwaLkc7rjciqU': 'P-86S ステレオマイクロフォン',
-  'price_1SuTKHGbZ5gwwaLkR6ew580Z': 'X-86S プロフェッショナルステレオマイクロフォン',
-};
-// JPY は小数点なし通貨: amount_total は 13900 (P-86S) / 39600 (X-86S)
-const AMOUNT_NAMES: Record<number, string> = {
-  13900: 'P-86S ステレオマイクロフォン',
-  39600: 'X-86S プロフェッショナルステレオマイクロフォン',
+const PRODUCT_FULL_NAMES: Record<string, { ja: string; en: string }> = {
+  'p-86s': {
+    ja: 'P-86S ステレオマイクロフォン',
+    en: 'P-86S Stereo Microphone',
+  },
+  'x-86s': {
+    ja: 'X-86S プロフェッショナルステレオマイクロフォン',
+    en: 'X-86S Professional Stereo Microphone',
+  },
 };
 
-export function detectProductName(session: SessionLike): string {
+const PRICE_ID_TO_KEY: Record<string, string> = {
+  'price_1SuT6IGbZ5gwwaLkc7rjciqU': 'p-86s',
+  'price_1SuTKHGbZ5gwwaLkR6ew580Z': 'x-86s',
+};
+
+// JPY は小数点なし通貨: amount_total は 13900 (P-86S) / 39600 (X-86S)
+const AMOUNT_TO_KEY: Record<number, string> = {
+  13900: 'p-86s',
+  39600: 'x-86s',
+};
+
+function detectProductKey(session: SessionLike): string {
   const metaProduct = session.metadata?.product;
-  if (metaProduct && PRODUCT_KEY_NAMES[metaProduct]) return PRODUCT_KEY_NAMES[metaProduct];
+  if (metaProduct && PRODUCT_FULL_NAMES[metaProduct]) return metaProduct;
   const priceId = session.line_items?.data?.[0]?.price?.id;
-  if (priceId && PRICE_ID_NAMES[priceId]) return PRICE_ID_NAMES[priceId];
-  if (session.amount_total && AMOUNT_NAMES[session.amount_total]) {
-    return AMOUNT_NAMES[session.amount_total];
+  if (priceId && PRICE_ID_TO_KEY[priceId]) return PRICE_ID_TO_KEY[priceId];
+  if (session.amount_total && AMOUNT_TO_KEY[session.amount_total]) {
+    return AMOUNT_TO_KEY[session.amount_total];
   }
-  return 'P-86S ステレオマイクロフォン';
+  return 'p-86s';
+}
+
+export function detectProductName(
+  session: SessionLike,
+  locale: 'ja' | 'en' = 'ja',
+): string {
+  const key = detectProductKey(session);
+  return PRODUCT_FULL_NAMES[key][locale];
 }
 
 export function detectProductShortName(session: SessionLike): string {
-  const fullName = detectProductName(session);
-  if (fullName.startsWith('P-86S')) return 'P-86S';
-  if (fullName.startsWith('X-86S')) return 'X-86S';
-  return 'P-86S';
+  const key = detectProductKey(session);
+  return key === 'p-86s' ? 'P-86S' : 'X-86S';
 }
 
 // ─────────────────────────────────────────────
-// 顧客向け購入完了メール (日本語)
+// 顧客の言語自動判定
 // ─────────────────────────────────────────────
 
-export function buildCustomerEmail(customerEmail: string, productName: string) {
+export function detectCustomerLocale(session: SessionLike): 'ja' | 'en' {
+  const country =
+    session.shipping_details?.address?.country ??
+    session.customer_details?.address?.country ??
+    'JP';
+  return country === 'JP' ? 'ja' : 'en';
+}
+
+// ─────────────────────────────────────────────
+// 顧客メール ディスパッチャ (locale で自動切替)
+// ─────────────────────────────────────────────
+
+export function buildCustomerEmail(
+  customerEmail: string,
+  session: SessionLike,
+  forceLocale?: 'ja' | 'en',
+) {
+  const locale = forceLocale ?? detectCustomerLocale(session);
+  const productNameJa = detectProductName(session, 'ja');
+  const productNameEn = detectProductName(session, 'en');
+  const productShort = detectProductShortName(session);
+
+  return locale === 'en'
+    ? buildCustomerEmailEn(customerEmail, productShort, productNameEn)
+    : buildCustomerEmailJa(customerEmail, productNameJa);
+}
+
+// ─────────────────────────────────────────────
+// 顧客メール (日本語) — 国内発送
+// ─────────────────────────────────────────────
+
+function buildCustomerEmailJa(customerEmail: string, productName: string) {
   return {
     from: '空音開発 Kuon R&D <noreply@kotaroasahina.com>',
     to: customerEmail,
@@ -158,13 +208,110 @@ export function buildCustomerEmail(customerEmail: string, productName: string) {
 }
 
 // ─────────────────────────────────────────────
-// オーナー向け注文通知メール
+// 顧客メール (英語) — 国際発送
+// ─────────────────────────────────────────────
+
+function buildCustomerEmailEn(
+  customerEmail: string,
+  productShort: string,
+  productFullEn: string,
+) {
+  return {
+    from: 'Kuon R&D <noreply@kotaroasahina.com>',
+    to: customerEmail,
+    subject: `Thank you for your ${productShort} purchase — Kuon R&D`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <h1 style="font-size: 22px; color: #0c4a6e; margin-bottom: 8px;">
+          Thank you for purchasing the<br>${productFullEn}
+        </h1>
+        <p style="color: #475569; font-size: 15px; line-height: 1.8;">
+          Your order has been confirmed. We will hand-pack and ship your ${productShort} from Hokkaido, Japan within 3-5 business days via EMS (tracked international mail).<br><br>
+          <strong>Estimated delivery time:</strong> 7-14 business days depending on destination country.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+        <h2 style="font-size: 18px; color: #0c4a6e; margin-bottom: 8px;">
+          Owner-Only Bonus: KUON NORMALIZE
+        </h2>
+        <p style="color: #475569; font-size: 14px; line-height: 1.8;">
+          As a ${productShort} owner, you have free access to KUON NORMALIZE, our professional audio normalization tool.
+        </p>
+
+        <div style="background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%); border-radius: 12px; padding: 24px; text-align: center; margin: 20px 0;">
+          <div style="color: rgba(255,255,255,0.8); font-size: 12px; letter-spacing: 2px; text-transform: uppercase;">
+            App Password
+          </div>
+          <div style="color: #fff; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'SF Mono', 'Consolas', monospace; margin: 8px 0;">
+            kuon
+          </div>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 13px; font-style: italic; text-align: center;">
+          This password is shared by all microphone owners — a mark of our community.
+        </p>
+
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="https://kuon-rnd.com/normalize"
+             style="display: inline-block; background: #0284c7; color: #fff; padding: 14px 36px; border-radius: 50px; text-decoration: none; font-size: 15px; letter-spacing: 1px;">
+            Open KUON NORMALIZE
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+        <h2 style="font-size: 18px; color: #0c4a6e; margin-bottom: 8px;">
+          Owner's Gallery
+        </h2>
+        <p style="color: #475569; font-size: 14px; line-height: 1.8;">
+          We'd love to showcase your recordings made with the ${productShort} on our website.
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 16px 0;">
+          <div style="color: #64748b; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
+            Submission Password
+          </div>
+          <div style="color: #0c4a6e; font-size: 24px; font-weight: 700; letter-spacing: 4px; font-family: 'SF Mono', 'Consolas', monospace;">
+            kuon041755
+          </div>
+        </div>
+
+        <div style="text-align: center; margin: 16px 0;">
+          <a href="https://kuon-rnd.com/microphone#gallery-submit"
+             style="display: inline-block; background: transparent; color: #0284c7; padding: 12px 28px; border-radius: 50px; text-decoration: none; font-size: 14px; letter-spacing: 1px; border: 1px solid #0284c7;">
+            Submit a Recording
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+          <p style="color: #92400e; font-size: 13px; line-height: 1.7; margin: 0;">
+            <strong>Important — International Shipping</strong><br>
+            Your country may charge import duties / VAT upon delivery. These charges are paid directly to your local customs or postal authority and are the recipient's responsibility. For most countries, the amount is small for items under USD 200.
+          </p>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 12px; line-height: 1.7; text-align: center;">
+          Kuon R&D<br>
+          <a href="https://kuon-rnd.com" style="color: #0284c7;">kuon-rnd.com</a><br>
+          Hand-built in Hokkaido, Japan<br>
+          Questions? Email <a href="mailto:369@kotaroasahina.com" style="color: #0284c7;">369@kotaroasahina.com</a>
+        </p>
+      </div>
+    `,
+  };
+}
+
+// ─────────────────────────────────────────────
+// オーナー向け注文通知メール (常に日本語)
 // ─────────────────────────────────────────────
 
 const OWNER_EMAIL = '369@kotaroasahina.com';
 
 export function buildOwnerNotificationEmail(session: SessionLike) {
-  const productName = detectProductName(session);
+  const productName = detectProductName(session, 'ja');
   const productShort = detectProductShortName(session);
 
   // 配送先 (shipping_details) を優先、なければ顧客請求先 (customer_details) を fallback
@@ -219,7 +366,8 @@ export function buildOwnerNotificationEmail(session: SessionLike) {
         <p style="font-size: 13px; color: #0f172a; margin: 0; line-height: 1.7;">
           EMS (Japan Post International) もしくは DHL での発送を推奨。<br>
           通関書類: 内容物「精密機械（マイクロフォン）/ Stereo microphone」<br>
-          HS コード: 8518.10
+          HS コード: 8518.10<br>
+          ※ 顧客には英語の購入御礼メールを自動送信済み (関税案内あり)
         </p>
       </div>
     `
@@ -301,7 +449,8 @@ export function buildOwnerNotificationEmail(session: SessionLike) {
 ${plainAddress}
 
 ${isInternational ? `🌐 国際発送 — EMS/DHL 推奨
-通関書類: 精密機械（マイクロフォン）, HS 8518.10` : `【ヤマト運輸 集荷依頼用】
+通関書類: 精密機械（マイクロフォン）, HS 8518.10
+※ 顧客には英語の購入御礼メールを自動送信済み` : `【ヤマト運輸 集荷依頼用】
 受取人氏名: ${name}
 電話: ${phoneNoHyphens}
 郵便番号: ${postalNoHyphens}

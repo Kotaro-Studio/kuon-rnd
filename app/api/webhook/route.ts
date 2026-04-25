@@ -11,7 +11,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   buildCustomerEmail,
   buildOwnerNotificationEmail,
-  detectProductName,
   sendViaResend,
   type SessionLike,
 } from '@/app/lib/purchase-emails';
@@ -99,12 +98,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  const productName = detectProductName(session);
-
   // ───────────────────────────────────────────
   // 顧客メール + オーナー通知メール を並行送信
+  // 顧客メールは shipping_details.address.country で言語自動切替 (JP→日本語、それ以外→英語)
   // ───────────────────────────────────────────
-  const customerMail = buildCustomerEmail(customerEmail, productName);
+  const customerMail = buildCustomerEmail(customerEmail, session);
   const ownerMail = buildOwnerNotificationEmail(session);
 
   const [customerRes, ownerRes] = await Promise.all([

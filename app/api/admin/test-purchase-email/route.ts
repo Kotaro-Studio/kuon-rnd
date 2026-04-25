@@ -26,7 +26,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   buildCustomerEmail,
   buildOwnerNotificationEmail,
-  detectProductName,
   sendViaResend,
   type SessionLike,
 } from '@/app/lib/purchase-emails';
@@ -122,12 +121,11 @@ export async function POST(request: NextRequest) {
     },
   };
 
-  const productName = detectProductName(fakeSession);
-
   const tasks: Promise<{ ok: boolean; error?: string; label: string }>[] = [];
 
   if (type === 'customer' || type === 'both') {
-    const mail = buildCustomerEmail(OWNER_EMAIL, productName);
+    // session の country で自動的に言語切替 (JP→日本語、それ以外→英語)
+    const mail = buildCustomerEmail(OWNER_EMAIL, fakeSession);
     tasks.push(
       sendViaResend(resendApiKey, mail).then((r) => ({ ...r, label: 'customer' })),
     );
