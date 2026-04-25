@@ -2135,11 +2135,12 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     await updateUserStripe(c.env, email, { stripeCustomerId });
   }
 
-  // FIRST100 Coupon を attach (monthly + (prelude|concerto|symphony) のみ)
-  // Opus は対象外、annual も対象外 (§40 設計)
+  // HALF50 Coupon を attach (monthly + 全プラン対応)
+  // 2026-04-25 切替: FIRST100 (Concerto/Symphony で赤字) → HALF50 (全プラン黒字)
+  // annual は対象外 (年額に 50% off は深すぎるため)
   const discounts: { coupon: string }[] = [];
-  if (billingCycle === 'monthly' && planTier !== 'opus') {
-    const couponMap = COUPON_IDS.first100 as Record<string, string>;
+  if (billingCycle === 'monthly') {
+    const couponMap = COUPON_IDS.half50 as Record<string, string>;
     const couponId = couponMap[planTier];
     if (couponId) {
       discounts.push({ coupon: couponId });

@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-04-25T11:53:19.402Z",
+  "mode": "live",
+  "coupons": [
+    {
+      "id": "HALF50_PRELUDE",
+      "status": "created",
+      "stripeId": "HALF50_PRELUDE"
+    },
+    {
+      "id": "HALF50_CONCERTO",
+      "status": "created",
+      "stripeId": "HALF50_CONCERTO"
+    },
+    {
+      "id": "HALF50_SYMPHONY",
+      "status": "created",
+      "stripeId": "HALF50_SYMPHONY"
+    },
+    {
+      "id": "HALF50_OPUS",
+      "status": "created",
+      "stripeId": "HALF50_OPUS"
+    }
+  ]
+}

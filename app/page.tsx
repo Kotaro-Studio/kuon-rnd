@@ -20,15 +20,21 @@ const HomePage: React.FC = () => {
   const [subscribeLoading, setSubscribeLoading] = useState<string | null>(null);
 
   // Stripe Live mode の Price と整合 (stripe-ids.md 参照)
-  // Prelude: ¥780/mo → ¥7,800/yr (2ヶ月無料 = 月換算¥650)
+  // Prelude:  ¥780/mo  → ¥7,800/yr   (2ヶ月無料 = 月換算¥650)
   // Concerto: ¥1,480/mo → ¥14,800/yr (2ヶ月無料 = 月換算¥1,234)
+  // Symphony: ¥2,480/mo → ¥24,800/yr (2ヶ月無料 = 月換算¥2,067)
+  // Opus:     ¥5,980/mo → ¥59,800/yr (2ヶ月無料 = 月換算¥4,984)
   const preludeMonthly  = 780;
   const preludeYearly   = 7800;
   const concertoMonthly = 1480;
   const concertoYearly  = 14800;
+  const symphonyMonthly = 2480;
+  const symphonyYearly  = 24800;
+  const opusMonthly     = 5980;
+  const opusYearly      = 59800;
 
   // Stripe Checkout 起動: 認証チェック → 未ログインなら /auth/login へ → ログイン済みなら Stripe へ
-  async function handleSubscribe(plan: 'prelude' | 'concerto', cycle: 'monthly' | 'annual') {
+  async function handleSubscribe(plan: 'prelude' | 'concerto' | 'symphony' | 'opus', cycle: 'monthly' | 'annual') {
     setSubscribeLoading(plan);
     try {
       const meRes = await fetch('/api/auth/me');
@@ -552,6 +558,132 @@ const HomePage: React.FC = () => {
                 ? t5({ ja: '処理中...', en: 'Processing...', es: 'Procesando...', ko: '처리 중...', pt: 'Processando...', de: 'Verarbeitung...' }, lang)
                 : t5({ ja: '購入する', en: 'Subscribe', es: 'Suscribirse', ko: '구독', pt: 'Assinar', de: 'Abonnieren' }, lang)}
             </button>
+          </div>
+
+          {/* Symphony — Advanced */}
+          <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>Symphony</h3>
+            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
+              ¥{yearly ? symphonyYearly.toLocaleString() : symphonyMonthly.toLocaleString()}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
+              {yearly
+                ? t5({ ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }, lang)
+                : t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' }, lang)}
+            </div>
+            {yearly && (
+              <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
+                {t5({
+                  ja: `月換算 ¥${Math.round(symphonyYearly / 12).toLocaleString()}`,
+                  en: `¥${Math.round(symphonyYearly / 12).toLocaleString()} / mo equivalent`,
+                  es: `¥${Math.round(symphonyYearly / 12).toLocaleString()} / mes`,
+                  ko: `월 환산 ¥${Math.round(symphonyYearly / 12).toLocaleString()}`,
+                  pt: `equivalente a ¥${Math.round(symphonyYearly / 12).toLocaleString()} / mês`,
+                  de: `entspricht ¥${Math.round(symphonyYearly / 12).toLocaleString()} / Monat`,
+                }, lang)}
+              </div>
+            )}
+            <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '上位プラン: より大量のサーバー処理', en: 'Heavy server processing', es: 'Procesamiento intensivo' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'Concerto の全機能 + 拡張クォータ', en: 'All Concerto features + expanded quota', es: 'Todo Concerto + cuota ampliada' }, lang)}</li>
+              <li>✓ {t5({ ja: '優先処理キュー', en: 'Priority processing queue', es: 'Cola prioritaria' }, lang)}</li>
+            </ul>
+            <button
+              type="button"
+              disabled={subscribeLoading !== null}
+              onClick={() => handleSubscribe('symphony', yearly ? 'annual' : 'monthly')}
+              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'symphony' ? 0.6 : 1, transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {subscribeLoading === 'symphony'
+                ? t5({ ja: '処理中...', en: 'Processing...', es: 'Procesando...', ko: '처리 중...', pt: 'Processando...', de: 'Verarbeitung...' }, lang)
+                : t5({ ja: '購入する', en: 'Subscribe', es: 'Suscribirse', ko: '구독', pt: 'Assinar', de: 'Abonnieren' }, lang)}
+            </button>
+          </div>
+
+          {/* Opus — Business / Enterprise */}
+          <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
+            <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>Opus</h3>
+            <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>
+              ¥{yearly ? opusYearly.toLocaleString() : opusMonthly.toLocaleString()}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: yearly ? '0.25rem' : '1.5rem' }}>
+              {yearly
+                ? t5({ ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }, lang)
+                : t5({ ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' }, lang)}
+            </div>
+            {yearly && (
+              <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
+                {t5({
+                  ja: `月換算 ¥${Math.round(opusYearly / 12).toLocaleString()}`,
+                  en: `¥${Math.round(opusYearly / 12).toLocaleString()} / mo equivalent`,
+                  es: `¥${Math.round(opusYearly / 12).toLocaleString()} / mes`,
+                  ko: `월 환산 ¥${Math.round(opusYearly / 12).toLocaleString()}`,
+                  pt: `equivalente a ¥${Math.round(opusYearly / 12).toLocaleString()} / mês`,
+                  de: `entspricht ¥${Math.round(opusYearly / 12).toLocaleString()} / Monat`,
+                }, lang)}
+              </div>
+            )}
+            <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '業務利用・教室・スタジオ向け', en: 'For business, schools, studios', es: 'Negocios, escuelas, estudios' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '最大クォータ + 商用利用可', en: 'Max quota + commercial use', es: 'Cuota máxima + uso comercial' }, lang)}</li>
+              <li>✓ {t5({ ja: '専用サポート', en: 'Dedicated support', es: 'Soporte dedicado' }, lang)}</li>
+            </ul>
+            <button
+              type="button"
+              disabled={subscribeLoading !== null}
+              onClick={() => handleSubscribe('opus', yearly ? 'annual' : 'monthly')}
+              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'opus' ? 0.6 : 1, transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {subscribeLoading === 'opus'
+                ? t5({ ja: '処理中...', en: 'Processing...', es: 'Procesando...', ko: '처리 중...', pt: 'Processando...', de: 'Verarbeitung...' }, lang)
+                : t5({ ja: '購入する', en: 'Subscribe', es: 'Suscribirse', ko: '구독', pt: 'Assinar', de: 'Abonnieren' }, lang)}
+            </button>
+          </div>
+        </div>
+
+        {/* HALF50 初月キャンペーン告知 (月払いの時のみ・全プラン対応) */}
+        {!yearly && (
+          <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)', borderRadius: '12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#92400e', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 600 }}>
+              🎁 {t5({ ja: '初月キャンペーン', en: 'First Month Deal', es: 'Promoción del Primer Mes' }, lang)}
+            </div>
+            <div style={{ fontFamily: serif, fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', color: '#7c2d12', fontWeight: 400, marginBottom: '0.5rem' }}>
+              {t5({
+                ja: '全プラン 初月 50% オフ',
+                en: '50% off the first month — all plans',
+                es: '50% de descuento el primer mes — todos los planes',
+              }, lang)}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#9a3412' }}>
+              {t5({
+                ja: 'Prelude ¥390 / Concerto ¥740 / Symphony ¥1,240 / Opus ¥2,990。いつでも解約可能。',
+                en: 'Prelude ¥390 / Concerto ¥740 / Symphony ¥1,240 / Opus ¥2,990. Cancel anytime.',
+                es: 'Prelude ¥390 / Concerto ¥740 / Symphony ¥1,240 / Opus ¥2,990. Cancela en cualquier momento.',
+              }, lang)}
+            </div>
+          </div>
+        )}
+
+        {/* マイク購入者特典バナー */}
+        <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: 'white', border: `2px dashed ${ACCENT}`, borderRadius: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: ACCENT, marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 600 }}>
+            🎙 {t5({ ja: 'マイク購入者特典', en: 'Microphone Owner Bonus', es: 'Bonificación para Dueños' }, lang)}
+          </div>
+          <div style={{ fontFamily: serif, fontSize: 'clamp(1rem, 2.5vw, 1.35rem)', color: '#0f172a', fontWeight: 400 }}>
+            {t5({
+              ja: 'P-86S / X-86S を購入すると Concerto 1ヶ月無料',
+              en: 'Buy P-86S / X-86S, get 1 month of Concerto free',
+              es: 'Compra P-86S / X-86S, obtén 1 mes de Concerto gratis',
+            }, lang)}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem' }}>
+            <Link href="/microphone" style={{ color: ACCENT, textDecoration: 'underline' }}>
+              {t5({ ja: 'マイクを見る →', en: 'View microphones →', es: 'Ver micrófonos →' }, lang)}
+            </Link>
           </div>
         </div>
       </section>

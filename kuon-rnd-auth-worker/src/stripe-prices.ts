@@ -50,12 +50,26 @@ export const PRICE_IDS = {
 // ============================================================
 
 export const COUPON_IDS = {
+  // ❗ 現役 (アクティブ): 初月 50% オフ — 全プラン対応・全プランで黒字
+  // 2026-04-25 切り替え: FIRST100 系 → HALF50 系
+  // 理由: FIRST100 は Concerto/Symphony で赤字だったため健全な収益構造に変更
+  half50: {
+    prelude:  'HALF50_PRELUDE',
+    concerto: 'HALF50_CONCERTO',
+    symphony: 'HALF50_SYMPHONY',
+    opus:     'HALF50_OPUS',
+  },
+
+  // ⚠️ legacy (現在未使用): 初月 ¥100 ベース
+  // Stripe には残存しているが、コードからは attach しない (赤字発生のため)
+  // 将来 Prelude 単体での集客キャンペーン等で再利用可能
   first100: {
     prelude:  'FIRST100_PRELUDE',
     concerto: 'FIRST100_CONCERTO',
     symphony: 'FIRST100_SYMPHONY',
     // Opus は対象外
   },
+
   referral_1month:      'REFERRAL_1MONTH_FREE',
   tier_a_partner:       'TIER_A_PARTNER_50',
   tier_c_graduate:      'TIER_C_GRADUATE_25',
