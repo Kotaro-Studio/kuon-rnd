@@ -478,20 +478,13 @@ export const APP_CATALOG: CatalogApp[] = [
     badges: ['NEW'],
     minPlan: 'free-with-login',
   },
-  {
-    id: 'drum',
-    name: { ja: 'DRUM MACHINE', en: 'DRUM MACHINE', es: 'DRUM MACHINE' },
-    tagline: { ja: '世界 12 文化圏のリズムを叩く', en: 'Beat the world\'s 12 cultures of rhythm', es: 'Toca ritmos de 12 culturas' },
-    href: '/drum-lp',
-    launchHref: '/drum',
-    emoji: '🥁',
-    category: 'production',
-    noLogin: true,
-    serverApp: false,
-    quotaKey: null,
-    badges: ['NEW'],
-    minPlan: 'free',
-  },
+  // 2026-04-26 開発保留: DRUM MACHINE
+  //   理由: 28 パターンが専門家 transcribe 不在の近似版だったため公開前に保留。
+  //   URL (/drum, /drum-lp) は残存・直リンクで動作。サイト導線からは完全除外。
+  //   再開時はオーナー (ボサノバ・ジャズ専門) 監修でパターン再構築の後カタログに復帰。
+  // {
+  //   id: 'drum', name: { ja: 'DRUM MACHINE', ... }, ...
+  // },
 
   // ============================================================
   // 🧘 メンタル・本番準備系 (2026-04-26 追加)

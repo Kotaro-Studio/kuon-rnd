@@ -78,6 +78,8 @@ export const metadata: Metadata = {
     description: '世界 12 文化圏 300+ パターン搭載・サンプル不要・登録不要・WAV/MIDI 出力',
   },
   alternates: { canonical: 'https://kuon-rnd.com/drum-lp' },
+  // 2026-04-26 開発保留: 検索エンジンには非掲載 (URL 直接アクセスは引き続き可能)
+  robots: { index: false, follow: false },
 };
 
 // ─────────────────────────────────────────────

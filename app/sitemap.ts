@@ -24,7 +24,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 🧘 メンタル・本番準備 (2026-04-26 追加)
     'breath', 'checklist', 'frequency',
     // 🎚 制作・スタジオ (2026-04-26 追加)
-    'comping', 'daw', 'drum',
+    'comping', 'daw',
+    // 2026-04-26 開発保留: 'drum' (専門家監修パターン再構築待ち・URL は残存)
   ];
 
   const appPages: MetadataRoute.Sitemap = apps.map(slug => ({
@@ -44,7 +45,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 🧘 メンタル・本番準備 (2026-04-26 追加)
     'breath-lp', 'checklist-lp', 'frequency-lp',
     // 🎚 制作・スタジオ (2026-04-26 追加)
-    'comping-lp', 'daw-lp', 'drum-lp',
+    'comping-lp', 'daw-lp',
+    // 2026-04-26 開発保留: 'drum-lp' (URL は残存・サイトマップには非掲載)
   ];
 
   const lpPages: MetadataRoute.Sitemap = lps.map(slug => ({

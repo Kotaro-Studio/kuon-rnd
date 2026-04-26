@@ -39,6 +39,8 @@ export const metadata: Metadata = {
     description: '世界12文化圏のリズムを叩く・サンプル不要・登録不要・ブラウザ完結',
   },
   alternates: { canonical: 'https://kuon-rnd.com/drum' },
+  // 2026-04-26 開発保留: 検索エンジンには非掲載 (URL 直接アクセスは引き続き可能)
+  robots: { index: false, follow: false },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
