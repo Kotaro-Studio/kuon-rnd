@@ -451,6 +451,20 @@ export const APP_CATALOG: CatalogApp[] = [
   // 🎚 制作・スタジオ系 (2026-04-26 追加)
   // ============================================================
   {
+    id: 'daw',
+    name: { ja: 'DAW', en: 'DAW', es: 'DAW' },
+    tagline: { ja: 'マルチトラック録音 + 編集 + マスタリング', en: 'Multi-track recorder + editor + mastering', es: 'Multipista + editor + masterización' },
+    href: '/daw-lp',
+    launchHref: '/daw',
+    emoji: '🎚',
+    category: 'production',
+    noLogin: false,
+    serverApp: false,
+    quotaKey: null,
+    badges: ['NEW'],
+    minPlan: 'free-with-login',
+  },
+  {
     id: 'comping',
     name: { ja: 'COMPING', en: 'COMPING', es: 'COMPING' },
     tagline: { ja: 'マルチテイク録音 + ベスト合成', en: 'Multi-take recording + best take comping', es: 'Grabación multitoma + comping' },
