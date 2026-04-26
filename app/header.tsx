@@ -22,10 +22,8 @@ const MENU: MenuItem[] = [
   { href: '/',                  label: { ja: 'トップ',           en: 'Top',        ko: '홈',        pt: 'Início',     es: 'Inicio',     de: 'Start'      } },
   { href: '/audio-apps',        label: { ja: 'アプリ',           en: 'Apps',       ko: '앱',        pt: 'Apps',       es: 'Apps',       de: 'Apps'       } },
   { href: '/microphone',        label: { ja: 'マイク',           en: 'Microphone', ko: '마이크',    pt: 'Microfone',  es: 'Micrófono',  de: 'Mikrofon'   } },
-  { href: '/soundmap',          label: { ja: '地球音マップ',     en: 'Sound Map',  ko: '지구의 소리', pt: 'Sons da Terra', es: 'Sonidos',  de: 'Klangkarte' } },
-  { href: '/events-lp',         label: { ja: 'ライブ情報',       en: "Today's Live", ko: '공연 정보', pt: 'Ao Vivo',   es: 'En Vivo',    de: 'Live-Events' } },
-  { href: '/#discover',         label: { ja: 'スカウト',         en: 'Discover',   ko: '디스커버',  pt: 'Descobrir',  es: 'Descubrir',  de: 'Entdecken'  } },
   { href: '/#pricing',          label: { ja: 'プラン',           en: 'Plans',      ko: '플랜',      pt: 'Planos',     es: 'Planes',     de: 'Pläne'      } },
+  // 2026-04-26 削除: 地球音マップ・ライブ情報・スカウト → フッターに移動
 ];
 
 const CONTACT: L3 = { ja: 'コンタクト', en: 'Contact', ko: '문의', pt: 'Contato', es: 'Contacto', de: 'Kontakt' };

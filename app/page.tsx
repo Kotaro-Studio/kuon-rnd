@@ -482,27 +482,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. DISCOVER */}
-      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '1400px', margin: '0 auto', width: '100%' }} id="discover">
-        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
-          {t5({ ja: 'スカウト', en: 'Discover', es: 'Descubrir', ko: '발견', pt: 'Descobrir', de: 'Entdecken' }, lang)}
-        </h2>
-        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem' }}>
-          {t5({ ja: '世界中の音楽、音風景、アーティストを探索する。', en: 'Explore music, soundscapes, and artists around the world.', es: 'Explora música, paisajes sonoros y artistas de todo el mundo.', ko: '세계의 음악, 음풍경, 아티스트를 탐색합니다.', pt: 'Explore música, paisagens sonoras e artistas em todo o mundo.', de: 'Entdecke Musik, Klanglandschaften und Künstler aus aller Welt.' }, lang)}
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-          <Link href="/soundmap" style={{ display: 'block', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', textDecoration: 'none', color: 'inherit', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌍</div>
-            <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: '地球の音マップ', en: 'Sound Map', es: 'Mapa de Sonido', ko: '사운드 맵', pt: 'Mapa de Som', de: 'Klangkarte' }, lang)}</h3>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', wordBreak: 'keep-all' }}>{t5({ ja: '世界中の音風景を探索', en: 'Explore soundscapes worldwide', es: 'Explora paisajes sonoros en todo el mundo', ko: '세계의 음풍경 탐색', pt: 'Explore paisagens sonoras em todo o mundo', de: 'Klanglandschaften weltweit erkunden' }, lang)}</p>
-          </Link>
-          <Link href="/events-lp" style={{ display: 'block', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem', textDecoration: 'none', color: 'inherit', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎪</div>
-            <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'ライブ情報', en: 'Live Events', es: 'Eventos en Vivo', ko: '라이브 이벤트', pt: 'Eventos ao Vivo', de: 'Live-Events' }, lang)}</h3>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', wordBreak: 'keep-all' }}>{t5({ ja: '近くのコンサートを見つける', en: 'Find concerts near you', es: 'Encuentra conciertos cerca de ti', ko: '근처 콘서트 찾기', pt: 'Encontre concertos perto de você', de: 'Konzerte in deiner Nähe finden' }, lang)}</p>
-          </Link>
-        </div>
-      </section>
+      {/* 6. DISCOVER (スカウト) — 2026-04-26 削除 (LP 簡素化のため。地球音マップ・ライブ情報はフッターに移動) */}
 
       {/* 7. PRICING */}
       <section id="pricing" style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%', scrollMarginTop: '80px' }}>
@@ -561,13 +541,13 @@ const HomePage: React.FC = () => {
             <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.85rem', textTransform: 'uppercase', fontWeight: 500 }}>{t5(PLAN_SUBTITLES.free, lang)}</div>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>{formatPrice(0, currency)}</div>
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상의 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.free.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.free.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.free.intonation, lang)}</li>
               <li>✓ {t5({ ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ahora, sin registro', ko: '지금 사용, 가입 불필요', pt: 'Use agora, sem inscrição', de: 'Sofort nutzen, keine Registrierung' }, lang)}</li>
             </ul>
-            <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
               {t5({ ja: '登録なしで今すぐ使う', en: 'Use Now — No Signup', es: 'Usar Ahora — Sin Registro', ko: '가입 없이 지금 사용', pt: 'Usar Agora — Sem Inscrição', de: 'Jetzt nutzen — ohne Registrierung' }, lang)}
             </Link>
           </div>
@@ -598,6 +578,18 @@ const HomePage: React.FC = () => {
               </div>
             )}
             {yearly && (
+              <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', display: 'inline-block' }}>
+                {t5({
+                  ja: '🎁 2ヶ月分お得',
+                  en: '🎁 2 months free',
+                  es: '🎁 2 meses gratis',
+                  ko: '🎁 2개월 무료',
+                  pt: '🎁 2 meses grátis',
+                  de: '🎁 2 Monate gratis',
+                }, lang)}
+              </div>
+            )}
+            {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
                   ja: `月換算 ${formatMonthlyEquivalent(preludeYearlyAmount, currency)}`,
@@ -610,7 +602,7 @@ const HomePage: React.FC = () => {
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상의 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.prelude.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.prelude.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.prelude.intonation, lang)}</li>
@@ -653,6 +645,18 @@ const HomePage: React.FC = () => {
               </div>
             )}
             {yearly && (
+              <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', display: 'inline-block' }}>
+                {t5({
+                  ja: '🎁 2ヶ月分お得',
+                  en: '🎁 2 months free',
+                  es: '🎁 2 meses gratis',
+                  ko: '🎁 2개월 무료',
+                  pt: '🎁 2 meses grátis',
+                  de: '🎁 2 Monate gratis',
+                }, lang)}
+              </div>
+            )}
+            {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
                   ja: `月換算 ${formatMonthlyEquivalent(concertoYearlyAmount, currency)}`,
@@ -665,7 +669,7 @@ const HomePage: React.FC = () => {
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상의 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.concerto.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.concerto.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.concerto.intonation, lang)}</li>
@@ -676,9 +680,9 @@ const HomePage: React.FC = () => {
               type="button"
               disabled={subscribeLoading !== null}
               onClick={() => handleSubscribe('concerto', yearly ? 'annual' : 'monthly')}
-              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'concerto' ? 0.6 : 1, transition: 'all 0.3s ease' }}
-              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'concerto' ? 0.6 : 1, transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
               {subscribeLoading === 'concerto'
                 ? t5({ ja: '処理中...', en: 'Processing...', es: 'Procesando...', ko: '처리 중...', pt: 'Processando...', de: 'Verarbeitung...' }, lang)
@@ -711,6 +715,18 @@ const HomePage: React.FC = () => {
               </div>
             )}
             {yearly && (
+              <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', display: 'inline-block' }}>
+                {t5({
+                  ja: '🎁 2ヶ月分お得',
+                  en: '🎁 2 months free',
+                  es: '🎁 2 meses gratis',
+                  ko: '🎁 2개월 무료',
+                  pt: '🎁 2 meses grátis',
+                  de: '🎁 2 Monate gratis',
+                }, lang)}
+              </div>
+            )}
+            {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
                   ja: `月換算 ${formatMonthlyEquivalent(symphonyYearlyAmount, currency)}`,
@@ -723,7 +739,7 @@ const HomePage: React.FC = () => {
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: 'ブラウザアプリ無制限', en: 'Unlimited browser apps', es: 'Aplicaciones de navegador ilimitadas', ko: '무제한 브라우저 앱', pt: 'Aplicativos de navegador ilimitados', de: 'Unbegrenzte Browser-Apps' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상의 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.symphony.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.symphony.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.symphony.intonation, lang)}</li>
@@ -733,9 +749,9 @@ const HomePage: React.FC = () => {
               type="button"
               disabled={subscribeLoading !== null}
               onClick={() => handleSubscribe('symphony', yearly ? 'annual' : 'monthly')}
-              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'symphony' ? 0.6 : 1, transition: 'all 0.3s ease' }}
-              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'symphony' ? 0.6 : 1, transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
               {subscribeLoading === 'symphony'
                 ? t5({ ja: '処理中...', en: 'Processing...', es: 'Procesando...', ko: '처리 중...', pt: 'Processando...', de: 'Verarbeitung...' }, lang)
@@ -768,6 +784,18 @@ const HomePage: React.FC = () => {
               </div>
             )}
             {yearly && (
+              <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: '6px', padding: '0.45rem 0.7rem', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', display: 'inline-block' }}>
+                {t5({
+                  ja: '🎁 2ヶ月分お得',
+                  en: '🎁 2 months free',
+                  es: '🎁 2 meses gratis',
+                  ko: '🎁 2개월 무료',
+                  pt: '🎁 2 meses grátis',
+                  de: '🎁 2 Monate gratis',
+                }, lang)}
+              </div>
+            )}
+            {yearly && (
               <div style={{ fontSize: '0.75rem', color: ACCENT, marginBottom: '1.25rem', fontWeight: 500 }}>
                 {t5({
                   ja: `月換算 ${formatMonthlyEquivalent(opusYearlyAmount, currency)}`,
@@ -790,9 +818,9 @@ const HomePage: React.FC = () => {
               type="button"
               disabled={subscribeLoading !== null}
               onClick={() => handleSubscribe('opus', yearly ? 'annual' : 'monthly')}
-              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#0f172a', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'opus' ? 0.6 : 1, transition: 'all 0.3s ease' }}
-              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', border: 'none', fontSize: '0.9rem', fontWeight: 500, cursor: subscribeLoading ? 'wait' : 'pointer', opacity: subscribeLoading === 'opus' ? 0.6 : 1, transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if (!subscribeLoading) { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
               {subscribeLoading === 'opus'
                 ? t5({ ja: '処理中...', en: 'Processing...', es: 'Procesando...', ko: '처리 중...', pt: 'Processando...', de: 'Verarbeitung...' }, lang)
