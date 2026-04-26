@@ -14,6 +14,7 @@ import {
   PLAN_QUOTAS,
   PLAN_SUBTITLES,
 } from '@/app/lib/pricing-display';
+import { CATEGORIES, APP_CATALOG, totalAppCount } from '@/app/lib/app-catalog';
 
 const serif = '"Shippori Mincho", "Noto Serif JP", "Yu Mincho", "YuMincho", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -313,57 +314,84 @@ const HomePage: React.FC = () => {
     },
   ];
 
+  // 2026-04-26 IQ190 personas: 5 personas with specific outcomes + numbers
+  // Each persona has: PAIN POINT recognition + SPECIFIC numerical benefit + identity activation
   const personas = [
     {
       emoji: '🎵',
       title: { ja: '演奏家', en: 'Musicians', es: 'Músicos', ko: '연주자', pt: 'Músicos', de: 'Musiker' },
-      desc: { ja: '練習の記録、ラウドネス調整、音源分離。プロの現場で使われるツールが、すべて無料。', en: 'Practice logs, loudness adjustment, stem separation. Professional-grade tools, all free.', es: 'Registros de práctica, ajuste de volumen, separación de stems. Herramientas de calidad profesional, todas gratis.', ko: '연습 기록, 라우드니스 조정, 스템 분리. 전문 수준의 도구, 모두 무료.', pt: 'Registros de prática, ajuste de volume, separação de stems. Ferramentas de qualidade profissional, todas grátis.', de: 'Übungsprotokolle, Lautheitsanpassung, Stem-Separation. Profiwerkzeuge, komplett kostenlos.' },
+      desc: { ja: '練習録音のコンピング、LUFS マスタリング、AI 音源分離。Pro Tools $300/年・Logic ¥30,000 の機能が、ブラウザで完全無料。', en: 'Comping, LUFS mastering, AI stem separation. Pro Tools $300/yr, Logic ¥30,000 — all free in your browser.', es: 'Comping, masterización LUFS, separación IA. Pro Tools $300/año, Logic ¥30,000 — gratis en tu navegador.', ko: '컴핑, LUFS 마스터링, AI 음원 분리. Pro Tools와 Logic의 기능이 브라우저에서 무료.', pt: 'Comping, masterização LUFS, separação IA. Pro Tools e Logic — gratuitos no navegador.', de: 'Comping, LUFS-Mastering, KI-Stem-Trennung. Pro Tools und Logic — kostenlos im Browser.' },
     },
     {
       emoji: '🎓',
       title: { ja: '音大生', en: 'Music Students', es: 'Estudiantes de Música', ko: '음악학생', pt: 'Estudantes de Música', de: 'Musikstudierende' },
-      desc: { ja: '和声分析、リズム訓練、聴音テスト。Prelude プランで音大4年間の成長を記録。', en: 'Harmony analysis, rhythm training, ear tests. Prelude plan tracks 4 years of growth.', es: 'Análisis de armonía, entrenamiento de ritmo, pruebas auditivas. Plan Prelude para registrar 4 años de crecimiento.', ko: '화성 분석, 리듬 훈련, 청음 테스트. Prelude 플랜으로 4년간의 성장을 기록합니다.', pt: 'Análise de harmonia, treinamento de ritmo, testes auditivos. Plano Prelude para rastrear 4 anos de crescimento.', de: 'Harmonielehre, Rhythmustraining, Gehörtests. Prelude-Tarif dokumentiert 4 Jahre Wachstum.' },
+      desc: { ja: '和声・対位法・聴音・本番準備。Prelude ¥780/月で、音大 4 年間の練習履歴を成長グラフに。', en: 'Harmony, counterpoint, ear training, performance prep. Prelude ¥780/mo turns 4 years of practice into a growth chart.', es: 'Armonía, contrapunto, entrenamiento auditivo. Prelude ¥780/mes registra 4 años de crecimiento.', ko: '화성, 대위법, 청음, 본 무대 준비. Prelude로 4년간의 연습 기록을 그래프로.', pt: 'Harmonia, contraponto, treino auditivo. Prelude registra 4 anos de crescimento.', de: 'Harmonie, Kontrapunkt, Gehörtraining. Prelude dokumentiert 4 Jahre Wachstum.' },
+    },
+    {
+      emoji: '🎤',
+      title: { ja: '歌い手・配信者', en: 'Singers & Streamers', es: 'Cantantes y Streamers', ko: '가수·스트리머', pt: 'Cantores e Streamers', de: 'Sänger & Streamer' },
+      desc: { ja: 'カラオケ → ボーカル録音 → ミックス → LUFS マスタリング → 配信書き出し。歌ってみた制作が、ブラウザだけで完結。', en: 'Karaoke → vocal recording → mix → LUFS mastering → release. Cover song production, end-to-end in your browser.', es: 'Karaoke → grabación vocal → mezcla → masterización LUFS → lanzamiento.', ko: '가라오케 → 보컬 녹음 → 믹스 → LUFS 마스터링 → 배포까지 브라우저 안에서.', pt: 'Karaokê → gravação vocal → mix → masterização LUFS → lançamento.', de: 'Karaoke → Aufnahme → Mix → LUFS-Mastering → Veröffentlichung — alles im Browser.' },
     },
     {
       emoji: '🎛️',
       title: { ja: '録音エンジニア', en: 'Recording Engineers', es: 'Ingenieros de Grabación', ko: '녹음 엔지니어', pt: 'Engenheiros de Gravação', de: 'Tonmeister' },
-      desc: { ja: 'DSD変換、DDPチェッカー、マスターチェック。他にないツールが、ブラウザで動く。', en: 'DSD converter, DDP checker, master check. Tools you can\'t find anywhere else, in your browser.', es: 'Convertidor DSD, verificador DDP, verificación maestra. Herramientas que no encontrarás en ningún otro lugar, en tu navegador.', ko: 'DSD 컨버터, DDP 체커, 마스터 체크. 다른 곳에서 찾을 수 없는 도구, 브라우저에서.', pt: 'Conversor DSD, verificador DDP, verificação mestre. Ferramentas que você não encontrará em nenhum outro lugar, no seu navegador.', de: 'DSD-Konverter, DDP-Prüfer, Master-Check. Werkzeuge, die es sonst nirgends gibt — direkt im Browser.' },
+      desc: { ja: 'DSD 変換、DDP 検証、マスターチェック、ステム分離。世界初のブラウザ完結プロツール群が、あなたの仕事を加速。', en: 'DSD conversion, DDP verification, master check, stem separation. World-first browser pro tools accelerate your work.', es: 'Conversión DSD, verificación DDP, verificación máster, separación de stems. Herramientas pro únicas en el navegador.', ko: 'DSD 변환, DDP 검증, 마스터 체크, 스템 분리. 세계 최초 브라우저 프로 도구.', pt: 'Conversão DSD, verificação DDP, master check, separação de stems. Ferramentas pro únicas no navegador.', de: 'DSD-Konvertierung, DDP-Prüfung, Master-Check, Stem-Separation. Erstmals als Browser-Profi-Tools.' },
     },
     {
       emoji: '🎧',
       title: { ja: '音楽ファン', en: 'Music Fans', es: 'Aficionados a la Música', ko: '음악 팬', pt: 'Fãs de Música', de: 'Musikliebhaber' },
-      desc: { ja: '世界中のライブ情報、録音マップ、アーティスト発掘。音楽の新しい楽しみ方。', en: 'Live events worldwide, sound map, discover artists. A new way to enjoy music.', es: 'Eventos en vivo en todo el mundo, mapa de sonido, descubre artistas. Una nueva forma de disfrutar la música.', ko: '세계 라이브 이벤트, 사운드 맵, 아티스트 발견. 음악을 즐기는 새로운 방식.', pt: 'Eventos ao vivo em todo o mundo, mapa de som, descubra artistas. Uma nova maneira de desfrutar da música.', de: 'Konzerte weltweit, Klanglandkarte, Künstler entdecken. Eine neue Art, Musik zu erleben.' },
+      desc: { ja: '地球音マップ、世界のライブ情報、新しいアーティスト発見。あなたと音楽の関係が、もう一段階深まります。', en: 'Sound map, live events worldwide, artist discovery. Deepen your relationship with music, one step further.', es: 'Mapa de sonidos, eventos en vivo mundiales, descubrimiento de artistas. Profundiza tu relación con la música.', ko: '지구 음향 맵, 세계 라이브, 아티스트 발견. 음악과의 관계가 한 단계 깊어집니다.', pt: 'Mapa de sons, eventos ao vivo mundiais, descoberta de artistas. Aprofunde sua relação com a música.', de: 'Klangkarte, Konzerte weltweit, Künstler entdecken. Vertiefen Sie Ihre Beziehung zur Musik.' },
     },
   ];
 
   return (
     <div style={{ fontFamily: sans, color: '#1f2937' }}>
-      {/* 1. HERO */}
+      {/* 1. HERO — IQ190 persona-targeted conversion copy (2026-04-26) */}
       <section style={{ minHeight: '90vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: 'clamp(2rem, 5%, 6rem) clamp(1rem, 3%, 4rem)', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' }}>
         <div style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#64748b', marginBottom: '1.5rem' }}>THE PLATFORM FOR MUSICIANS</div>
         <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 2rem 0', maxWidth: '1000px', whiteSpace: 'pre-line', wordBreak: 'keep-all', color: '#0f172a' }}>
-          {t5({ ja: 'あなたの音楽を、\n次のステージへ。', en: 'Take your music\nto the next stage.', es: 'Lleva tu música\nal siguiente nivel.', ko: '당신의 음악을\n다음 단계로.', pt: 'Leve sua música\npara o próximo nível.', de: 'Bring deine Musik\nauf die nächste Stufe.' }, lang)}
+          {t5({
+            ja: '音楽家のための、\nひとつの場所。',
+            en: 'One place,\nfor every musician.',
+            es: 'Un lugar,\npara cada músico.',
+            ko: '모든 음악가를 위한,\n하나의 장소.',
+            pt: 'Um lugar,\npara cada músico.',
+            de: 'Ein Ort,\nfür jeden Musiker.',
+          }, lang)}
         </h1>
         <p style={{ fontFamily: sans, fontSize: 'clamp(1rem, 2.5vw, 1.125rem)', color: '#64748b', maxWidth: '800px', lineHeight: 1.6, margin: '0 0 3rem 0', whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
-          {t5({ ja: '15以上の無料ツール、ハンドメイドマイク、世界中の音楽家コミュニティ。\n空音開発は、音楽に生きるすべての人のためのプラットフォームです。', en: '15+ free tools, handmade microphones, a global musician community.\nKuon R&D is the platform for everyone who lives for music.', es: 'Más de 15 herramientas gratuitas, micrófonos artesanales, comunidad global.\nKuon R&D es la plataforma para quienes viven por la música.', ko: '15개 이상의 무료 도구, 핸드메이드 마이크, 글로벌 음악가 커뮤니티.\n공음개발은 음악으로 살아가는 모든 사람을 위한 플랫폼입니다.', pt: 'Mais de 15 ferramentas gratuitas, microfones artesanais, comunidade global.\nKuon R&D é a plataforma para quem vive pela música.', de: 'Über 15 kostenlose Tools, handgefertigte Mikrofone, eine weltweite Musikergemeinschaft.\nKuon R&D ist die Plattform für alle, die für Musik leben.' }, lang)}
+          {t5({
+            ja: '30 以上のプロツール、ハンドメイドマイク、世界中の音楽家コミュニティ。\n練習も、録音も、配信も、ブラウザひとつで完結します。',
+            en: '30+ professional tools, handmade microphones, a global musician community.\nPractice, record, master, release — all in one browser.',
+            es: '30+ herramientas profesionales, micrófonos artesanales, comunidad global.\nPractica, graba, masteriza, publica — todo en un navegador.',
+            ko: '30+ 프로 도구, 핸드메이드 마이크, 글로벌 커뮤니티.\n연습, 녹음, 마스터링, 배포 — 브라우저 하나로.',
+            pt: '30+ ferramentas profissionais, microfones artesanais, comunidade global.\nPratique, grave, masterize, publique — tudo em um navegador.',
+            de: '30+ Profi-Tools, handgefertigte Mikrofone, weltweite Community.\nÜben, Aufnehmen, Mastern, Veröffentlichen — alles in einem Browser.',
+          }, lang)}
         </p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.875rem 2rem', background: '#0f172a', color: 'white', borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#0f172a'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-            {t5({ ja: '無料ではじめる', en: 'Start Free', es: 'Comenzar Gratis', ko: '무료로 시작', pt: 'Comece Grátis', de: 'Kostenlos starten' }, lang)}
+            {t5({ ja: '無料ではじめる →', en: 'Start Free →', es: 'Comenzar Gratis →', ko: '무료로 시작 →', pt: 'Comece Grátis →', de: 'Kostenlos starten →' }, lang)}
           </Link>
           <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.875rem 2rem', border: `2px solid ${ACCENT}`, color: ACCENT, borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', background: 'white', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-            {t5({ ja: 'アプリを体験する', en: 'Try the Apps', es: 'Probar las Aplicaciones', ko: '앱 시도', pt: 'Experimente os Aplicativos', de: 'Apps ausprobieren' }, lang)}
+            {t5({ ja: '30 のツールを覗く', en: 'Explore 30+ tools', es: 'Explorar 30+ herramientas', ko: '30+ 도구 보기', pt: 'Explorar 30+ ferramentas', de: '30+ Tools entdecken' }, lang)}
           </Link>
+        </div>
+        <div style={{ marginTop: '1.5rem', fontSize: '0.78rem', color: '#94a3b8', display: 'flex', gap: '1.25rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span>✓ {t5({ ja: 'メールアドレスだけ', en: 'Email only', es: 'Solo email', ko: '이메일만', pt: 'Só email', de: 'Nur E-Mail' }, lang)}</span>
+          <span>✓ {t5({ ja: '30 秒で完了', en: '30 seconds', es: '30 segundos', ko: '30초', pt: '30 segundos', de: '30 Sekunden' }, lang)}</span>
+          <span>✓ {t5({ ja: 'クラウド送信ゼロ', en: 'Zero cloud upload', es: 'Cero subida', ko: '클라우드 업로드 제로', pt: 'Sem upload', de: 'Kein Cloud-Upload' }, lang)}</span>
         </div>
       </section>
 
-      {/* 2. TRUST BAR */}
+      {/* 2. TRUST BAR — 2026-04-26 IQ190 update: numbers reflect current state (30+ apps, 8 categories) */}
       <section style={{ borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '2rem clamp(1rem, 3%, 4rem)', background: 'white' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>15+</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'オーディオツール', en: 'Audio Tools', es: 'Herramientas de Audio', ko: '오디오 도구', pt: 'Ferramentas de Áudio', de: 'Audio-Tools' }, lang)}</div></div>
-          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>🌐</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '世界中に発送', en: 'Ships Worldwide', es: 'Envío Mundial', ko: '전 세계 배송', pt: 'Envio Mundial', de: 'Weltweiter Versand' }, lang)}</div></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>{totalAppCount()}+</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'プロツール', en: 'Pro Tools', es: 'Herramientas Pro', ko: '프로 도구', pt: 'Ferramentas Pro', de: 'Profi-Tools' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>{CATEGORIES.length}</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'カテゴリ', en: 'Categories', es: 'Categorías', ko: '카테고리', pt: 'Categorias', de: 'Kategorien' }, lang)}</div></div>
           <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>6</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '言語対応', en: 'Languages', es: 'Idiomas', ko: '언어', pt: 'Idiomas', de: 'Sprachen' }, lang)}</div></div>
           <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>100%</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: 'ブラウザ完結', en: 'Browser-Based', es: 'Basado en Navegador', ko: '브라우저 기반', pt: 'Baseado em Navegador', de: 'Browserbasiert' }, lang)}</div></div>
+          <div><div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT }}>¥0</div><div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>{t5({ ja: '完全無料 (Free プラン)', en: 'Free plan', es: 'Plan gratis', ko: '완전 무료', pt: 'Totalmente grátis', de: 'Kostenloser Plan' }, lang)}</div></div>
         </div>
       </section>
 
@@ -386,30 +414,148 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. APP SHOWCASE */}
+      {/* 4. APP SHOWCASE — IQ190 redesign 2026-04-26: category-based + featured NEW apps */}
       <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: '#f8fafc', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
-          {t5({ ja: 'プロが使うツールを、あなたの手に。', en: 'Professional tools, in your hands.', es: 'Herramientas profesionales, en tus manos.', ko: '프로가 사용하는 도구를 당신의 손에.', pt: 'Ferramentas profissionais, nas suas mãos.', de: 'Profi-Werkzeuge in deiner Hand.' }, lang)}
+          {t5({
+            ja: 'あなたの目的が、すぐ見つかる。',
+            en: 'Find what you need, instantly.',
+            es: 'Encuentra lo que necesitas, al instante.',
+            ko: '필요한 것을 즉시 찾으세요.',
+            pt: 'Encontre o que precisa, instantaneamente.',
+            de: 'Finde sofort, was du brauchst.',
+          }, lang)}
         </h2>
         <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '1rem', maxWidth: '700px', margin: '0 auto 3rem', wordBreak: 'keep-all' }}>
-          {t5({ ja: 'ブラウザだけで完結。ダウンロード不要で今すぐ使えます。', en: 'Everything runs in your browser. No downloads needed — start right now.', es: 'Todo se ejecuta en tu navegador. Sin descargas necesarias.', ko: '모든 것이 브라우저에서 실행됩니다. 다운로드 없이 바로 시작하세요.', pt: 'Tudo é executado no seu navegador. Sem downloads necessários.', de: 'Alles läuft im Browser. Kein Download nötig — direkt loslegen.' }, lang)}
+          {t5({
+            ja: '8 つのカテゴリに、合計 30 以上のプロツール。すべてブラウザだけで完結します。',
+            en: '8 categories, 30+ pro tools — all running in your browser.',
+            es: '8 categorías, 30+ herramientas pro — todo en tu navegador.',
+            ko: '8개 카테고리, 30+ 프로 도구. 모두 브라우저에서.',
+            pt: '8 categorias, 30+ ferramentas pro — tudo no navegador.',
+            de: '8 Kategorien, 30+ Profi-Tools — alle im Browser.',
+          }, lang)}
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
-          {apps.map((app, idx) => (
-            <Link key={idx} href={app.href} style={{ display: 'block', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', textDecoration: 'none', color: 'inherit', transition: 'all 0.3s ease', position: 'relative' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.boxShadow = `0 4px 12px rgba(2, 132, 199, 0.1)`; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}>
-              {app.badge && (
-                <span style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', fontSize: '0.65rem', fontWeight: 600, padding: '0.25rem 0.6rem', borderRadius: '999px', letterSpacing: '0.02em' }}>{t5(app.badge, lang)}</span>
-              )}
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{app.emoji}</div>
-              <h3 style={{ fontFamily: sans, fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>{app.name}</h3>
-              <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem', wordBreak: 'keep-all' }}>{t5(app.desc, lang)}</p>
-              <span style={{ color: ACCENT, fontSize: '0.875rem', fontWeight: 500 }}>→</span>
-            </Link>
-          ))}
+
+        {/* Category grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem', marginBottom: '4rem' }}>
+          {CATEGORIES.map((cat) => {
+            const count = APP_CATALOG.filter((a) => a.category === cat.id).length;
+            return (
+              <Link
+                key={cat.id}
+                href="/audio-apps#apps"
+                style={{
+                  display: 'block', background: 'white', border: '1px solid #e2e8f0',
+                  borderRadius: '12px', padding: '1.5rem',
+                  textDecoration: 'none', color: 'inherit', transition: 'all 0.25s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(2,132,199,0.1)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{cat.emoji}</div>
+                <h3 style={{ fontFamily: sans, fontSize: '1rem', fontWeight: 600, marginBottom: '0.4rem', color: '#0f172a' }}>{t5(cat.label, lang)}</h3>
+                <p style={{ color: '#64748b', fontSize: '0.78rem', lineHeight: 1.5, marginBottom: '0.75rem', minHeight: '2.4em' }}>{t5(cat.desc, lang)}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', color: ACCENT, fontWeight: 600 }}>{count} {t5({ ja: 'アプリ', en: 'apps', es: 'apps', ko: '앱', pt: 'apps', de: 'Apps' }, lang)}</span>
+                  <span style={{ color: ACCENT, fontSize: '0.85rem', fontWeight: 500 }}>→</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
+
+        {/* Featured NEW apps */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontFamily: serif, fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
+            {t5({ ja: '✨ 最近リリースされたアプリ', en: '✨ Recently Released', es: '✨ Lanzamientos recientes' }, lang)}
+          </h3>
+          <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '2rem', fontSize: '0.9rem' }}>
+            {t5({ ja: '今、空音開発が最もおすすめする 4 つ', en: 'Our 4 most recommended apps right now', es: 'Nuestras 4 apps más recomendadas' }, lang)}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            {[
+              { id: 'daw', emoji: '🎚', name: 'KUON DAW', tag: { ja: 'マルチトラック録音 + マスタリング', en: 'Multi-track recording + mastering', es: 'Multipista + masterización' }, href: '/daw-lp' },
+              { id: 'comping', emoji: '🎙', name: 'KUON COMPING', tag: { ja: 'マルチテイク・ベスト合成', en: 'Multi-take + best comping', es: 'Multitoma + mejor comping' }, href: '/comping-lp' },
+              { id: 'breath', emoji: '🌬', name: 'KUON BREATH', tag: { ja: '本番前の呼吸法ガイド', en: 'Pre-stage breathing guide', es: 'Respiración pre-show' }, href: '/breath-lp' },
+              { id: 'frequency', emoji: '🔊', name: 'KUON FREQUENCY', tag: { ja: 'ソルフェジオ周波数プレーヤー', en: 'Solfeggio frequency player', es: 'Reproductor solfeggio' }, href: '/frequency-lp' },
+            ].map((a, i) => (
+              <Link key={i} href={a.href} style={{
+                display: 'block', background: 'linear-gradient(135deg, #fff 0%, #f0f9ff 100%)',
+                border: `1px solid ${ACCENT}33`, borderRadius: '12px', padding: '1.25rem',
+                textDecoration: 'none', color: 'inherit', transition: 'all 0.25s ease', position: 'relative',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(2,132,199,0.15)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${ACCENT}33`; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <span style={{ position: 'absolute', top: '0.6rem', right: '0.6rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', fontSize: '0.6rem', fontWeight: 600, padding: '2px 7px', borderRadius: '999px' }}>NEW</span>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{a.emoji}</div>
+                <h4 style={{ fontFamily: sans, fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.3rem', color: '#0f172a' }}>{a.name}</h4>
+                <p style={{ color: '#64748b', fontSize: '0.75rem', lineHeight: 1.5 }}>{t5(a.tag, lang)}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
           <Link href="/audio-apps" style={{ color: ACCENT, textDecoration: 'none', fontSize: '1rem', fontWeight: 500 }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
-            {t5({ ja: 'すべてのアプリを見る →', en: 'See all apps →', es: 'Ver todas las aplicaciones →', ko: '모든 앱 보기 →', pt: 'Ver todos os aplicativos →', de: 'Alle Apps ansehen →' }, lang)}
+            {t5({ ja: '全 30+ アプリを見る →', en: 'See all 30+ apps →', es: 'Ver todas las 30+ apps →', ko: '30+ 앱 모두 보기 →', pt: 'Ver todas as 30+ apps →', de: 'Alle 30+ Apps ansehen →' }, lang)}
+          </Link>
+        </div>
+      </section>
+
+      {/* 4.5 PSYCHOLOGICAL HOOK SECTION — "30秒で得られるもの" (free signup nudge) */}
+      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1100px', margin: '0 auto', width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <div style={{ fontSize: '0.75rem', letterSpacing: '0.2em', color: ACCENT, marginBottom: '0.85rem', fontWeight: 600 }}>
+            ⏱ {t5({ ja: '30 秒で完了', en: '30 SECONDS', es: '30 SEGUNDOS', ko: '30초', pt: '30 SEGUNDOS', de: '30 SEKUNDEN' }, lang)}
+          </div>
+          <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.75rem, 4.5vw, 2.75rem)', fontWeight: 400, marginBottom: '1rem', color: '#0f172a' }}>
+            {t5({
+              ja: '無料登録で、何ができるようになるか?',
+              en: 'What you get with a free account.',
+              es: '¿Qué obtienes con una cuenta gratis?',
+              ko: '무료 계정으로 무엇을 얻을 수 있나요?',
+              pt: 'O que você ganha com uma conta gratuita?',
+              de: 'Was du mit einem kostenlosen Konto erhältst.',
+            }, lang)}
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: 600, margin: '0 auto', lineHeight: 1.7 }}>
+            {t5({
+              ja: 'メールアドレスだけで登録完了。コミットメントゼロ。やめる時はワンクリック。',
+              en: 'Just an email. Zero commitment. Quit with one click anytime.',
+              es: 'Solo email. Sin compromiso. Sal con un click cuando quieras.',
+              ko: '이메일만. 약속 없음. 언제든 한 번의 클릭으로 종료.',
+              pt: 'Só email. Sem compromisso. Saia com um clique.',
+              de: 'Nur E-Mail. Keine Verpflichtung. Mit einem Klick kündbar.',
+            }, lang)}
+          </p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+          {[
+            { ic: '🎚', t: { ja: '30+ アプリすべて使い放題', en: '30+ apps unlocked', es: '30+ apps desbloqueadas' } },
+            { ic: '📊', t: { ja: '練習履歴・成長グラフ', en: 'Practice logs & growth chart', es: 'Registros y gráficos' } },
+            { ic: '⭐', t: { ja: 'お気に入りアプリの保存', en: 'Save favorite apps', es: 'Guardar favoritos' } },
+            { ic: '🎁', t: { ja: '初月 50% オフキャンペーン', en: '50% off first month deal', es: '50% de descuento primer mes' } },
+            { ic: '💌', t: { ja: '新機能の優先案内', en: 'Early feature access', es: 'Acceso anticipado' } },
+            { ic: '🔒', t: { ja: 'クラウド送信ゼロ・プライバシー保護', en: 'Zero cloud upload · privacy protected', es: 'Sin upload · privacidad' } },
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1rem 1.1rem', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>{item.ic}</span>
+              <span style={{ fontSize: '0.88rem', color: '#0f172a', fontWeight: 500 }}>{t5(item.t, lang)}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <Link href="/auth/login" style={{
+            display: 'inline-block', padding: '1rem 2.5rem', background: ACCENT, color: 'white',
+            borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem',
+            transition: 'all 0.3s ease', boxShadow: '0 6px 20px rgba(2,132,199,0.3)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(2,132,199,0.4)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(2,132,199,0.3)'; }}
+          >
+            {t5({ ja: '今すぐ無料登録 (30 秒) →', en: 'Sign up free (30 sec) →', es: 'Regístrate gratis (30s) →', ko: '무료 가입 (30초) →', pt: 'Cadastre-se grátis (30s) →', de: 'Kostenlos anmelden (30s) →' }, lang)}
           </Link>
         </div>
       </section>
