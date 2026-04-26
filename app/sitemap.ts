@@ -23,6 +23,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'interval-speed', 'metronome', 'sight-reading', 'slowdown',
     // 🧘 メンタル・本番準備 (2026-04-26 追加)
     'breath', 'checklist', 'frequency',
+    // 🎚 制作・スタジオ (2026-04-26 追加)
+    'comping',
   ];
 
   const appPages: MetadataRoute.Sitemap = apps.map(slug => ({
@@ -41,6 +43,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'itadaki-lp', 'slowdown-lp', 'separator-lp',
     // 🧘 メンタル・本番準備 (2026-04-26 追加)
     'breath-lp', 'checklist-lp', 'frequency-lp',
+    // 🎚 制作・スタジオ (2026-04-26 追加)
+    'comping-lp',
   ];
 
   const lpPages: MetadataRoute.Sitemap = lps.map(slug => ({

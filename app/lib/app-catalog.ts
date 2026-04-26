@@ -23,6 +23,7 @@ export type AppCategory =
   | 'learning'    // 🎓 学習・練習系 (毎日の楽器練習)
   | 'composition' // 🎼 作曲・理論系 (和声・対位法・移調)
   | 'recording'   // 🎛 録音・編集系 (マイク特典・ノイズ除去等)
+  | 'production'  // 🎚 制作・スタジオ系 (コンピング・マルチトラック・スタジオ機能)
   | 'analysis'    // 🔬 分析・プロ系 (マスター・DDP・DSD)
   | 'sharing'     // 🌍 共有・コミュニティ系
   | 'mental'      // 🧘 メンタル・本番準備 (呼吸・チェックリスト・周波数)
@@ -447,6 +448,24 @@ export const APP_CATALOG: CatalogApp[] = [
   },
 
   // ============================================================
+  // 🎚 制作・スタジオ系 (2026-04-26 追加)
+  // ============================================================
+  {
+    id: 'comping',
+    name: { ja: 'COMPING', en: 'COMPING', es: 'COMPING' },
+    tagline: { ja: 'マルチテイク録音 + ベスト合成', en: 'Multi-take recording + best take comping', es: 'Grabación multitoma + comping' },
+    href: '/comping-lp',
+    launchHref: '/comping',
+    emoji: '🎙',
+    category: 'production',
+    noLogin: false,
+    serverApp: false,
+    quotaKey: null,
+    badges: ['NEW'],
+    minPlan: 'free-with-login',
+  },
+
+  // ============================================================
   // 🧘 メンタル・本番準備系 (2026-04-26 追加)
   // ============================================================
   {
@@ -574,6 +593,12 @@ export const CATEGORIES: CategoryMeta[] = [
     emoji: '🔬',
     label: { ja: '分析・プロ', en: 'Analysis & Pro Tools', es: 'Análisis y Herramientas Pro' },
     desc: { ja: 'マスタリング検証・DDP・DSD・スペクトラム', en: 'Mastering verification, DDP, DSD, spectrum', es: 'Verificación de masterización' },
+  },
+  {
+    id: 'production',
+    emoji: '🎚',
+    label: { ja: '制作・スタジオ', en: 'Production & Studio', es: 'Producción y Estudio' },
+    desc: { ja: 'コンピング・マルチトラック・スタジオ機能', en: 'Comping, multi-track, studio tools', es: 'Comping, multipista, herramientas estudio' },
   },
   {
     id: 'sharing',
