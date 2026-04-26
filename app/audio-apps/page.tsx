@@ -5,6 +5,15 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { CATEGORIES, appsByCategory } from '@/app/lib/app-catalog';
+import {
+  currencyForLang,
+  getPrice,
+  formatPrice,
+  formatHalfPrice,
+  formatMonthlyEquivalent,
+  PLAN_SUBTITLES,
+  PLAN_QUOTAS,
+} from '@/app/lib/pricing-display';
 
 // ─────────────────────────────────────────────
 // Design tokens
@@ -1436,52 +1445,103 @@ function WorkflowStack({ stack, lang, accent }: { stack: Stack; lang: Lang; acce
 }
 
 // ─────────────────────────────────────────────
-// Subscription preview (IQ180)
+// Subscription preview (IQ180 — 2026-04-26 改訂)
+// 5 プラン (Free + Prelude + Concerto + Symphony + Opus) ・ 多通貨対応
+// 月払い / 年払い切替 ・ HALF50 初月割引表示
+// 実際の Checkout はホームページ /#pricing に集約
 // ─────────────────────────────────────────────
 function SubscriptionPreview({ lang }: { lang: Lang }) {
-  const plans = [
+  const [yearly, setYearly] = useState(false);
+  const currency = currencyForLang(lang);
+
+  const preludeM  = getPrice('prelude',  'monthly', currency);
+  const preludeY  = getPrice('prelude',  'annual',  currency);
+  const concertoM = getPrice('concerto', 'monthly', currency);
+  const concertoY = getPrice('concerto', 'annual',  currency);
+  const symphonyM = getPrice('symphony', 'monthly', currency);
+  const symphonyY = getPrice('symphony', 'annual',  currency);
+  const opusM     = getPrice('opus',     'monthly', currency);
+  const opusY     = getPrice('opus',     'annual',  currency);
+
+  const cycleLabel: L5 = yearly
+    ? { ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }
+    : { ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' };
+
+  type PlanCard = {
+    id: 'free' | 'prelude' | 'concerto' | 'symphony' | 'opus';
+    label: L5;
+    monthlyAmount: number;
+    yearlyAmount: number;
+    accent: string;
+    features: L5[];
+    highlight?: boolean;
+  };
+
+  const plans: PlanCard[] = [
     {
       id: 'free',
-      label: { ja: 'FREE', en: 'FREE' } as L5,
-      price: '¥0',
-      priceNote: { ja: '永年無料', en: 'Free forever', ko: '영구 무료', pt: 'Grátis sempre', es: 'Siempre gratis' } as L5,
-      features: [
-        { ja: 'ブラウザアプリ全て無制限', en: 'All browser apps unlimited', ko: '브라우저 앱 무제한', pt: 'Apps no navegador ilimitados', es: 'Apps del navegador ilimitadas' },
-        { ja: 'サーバーアプリ 月3回', en: 'Server apps: 3/month', ko: '서버 앱 월 3회', pt: 'Apps servidor: 3/mês', es: 'Apps servidor: 3/mes' },
-        { ja: 'ログインなしでも使用可', en: 'Works without login', ko: '로그인 없이 사용 가능', pt: 'Funciona sem login', es: 'Funciona sin login' },
-      ],
+      label: { ja: 'Free', en: 'Free', es: 'Gratis', ko: '무료', pt: 'Grátis', de: 'Kostenlos' },
+      monthlyAmount: 0,
+      yearlyAmount: 0,
       accent: '#059669',
-      cta: { ja: '今すぐ使う', en: 'Use Now', ko: '지금 사용', pt: 'Usar agora', es: 'Usar ahora' } as L5,
-      href: '#apps',
+      features: [
+        { ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' },
+        PLAN_QUOTAS.free.separator,
+        { ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ya, sin registro', ko: '등록 없이 바로 사용', pt: 'Use agora, sem inscrição', de: 'Sofort nutzen, keine Registrierung' },
+      ],
     },
     {
-      id: 'student',
-      label: { ja: 'STUDENT', en: 'STUDENT' } as L5,
-      price: '¥480',
-      priceNote: { ja: '/月・学割', en: '/mo · Student', ko: '/월 · 학생', pt: '/mês · Estudante', es: '/mes · Estudiante' } as L5,
+      id: 'prelude',
+      label: { ja: 'Prelude', en: 'Prelude', es: 'Prelude', ko: 'Prelude', pt: 'Prelude', de: 'Prelude' },
+      monthlyAmount: preludeM,
+      yearlyAmount: preludeY,
+      accent: '#0284c7',
       features: [
-        { ja: '全サーバーアプリ無制限', en: 'All server apps unlimited', ko: '모든 서버 앱 무제한', pt: 'Apps servidor ilimitados', es: 'Apps servidor ilimitadas' },
-        { ja: '練習ログ・成長曲線の保存', en: 'Practice logs & growth curves', ko: '연습 기록·성장 곡선', pt: 'Registros e curvas de crescimento', es: 'Registros y curvas de crecimiento' },
-        { ja: '音大生向けコミュニティ', en: 'Student-focused community', ko: '학생 커뮤니티', pt: 'Comunidade estudantil', es: 'Comunidad estudiantil' },
+        { ja: 'ブラウザアプリ全て無制限', en: 'All browser apps unlimited', es: 'Todas las apps de navegador ilimitadas', ko: '브라우저 앱 전부 무제한', pt: 'Todos os apps no navegador ilimitados', de: 'Alle Browser-Apps unbegrenzt' },
+        PLAN_QUOTAS.prelude.separator,
+        PLAN_QUOTAS.prelude.transcriber,
+        { ja: '練習ログ・成長記録', en: 'Practice logs & growth tracking', es: 'Registros de práctica y crecimiento', ko: '연습 로그·성장 기록', pt: 'Registros de prática e crescimento', de: 'Übungsprotokolle und Wachstum' },
       ],
-      accent: '#8b5cf6',
-      cta: { ja: 'まもなく', en: 'Coming soon', ko: '곧 공개', pt: 'Em breve', es: 'Próximamente' } as L5,
-      comingSoon: true,
-    },
-    {
-      id: 'pro',
-      label: { ja: 'PRO', en: 'PRO' } as L5,
-      price: '¥980',
-      priceNote: { ja: '/月', en: '/mo', ko: '/월', pt: '/mês', es: '/mes' } as L5,
-      features: [
-        { ja: '全機能無制限', en: 'All features unlimited', ko: '전 기능 무제한', pt: 'Tudo ilimitado', es: 'Todo ilimitado' },
-        { ja: '優先サーバー処理', en: 'Priority server processing', ko: '우선 서버 처리', pt: 'Processamento prioritário', es: 'Procesamiento prioritario' },
-        { ja: 'イベント投稿・ポートフォリオ', en: 'Event posting & portfolio', ko: '이벤트·포트폴리오', pt: 'Eventos e portfólio', es: 'Eventos y portafolio' },
-      ],
-      accent: '#d97706',
-      cta: { ja: 'まもなく', en: 'Coming soon', ko: '곧 공개', pt: 'Em breve', es: 'Próximamente' } as L5,
-      comingSoon: true,
       highlight: true,
+    },
+    {
+      id: 'concerto',
+      label: { ja: 'Concerto', en: 'Concerto', es: 'Concerto', ko: 'Concerto', pt: 'Concerto', de: 'Concerto' },
+      monthlyAmount: concertoM,
+      yearlyAmount: concertoY,
+      accent: '#7c3aed',
+      features: [
+        PLAN_QUOTAS.concerto.separator,
+        PLAN_QUOTAS.concerto.transcriber,
+        PLAN_QUOTAS.concerto.intonation,
+        { ja: 'ライブ投稿・優先サポート', en: 'Live event posting & priority support', es: 'Publicación de eventos y soporte prioritario', ko: '라이브 포스팅 + 우선 지원', pt: 'Publicação de eventos e suporte prioritário', de: 'Live-Event-Posten + Priority-Support' },
+      ],
+    },
+    {
+      id: 'symphony',
+      label: { ja: 'Symphony', en: 'Symphony', es: 'Symphony', ko: 'Symphony', pt: 'Symphony', de: 'Symphony' },
+      monthlyAmount: symphonyM,
+      yearlyAmount: symphonyY,
+      accent: '#db2777',
+      features: [
+        PLAN_QUOTAS.symphony.separator,
+        PLAN_QUOTAS.symphony.transcriber,
+        PLAN_QUOTAS.symphony.intonation,
+        { ja: 'ポートフォリオ + 優先処理キュー', en: 'Portfolio + priority queue', es: 'Portafolio + cola prioritaria', ko: '포트폴리오 + 우선 처리 큐', pt: 'Portfólio + fila prioritária', de: 'Portfolio + Prioritäts-Warteschlange' },
+      ],
+    },
+    {
+      id: 'opus',
+      label: { ja: 'Opus', en: 'Opus', es: 'Opus', ko: 'Opus', pt: 'Opus', de: 'Opus' },
+      monthlyAmount: opusM,
+      yearlyAmount: opusY,
+      accent: '#d97706',
+      features: [
+        PLAN_QUOTAS.opus.separator,
+        PLAN_QUOTAS.opus.transcriber,
+        PLAN_QUOTAS.opus.intonation,
+        { ja: '業務・教室・スタジオ向け', en: 'Business · Schools · Studios', es: 'Negocios · Escuelas · Estudios', ko: '업무·교실·스튜디오', pt: 'Negócios · Escolas · Estúdios', de: 'Geschäft · Schulen · Studios' },
+      ],
     },
   ];
 
@@ -1498,9 +1558,9 @@ function SubscriptionPreview({ lang }: { lang: Lang }) {
           PRICING
         </p>
         <h2 style={{
-          fontFamily: serif, fontSize: 'clamp(20px, 3.5vw, 28px)',
-          fontWeight: 700, letterSpacing: '0.03em',
-          margin: '0 0 10px 0', color: '#111827',
+          fontFamily: serif, fontSize: 'clamp(22px, 4vw, 32px)',
+          fontWeight: 400, letterSpacing: '0.02em',
+          margin: '0 0 12px 0', color: '#0a1226',
         }}>
           {t5({
             ja: 'あなたに合った使い方を。',
@@ -1508,280 +1568,241 @@ function SubscriptionPreview({ lang }: { lang: Lang }) {
             ko: '당신에게 맞는 방식으로.',
             pt: 'Um plano que se ajusta a você.',
             es: 'Un plan que se ajusta a ti.',
+            de: 'Ein Plan, der zu dir passt.',
           }, lang)}
         </h2>
         <p style={{
           fontSize: 'clamp(12px, 1.8vw, 14px)', color: '#6b7280',
-          maxWidth: 520, margin: '0 auto', lineHeight: 1.7,
+          maxWidth: 560, margin: '0 auto', lineHeight: 1.7,
+          wordBreak: 'keep-all',
         }}>
           {t5({
-            ja: 'ブラウザで動くアプリは全て無料で使えます。サーバー処理が必要なアプリのみサブスクをご用意。',
-            en: 'All browser-native apps are free, always. Subscription covers server-processing apps only.',
-            ko: '브라우저 앱은 모두 무료. 서버 처리 앱에만 구독이 필요합니다.',
-            pt: 'Todos os apps no navegador são grátis. Assinatura apenas para apps com processamento no servidor.',
-            es: 'Todas las apps del navegador son gratis. La suscripción solo cubre apps con procesamiento en servidor.',
+            ja: 'ブラウザで動くアプリは全て無料で使えます。AI 音源分離・譜起こしなどサーバー処理が必要なアプリのみ、有料プランで解放されます。',
+            en: 'All browser-native apps are free, forever. AI source separation, transcription and other server-processing apps unlock with paid plans.',
+            ko: '브라우저 앱은 모두 영구 무료. AI 음원 분리·채보 등 서버 처리 앱만 유료 플랜에서 해제됩니다.',
+            pt: 'Todos os apps no navegador são grátis para sempre. Apps de servidor (separação IA, transcrição) só nos planos pagos.',
+            es: 'Todas las apps del navegador son gratis para siempre. Las apps de servidor (separación IA, transcripción) solo en planes pagos.',
+            de: 'Alle Browser-Apps sind dauerhaft kostenlos. Server-Apps (KI-Trennung, Transkription) nur in Bezahlplänen.',
           }, lang)}
         </p>
+
+        {/* Billing toggle — 2 ヶ月無料 */}
+        <div style={{
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          gap: 14, marginTop: 24, flexWrap: 'wrap',
+        }}>
+          <span style={{
+            fontSize: 13, fontFamily: sans,
+            color: yearly ? '#94a3b8' : '#0a1226',
+            fontWeight: yearly ? 400 : 600, transition: 'color 0.2s ease',
+          }}>
+            {t5({ ja: '月払い', en: 'Monthly', es: 'Mensual', ko: '월간', pt: 'Mensal', de: 'Monatlich' }, lang)}
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={yearly}
+            onClick={() => setYearly(!yearly)}
+            style={{
+              width: 52, height: 28, borderRadius: 999, border: 'none',
+              background: yearly ? '#0284c7' : '#cbd5e1',
+              position: 'relative', cursor: 'pointer',
+              transition: 'background 0.2s ease', padding: 0,
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 3,
+              left: yearly ? 27 : 3,
+              width: 22, height: 22, borderRadius: '50%',
+              background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              transition: 'left 0.2s ease',
+            }} />
+          </button>
+          <span style={{
+            fontSize: 13, fontFamily: sans,
+            color: yearly ? '#0a1226' : '#94a3b8',
+            fontWeight: yearly ? 600 : 400, transition: 'color 0.2s ease',
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+          }}>
+            {t5({ ja: '年払い', en: 'Yearly', es: 'Anual', ko: '연간', pt: 'Anual', de: 'Jährlich' }, lang)}
+            <span style={{
+              background: '#fef3c7', color: '#92400e',
+              fontSize: 10, padding: '2px 8px', borderRadius: 999,
+              fontWeight: 700, letterSpacing: '0.04em',
+            }}>
+              {t5({ ja: '2ヶ月無料', en: '2 months free', es: '2 meses gratis', ko: '2개월 무료', pt: '2 meses grátis', de: '2 Monate gratis' }, lang)}
+            </span>
+          </span>
+        </div>
       </div>
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
         gap: 'clamp(12px, 2vw, 18px)',
       }}>
-        {plans.map(plan => (
-          <div key={plan.id} style={{
-            position: 'relative',
-            padding: 'clamp(20px, 3vw, 28px)',
-            borderRadius: 18,
-            background: plan.highlight
-              ? 'linear-gradient(135deg, #1e293b, #0f172a)'
-              : 'rgba(255,255,255,0.6)',
-            backdropFilter: 'blur(14px)',
-            WebkitBackdropFilter: 'blur(14px)',
-            border: plan.highlight
-              ? `1.5px solid ${plan.accent}`
-              : '1px solid rgba(255,255,255,0.8)',
-            boxShadow: plan.highlight
-              ? `0 20px 48px ${plan.accent}30`
-              : '0 2px 12px rgba(0,0,0,0.04)',
-            color: plan.highlight ? '#fff' : '#111827',
-            display: 'flex', flexDirection: 'column' as const,
-          }}>
-            {plan.highlight && (
-              <span style={{
-                position: 'absolute', top: -10, right: 16,
-                fontSize: 9, fontWeight: 800, letterSpacing: '0.14em',
-                color: '#fff',
-                background: `linear-gradient(135deg, ${plan.accent}, #ec4899)`,
-                padding: '4px 10px', borderRadius: 50,
-              }}>
-                POPULAR
-              </span>
-            )}
-            <div style={{
-              fontFamily: mono, fontSize: 11, fontWeight: 800,
-              letterSpacing: '0.16em', color: plan.accent,
-              marginBottom: 12,
+        {plans.map(plan => {
+          const amount = yearly ? plan.yearlyAmount : plan.monthlyAmount;
+          const priceText = plan.id === 'free'
+            ? formatPrice(0, currency)
+            : formatPrice(amount, currency);
+          return (
+            <div key={plan.id} style={{
+              position: 'relative',
+              padding: 'clamp(20px, 3vw, 28px)',
+              borderRadius: 18,
+              background: plan.highlight
+                ? 'linear-gradient(135deg, #0a1226, #1e293b)'
+                : 'rgba(255,255,255,0.7)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+              border: plan.highlight
+                ? `1.5px solid ${plan.accent}`
+                : '1px solid rgba(226,232,240,0.9)',
+              boxShadow: plan.highlight
+                ? `0 20px 48px ${plan.accent}30`
+                : '0 2px 12px rgba(0,0,0,0.04)',
+              color: plan.highlight ? '#fff' : '#0a1226',
+              display: 'flex', flexDirection: 'column' as const,
             }}>
-              {t5(plan.label, lang)}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 14 }}>
-              <span style={{
-                fontFamily: sans, fontSize: 'clamp(28px, 4vw, 36px)',
-                fontWeight: 800, letterSpacing: '-0.02em',
-              }}>
-                {plan.price}
-              </span>
-              <span style={{
-                fontSize: 12, opacity: plan.highlight ? 0.7 : 0.6,
-                fontWeight: 500,
-              }}>
-                {t5(plan.priceNote, lang)}
-              </span>
-            </div>
-            <ul style={{
-              listStyle: 'none', padding: 0, margin: '0 0 20px 0',
-              display: 'flex', flexDirection: 'column' as const, gap: 8,
-              flex: 1,
-            }}>
-              {plan.features.map((f, i) => (
-                <li key={i} style={{
-                  display: 'flex', gap: 8,
-                  fontSize: 'clamp(11px, 1.6vw, 13px)',
-                  lineHeight: 1.6,
-                  opacity: plan.highlight ? 0.9 : 0.85,
+              {plan.highlight && (
+                <span style={{
+                  position: 'absolute', top: -10, right: 16,
+                  fontSize: 9, fontWeight: 800, letterSpacing: '0.14em',
+                  color: '#fff',
+                  background: `linear-gradient(135deg, ${plan.accent}, #38bdf8)`,
+                  padding: '4px 10px', borderRadius: 50,
                 }}>
-                  <span style={{ color: plan.accent, fontWeight: 700 }}>✓</span>
-                  <span>{t5(f as L5, lang)}</span>
-                </li>
-              ))}
-            </ul>
-            {plan.comingSoon ? (
+                  POPULAR
+                </span>
+              )}
               <div style={{
-                padding: '10px 16px', borderRadius: 50,
-                textAlign: 'center' as const,
-                fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
-                background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(148,163,184,0.12)',
-                color: plan.highlight ? '#94a3b8' : '#94a3b8',
+                fontFamily: mono, fontSize: 11, fontWeight: 800,
+                letterSpacing: '0.16em', color: plan.accent,
+                marginBottom: 4,
               }}>
-                {t5(plan.cta, lang)}
+                {t5(plan.label, lang)}
               </div>
-            ) : (
-              <Link href={plan.href ?? '#apps'} style={{
-                padding: '10px 16px', borderRadius: 50,
-                textAlign: 'center' as const, textDecoration: 'none',
-                fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
-                background: plan.accent, color: '#fff',
-                transition: 'all 0.25s',
+              <div style={{
+                fontSize: 10, fontFamily: sans,
+                color: '#94a3b8',
+                letterSpacing: '0.05em', textTransform: 'uppercase',
+                marginBottom: 12, fontWeight: 500,
               }}>
-                {t5(plan.cta, lang)}
-              </Link>
-            )}
-          </div>
-        ))}
+                {t5(PLAN_SUBTITLES[plan.id], lang)}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
+                <span style={{
+                  fontFamily: sans, fontSize: 'clamp(26px, 3.8vw, 32px)',
+                  fontWeight: 800, letterSpacing: '-0.02em',
+                }}>
+                  {priceText}
+                </span>
+                {plan.id !== 'free' && (
+                  <span style={{
+                    fontSize: 12, opacity: plan.highlight ? 0.7 : 0.6,
+                    fontWeight: 500,
+                  }}>
+                    {t5(cycleLabel, lang)}
+                  </span>
+                )}
+              </div>
+
+              {/* HALF50 / 月換算ヒント */}
+              {plan.id !== 'free' && !yearly && (
+                <div style={{
+                  background: '#fef3c7', color: '#92400e',
+                  borderRadius: 6, padding: '4px 8px',
+                  fontSize: 11, fontWeight: 700, marginBottom: 14,
+                  display: 'inline-block', alignSelf: 'flex-start',
+                }}>
+                  🎁 {t5({
+                    ja: `初月 ${formatHalfPrice(plan.monthlyAmount, currency)} (50% OFF)`,
+                    en: `First month ${formatHalfPrice(plan.monthlyAmount, currency)} (50% OFF)`,
+                    es: `Primer mes ${formatHalfPrice(plan.monthlyAmount, currency)} (50% OFF)`,
+                    ko: `첫달 ${formatHalfPrice(plan.monthlyAmount, currency)} (50% OFF)`,
+                    pt: `Primeiro mês ${formatHalfPrice(plan.monthlyAmount, currency)} (50% OFF)`,
+                    de: `Erster Monat ${formatHalfPrice(plan.monthlyAmount, currency)} (50% OFF)`,
+                  }, lang)}
+                </div>
+              )}
+              {plan.id !== 'free' && yearly && (
+                <div style={{
+                  fontSize: 11, color: plan.accent,
+                  marginBottom: 14, fontWeight: 600,
+                }}>
+                  {t5({
+                    ja: `月換算 ${formatMonthlyEquivalent(plan.yearlyAmount, currency)}`,
+                    en: `${formatMonthlyEquivalent(plan.yearlyAmount, currency)} / mo equiv.`,
+                    es: `${formatMonthlyEquivalent(plan.yearlyAmount, currency)} / mes`,
+                    ko: `월 환산 ${formatMonthlyEquivalent(plan.yearlyAmount, currency)}`,
+                    pt: `equiv. ${formatMonthlyEquivalent(plan.yearlyAmount, currency)} / mês`,
+                    de: `entspricht ${formatMonthlyEquivalent(plan.yearlyAmount, currency)} / Mo.`,
+                  }, lang)}
+                </div>
+              )}
+              {plan.id === 'free' && (
+                <div style={{
+                  fontSize: 12, color: '#6b7280',
+                  marginBottom: 14, fontWeight: 500,
+                }}>
+                  {t5({ ja: '永年無料', en: 'Free forever', es: 'Siempre gratis', ko: '영구 무료', pt: 'Grátis sempre', de: 'Für immer kostenlos' }, lang)}
+                </div>
+              )}
+
+              <ul style={{
+                listStyle: 'none', padding: 0, margin: '0 0 20px 0',
+                display: 'flex', flexDirection: 'column' as const, gap: 8,
+                flex: 1,
+              }}>
+                {plan.features.map((f, i) => (
+                  <li key={i} style={{
+                    display: 'flex', gap: 8,
+                    fontSize: 'clamp(11px, 1.6vw, 13px)',
+                    lineHeight: 1.6,
+                    opacity: plan.highlight ? 0.92 : 0.85,
+                  }}>
+                    <span style={{ color: plan.accent, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                    <span>{t5(f, lang)}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {plan.id === 'free' ? (
+                <Link href="#apps" style={{
+                  padding: '10px 16px', borderRadius: 50,
+                  textAlign: 'center' as const, textDecoration: 'none',
+                  fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
+                  background: plan.accent, color: '#fff',
+                  transition: 'all 0.25s',
+                }}>
+                  {t5({ ja: '今すぐ使う', en: 'Use Now', es: 'Usar ahora', ko: '지금 사용', pt: 'Usar agora', de: 'Jetzt nutzen' }, lang)} →
+                </Link>
+              ) : (
+                <Link href="/#pricing" style={{
+                  padding: '10px 16px', borderRadius: 50,
+                  textAlign: 'center' as const, textDecoration: 'none',
+                  fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
+                  background: plan.accent, color: '#fff',
+                  transition: 'all 0.25s',
+                }}>
+                  {t5({ ja: '購入する', en: 'Subscribe', es: 'Suscribirse', ko: '구독', pt: 'Assinar', de: 'Abonnieren' }, lang)} →
+                </Link>
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
   );
 }
 
 // ─────────────────────────────────────────────
-// Mic bundle CTA (flywheel §29)
+// 2026-04-26: MicBundleCTA + MasteringServiceCard を削除
+//   - マイクは日本国内限定販売 (海外勢の不公平を排除)
+//   - マスタリングサービスは外部 LP に集約 (本人労働を増やさない)
+//   - フロントは純粋にサブスク導線に集中
 // ─────────────────────────────────────────────
-function MicBundleCTA({ lang }: { lang: Lang }) {
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fff7ed, #fef3c7)',
-      border: '1px solid rgba(217,119,6,0.2)',
-      borderRadius: 20,
-      padding: 'clamp(24px, 4vw, 36px)',
-      marginTop: 'clamp(32px, 6vw, 48px)',
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-      gap: 'clamp(16px, 3vw, 24px)',
-      alignItems: 'center',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      <div style={{
-        position: 'absolute', top: -40, right: -40,
-        width: 180, height: 180, borderRadius: '50%',
-        background: 'rgba(217,119,6,0.12)', filter: 'blur(48px)',
-      }} />
-      <div style={{ position: 'relative' }}>
-        <p style={{
-          fontFamily: mono, fontSize: 10, fontWeight: 800,
-          letterSpacing: '0.2em', color: '#d97706',
-          margin: '0 0 10px 0',
-        }}>
-          OWNER BONUS
-        </p>
-        <h3 style={{
-          fontFamily: serif, fontSize: 'clamp(18px, 3vw, 24px)',
-          fontWeight: 700, letterSpacing: '0.02em',
-          margin: '0 0 10px 0', color: '#7c2d12',
-        }}>
-          {t5({
-            ja: 'P-86S を買うと、PRO が 3 ヶ月無料。',
-            en: 'Buy P-86S, get 3 months of PRO — free.',
-            ko: 'P-86S 구매 시 PRO 3개월 무료.',
-            pt: 'Compre P-86S e ganhe 3 meses de PRO grátis.',
-            es: 'Compra P-86S y obtén 3 meses PRO gratis.',
-          }, lang)}
-        </h3>
-        <p style={{
-          fontSize: 'clamp(12px, 1.8vw, 14px)',
-          color: '#78350f', lineHeight: 1.7, margin: 0,
-        }}>
-          {t5({
-            ja: '音大生だった朝比奈幸太郎が手はんだで作る、数十万円クラスの録音クオリティ。¥13,900。KUON NORMALIZE を含む PRO 特典付き。',
-            en: 'Handmade by Kotaro Asahina with his own solder — delivering the quality of $2,000+ microphones. ¥13,900, ships worldwide. PRO benefits including KUON NORMALIZE included.',
-            ko: '음대생이었던 아사히나 코타로가 손납땜으로 제작. 수십만 엔급 녹음 품질. ¥13,900.',
-            pt: 'Feito à mão por Kotaro Asahina — qualidade de microfones de US$ 2.000+. ¥13,900. Envio internacional.',
-            es: 'Hecho a mano por Kotaro Asahina — calidad de micrófonos de $2,000+. ¥13,900. Envío internacional.',
-          }, lang)}
-        </p>
-      </div>
-      <div style={{
-        display: 'flex', gap: 10, flexWrap: 'wrap',
-        justifyContent: 'flex-end', position: 'relative',
-      }}>
-        <Link href="/microphone" style={{
-          padding: '12px 28px', borderRadius: 50,
-          background: '#d97706', color: '#fff',
-          fontSize: 13, fontWeight: 700, letterSpacing: '0.06em',
-          textDecoration: 'none',
-          boxShadow: '0 8px 20px rgba(217,119,6,0.35)',
-          transition: 'all 0.25s',
-        }}>
-          {t5({
-            ja: 'P-86S を見る', en: 'View P-86S', ko: 'P-86S 보기',
-            pt: 'Ver P-86S', es: 'Ver P-86S',
-          }, lang)} →
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Service cross-sell (mastering service)
-// ─────────────────────────────────────────────
-function MasteringServiceCard({ lang }: { lang: Lang }) {
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #0f172a, #312e81)',
-      borderRadius: 20,
-      padding: 'clamp(24px, 4vw, 36px)',
-      color: '#fff',
-      position: 'relative', overflow: 'hidden',
-      marginTop: 'clamp(24px, 4vw, 32px)',
-    }}>
-      <div style={{
-        position: 'absolute', top: -60, left: -60,
-        width: 200, height: 200, borderRadius: '50%',
-        background: 'rgba(139,92,246,0.2)', filter: 'blur(60px)',
-      }} />
-      <div style={{ position: 'relative', display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-        gap: 'clamp(16px, 3vw, 24px)', alignItems: 'center',
-      }}>
-        <div>
-          <p style={{
-            fontFamily: mono, fontSize: 10, fontWeight: 800,
-            letterSpacing: '0.2em', color: '#a78bfa',
-            margin: '0 0 10px 0',
-          }}>
-            HUMAN TOUCH
-          </p>
-          <h3 style={{
-            fontFamily: serif, fontSize: 'clamp(18px, 3vw, 24px)',
-            fontWeight: 700, letterSpacing: '0.02em',
-            margin: '0 0 10px 0',
-          }}>
-            {t5({
-              ja: 'ツールで足りない時は、朝比奈幸太郎本人に依頼を。',
-              en: 'When tools aren\'t enough, let Kotaro Asahina master it himself.',
-              ko: '도구로 부족할 때, 아사히나 코타로 본인에게 의뢰하세요.',
-              pt: 'Quando ferramentas não bastam — peça a Kotaro Asahina.',
-              es: 'Cuando las herramientas no bastan — pídele a Kotaro Asahina.',
-            }, lang)}
-          </h3>
-          <p style={{
-            fontSize: 'clamp(12px, 1.8vw, 14px)',
-            color: '#cbd5e1', lineHeight: 1.7, margin: 0,
-          }}>
-            {t5({
-              ja: '音大卒の音響エンジニアによる、1対1のマスタリング／録音サービス。金田式DC録音技術を継承。KUON PRO 会員は優先対応。',
-              en: 'One-on-one mastering & recording by a conservatory-trained engineer. Inheriting the Kaneda DC recording tradition. KUON PRO members get priority.',
-              ko: '음대 졸업 음향 엔지니어의 1:1 마스터링·녹음. 카네다식 DC 녹음 기술 계승. PRO 회원 우선.',
-              pt: 'Masterização e gravação 1:1 por engenheiro formado em conservatório. Tradição Kaneda DC. Membros PRO têm prioridade.',
-              es: 'Masterización y grabación 1:1 por ingeniero formado en conservatorio. Tradición Kaneda DC. Miembros PRO con prioridad.',
-            }, lang)}
-          </p>
-        </div>
-        <div style={{
-          display: 'flex', gap: 10, flexWrap: 'wrap',
-          justifyContent: 'flex-end',
-        }}>
-          <Link href="https://academy.kotarohattori.com" target="_blank" rel="noopener" style={{
-            padding: '12px 28px', borderRadius: 50,
-            background: '#a78bfa', color: '#0f172a',
-            fontSize: 13, fontWeight: 700, letterSpacing: '0.06em',
-            textDecoration: 'none',
-            boxShadow: '0 8px 20px rgba(167,139,250,0.35)',
-            transition: 'all 0.25s',
-          }}>
-            {t5({
-              ja: 'サービスを見る', en: 'Book a session', ko: '서비스 보기',
-              pt: 'Reservar sessão', es: 'Reservar sesión',
-            }, lang)} →
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────
 // Signup CTA Banner
@@ -2206,12 +2227,6 @@ export default function AudioAppsPage() {
 
       {/* ═══════ PRICING / SUBSCRIPTION ═══════ */}
       <SubscriptionPreview lang={lang} />
-
-      {/* ═══════ MIC BUNDLE CTA ═══════ */}
-      <MicBundleCTA lang={lang} />
-
-      {/* ═══════ MASTERING SERVICE CROSS-SELL ═══════ */}
-      <MasteringServiceCard lang={lang} />
 
       {/* ═══════ SIGNUP CTA ═══════ */}
       <SignupBanner lang={lang} />
