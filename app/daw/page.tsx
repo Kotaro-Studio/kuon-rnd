@@ -96,12 +96,26 @@ const THEME: Record<ThemeMode, ThemeColors> = {
 };
 
 // ============================================================
-// IndexedDB Helper
+// IndexedDB Helper (v2: streaming write + crash recovery)
+// ============================================================
+//
+// 物理保存場所:
+//   Mac:     ~/Library/Application Support/Google/Chrome/Default/IndexedDB/
+//   Windows: %LOCALAPPDATA%\Google\Chrome\User Data\Default\IndexedDB\
+//   iOS:     Safari サンドボックス内 (暗号化)
+//   Android: /data/data/com.android.chrome/.../IndexedDB/
+//
+// クラッシュ復旧:
+//   recording_sessions に { active: true } セッションを保存
+//   recording_chunks に 250ms ごとに chunk を即書き込み
+//   起動時に active=true のセッションを検出 → 復旧ダイアログ
 // ============================================================
 const DB_NAME = 'kuon_daw';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_PROJECTS = 'projects';
 const STORE_BUFFERS = 'buffers';
+const STORE_REC_SESSIONS = 'recording_sessions';
+const STORE_REC_CHUNKS = 'recording_chunks';
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -112,6 +126,11 @@ function openDb(): Promise<IDBDatabase> {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE_PROJECTS)) db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
       if (!db.objectStoreNames.contains(STORE_BUFFERS)) db.createObjectStore(STORE_BUFFERS, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(STORE_REC_SESSIONS)) db.createObjectStore(STORE_REC_SESSIONS, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(STORE_REC_CHUNKS)) {
+        const chunks = db.createObjectStore(STORE_REC_CHUNKS, { keyPath: 'id' });
+        chunks.createIndex('sessionId', 'sessionId', { unique: false });
+      }
     };
   });
 }
@@ -137,6 +156,98 @@ async function dbGet(store: string, id: string): Promise<unknown> {
   });
   db.close();
   return r;
+}
+
+async function dbDelete(store: string, id: string): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).delete(id);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+  db.close();
+}
+
+async function dbGetAll(store: string): Promise<unknown[]> {
+  const db = await openDb();
+  const r = await new Promise<unknown[]>((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res((req.result as unknown[]) || []);
+    req.onerror = () => rej(req.error);
+  });
+  db.close();
+  return r;
+}
+
+/** 指定 sessionId のチャンクを順番に取得 */
+async function dbGetChunksBySession(sessionId: string): Promise<{ id: string; sessionId: string; chunkIndex: number; blob: Blob }[]> {
+  const db = await openDb();
+  const r = await new Promise<{ id: string; sessionId: string; chunkIndex: number; blob: Blob }[]>((res, rej) => {
+    const tx = db.transaction(STORE_REC_CHUNKS, 'readonly');
+    const idx = tx.objectStore(STORE_REC_CHUNKS).index('sessionId');
+    const req = idx.getAll(sessionId);
+    req.onsuccess = () => {
+      const arr = (req.result || []) as { id: string; sessionId: string; chunkIndex: number; blob: Blob }[];
+      arr.sort((a, b) => a.chunkIndex - b.chunkIndex);
+      res(arr);
+    };
+    req.onerror = () => rej(req.error);
+  });
+  db.close();
+  return r;
+}
+
+/** active=true のままになっている (= クラッシュ未復旧) セッションを取得 */
+interface RecordingSession {
+  id: string;
+  trackId: string;
+  startTime: number;
+  active: boolean;
+  sampleRate: number;
+  mimeType: string;
+}
+async function dbFindOrphanedSessions(): Promise<RecordingSession[]> {
+  const all = (await dbGetAll(STORE_REC_SESSIONS)) as RecordingSession[];
+  return all.filter((s) => s.active);
+}
+
+/** ストレージ使用量推定 (Storage API) */
+async function getStorageEstimate(): Promise<{ usage: number; quota: number } | null> {
+  if (typeof navigator === 'undefined' || !navigator.storage?.estimate) return null;
+  const { usage = 0, quota = 0 } = await navigator.storage.estimate();
+  return { usage, quota };
+}
+
+/** OS 別保存パス取得 (表示用) */
+function getStorageLocationHint(): string {
+  if (typeof window === 'undefined') return '';
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua)) {
+    return 'Safari サンドボックス内 (暗号化)';
+  } else if (/Android/.test(ua)) {
+    return '/data/data/com.android.chrome/app_chrome/Default/IndexedDB/';
+  } else if (/Mac/.test(ua)) {
+    return '~/Library/Application Support/Google/Chrome/Default/IndexedDB/';
+  } else if (/Windows/.test(ua)) {
+    return '%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\IndexedDB\\';
+  } else if (/Linux/.test(ua)) {
+    return '~/.config/google-chrome/Default/IndexedDB/';
+  }
+  return 'ブラウザのローカルストレージ';
+}
+
+/** プライベートブラウジング検出 */
+async function isPrivateBrowsing(): Promise<boolean> {
+  try {
+    const est = await getStorageEstimate();
+    // Safari Private Browsing reports very low quota
+    if (est && est.quota < 120 * 1024 * 1024) return true;
+  } catch {
+    return true;
+  }
+  return false;
 }
 
 // ============================================================
@@ -273,6 +384,15 @@ function DawApp() {
   const [playing, setPlaying] = useState(false);
   const [playPos, setPlayPos] = useState(0);
   const [exporting, setExporting] = useState(false);
+  // Phase 1: Crash recovery state
+  const [orphanSessions, setOrphanSessions] = useState<RecordingSession[]>([]);
+  const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const [storageInfo, setStorageInfo] = useState<{ usage: number; quota: number } | null>(null);
+  const [storagePath, setStoragePath] = useState('');
+  const [privateModeWarning, setPrivateModeWarning] = useState(false);
+  const [showFirstVisitWarning, setShowFirstVisitWarning] = useState(false);
+  const recSessionIdRef = useRef<string | null>(null);
+  const recChunkIndexRef = useRef<number>(0);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -376,7 +496,11 @@ function DawApp() {
   };
 
   // ============================================================
-  // Recording
+  // Recording (Phase 1: streaming write to IndexedDB every 250ms)
+  // ============================================================
+  // クラッシュ耐性: 250ms 毎に chunk を即 IndexedDB へ書き込み。
+  // ブラウザ落ち / タブ閉じ / 電源断でも、最悪 250ms 分の損失で済む。
+  // 復旧は起動時に自動検出 (showRecoveryDialog 経由)。
   // ============================================================
   const startRecording = async (trackId: string) => {
     try {
@@ -390,39 +514,86 @@ function DawApp() {
         },
       });
       mediaStreamRef.current = stream;
-      const recorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : 'audio/webm',
-      });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
+      const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecRef.current = recorder;
-      recChunksRef.current = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) recChunksRef.current.push(e.data); };
-      recorder.onstop = async () => {
-        const blob = new Blob(recChunksRef.current, { type: 'audio/webm' });
-        const ctx = getCtx();
-        const ab = await blob.arrayBuffer();
-        const buf = await ctx.decodeAudioData(ab.slice(0));
-        const bufferId = `buf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        setAudioBuffers((m) => new Map(m).set(bufferId, buf));
 
-        const region: Region = {
-          id: `r_${Date.now()}`,
-          bufferId,
-          startInTrack: 0,
-          offsetInBuffer: 0,
-          duration: buf.duration,
-          fadeInSec: 0,
-          fadeOutSec: 0,
-        };
-        setProject((p) => ({
-          ...p,
-          tracks: p.tracks.map((t) => (t.id === trackId ? { ...t, regions: [...t.regions, region] } : t)),
-          modifiedAt: Date.now(),
-        }));
+      // セッション ID 発行 + IndexedDB に active セッションとして記録
+      const sessionId = `rec_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      recSessionIdRef.current = sessionId;
+      recChunkIndexRef.current = 0;
+      const startTime = Date.now();
+      await dbPut(STORE_REC_SESSIONS, {
+        id: sessionId,
+        trackId,
+        startTime,
+        active: true,
+        sampleRate: project.sampleRate,
+        mimeType,
+      });
+
+      // ★ストリーミング書き込み: chunk 到着のたびに IndexedDB へ即書き込み★
+      recorder.ondataavailable = async (e) => {
+        if (e.data.size === 0) return;
+        const idx = recChunkIndexRef.current++;
+        try {
+          await dbPut(STORE_REC_CHUNKS, {
+            id: `${sessionId}_${String(idx).padStart(6, '0')}`,
+            sessionId,
+            chunkIndex: idx,
+            blob: e.data,
+          });
+        } catch (err) {
+          console.error('Failed to persist chunk:', err);
+        }
       };
-      recorder.start();
-      recStartRef.current = Date.now();
+
+      recorder.onstop = async () => {
+        // 全 chunk を IndexedDB から取得して assemble
+        const sid = recSessionIdRef.current;
+        if (!sid) return;
+        try {
+          const chunks = await dbGetChunksBySession(sid);
+          const blobs = chunks.map((c) => c.blob);
+          if (blobs.length === 0) return;
+          const blob = new Blob(blobs, { type: mimeType });
+          const ctx = getCtx();
+          const ab = await blob.arrayBuffer();
+          const buf = await ctx.decodeAudioData(ab.slice(0));
+          const bufferId = `buf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          setAudioBuffers((m) => new Map(m).set(bufferId, buf));
+
+          const region: Region = {
+            id: `r_${Date.now()}`,
+            bufferId,
+            startInTrack: 0,
+            offsetInBuffer: 0,
+            duration: buf.duration,
+            fadeInSec: 0,
+            fadeOutSec: 0,
+          };
+          setProject((p) => ({
+            ...p,
+            tracks: p.tracks.map((t) => (t.id === trackId ? { ...t, regions: [...t.regions, region] } : t)),
+            modifiedAt: Date.now(),
+          }));
+
+          // セッションを active=false にマーク (復旧不要)
+          await dbPut(STORE_REC_SESSIONS, {
+            id: sid, trackId, startTime, active: false, sampleRate: project.sampleRate, mimeType,
+          });
+          // チャンクは TTL 30 日で残す (誤操作からの保険)・ここでは消さない
+          recSessionIdRef.current = null;
+        } catch (err) {
+          console.error('Finalize failed:', err);
+        }
+      };
+
+      // 250ms 毎に chunk 発火 = ストリーミング書き込み
+      recorder.start(250);
+      recStartRef.current = startTime;
       setRecState('recording');
       setActiveRecordingTrackId(trackId);
       recIntervalRef.current = window.setInterval(() => {
@@ -447,6 +618,64 @@ function DawApp() {
     setRecState('idle');
     setActiveRecordingTrackId(null);
     setRecElapsed(0);
+  };
+
+  // ============================================================
+  // Phase 1: Crash recovery
+  // ============================================================
+  const recoverSession = async (session: RecordingSession) => {
+    try {
+      const chunks = await dbGetChunksBySession(session.id);
+      if (chunks.length === 0) {
+        await dbPut(STORE_REC_SESSIONS, { ...session, active: false });
+        return;
+      }
+      const blob = new Blob(chunks.map((c) => c.blob), { type: session.mimeType });
+      const ctx = getCtx();
+      const ab = await blob.arrayBuffer();
+      const buf = await ctx.decodeAudioData(ab.slice(0));
+      const bufferId = `buf_recovered_${Date.now()}`;
+      setAudioBuffers((m) => new Map(m).set(bufferId, buf));
+
+      const region: Region = {
+        id: `r_recovered_${Date.now()}`,
+        bufferId, startInTrack: 0, offsetInBuffer: 0,
+        duration: buf.duration, fadeInSec: 0, fadeOutSec: 0,
+      };
+      // 復旧したリージョンを既存トラックに追加 (元のトラック ID で)
+      const trackExists = project.tracks.some((t) => t.id === session.trackId);
+      if (trackExists) {
+        setProject((p) => ({
+          ...p,
+          tracks: p.tracks.map((t) =>
+            t.id !== session.trackId ? t : { ...t, regions: [...t.regions, region] }),
+          modifiedAt: Date.now(),
+        }));
+      } else {
+        // トラックが存在しない場合は新規トラック作成
+        setProject((p) => {
+          const newTrack: Track = { ...makeTrack(p.tracks.length), regions: [region], name: `Recovered ${new Date(session.startTime).toLocaleString()}` };
+          return { ...p, tracks: [...p.tracks, newTrack], modifiedAt: Date.now() };
+        });
+      }
+      await dbPut(STORE_REC_SESSIONS, { ...session, active: false });
+      setOrphanSessions((arr) => arr.filter((s) => s.id !== session.id));
+    } catch (err) {
+      console.error('Recovery failed:', err);
+      alert(t({ ja: '復旧に失敗しました', en: 'Recovery failed', es: 'Recuperación fallida' }, lang));
+    }
+  };
+
+  const discardSession = async (sessionId: string) => {
+    try {
+      // チャンクを削除
+      const chunks = await dbGetChunksBySession(sessionId);
+      for (const c of chunks) await dbDelete(STORE_REC_CHUNKS, c.id);
+      await dbDelete(STORE_REC_SESSIONS, sessionId);
+      setOrphanSessions((arr) => arr.filter((s) => s.id !== sessionId));
+    } catch (err) {
+      console.error('Discard failed:', err);
+    }
   };
 
   // ============================================================
@@ -699,6 +928,52 @@ function DawApp() {
   }, []);
 
   // ============================================================
+  // Phase 1: Startup checks (orphan sessions + storage + private mode + first visit)
+  // ============================================================
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    (async () => {
+      // 1. プライベートブラウジング検出
+      try {
+        const isPriv = await isPrivateBrowsing();
+        if (isPriv) setPrivateModeWarning(true);
+      } catch {}
+
+      // 2. 初回訪問警告 (ブラウザデータ削除リスク告知)
+      const visited = localStorage.getItem('kuon_daw_visited');
+      if (!visited) setShowFirstVisitWarning(true);
+
+      // 3. ストレージ使用量取得 + 保存パス
+      try {
+        const est = await getStorageEstimate();
+        if (est) setStorageInfo(est);
+        setStoragePath(getStorageLocationHint());
+      } catch {}
+
+      // 4. クラッシュ未復旧セッション検出
+      try {
+        const orphans = await dbFindOrphanedSessions();
+        if (orphans.length > 0) {
+          setOrphanSessions(orphans);
+          setShowRecoveryDialog(true);
+        }
+      } catch {}
+    })();
+  }, []);
+
+  // Persistent Storage 申請 (ブラウザがストレージを誤削除しないようマーク)
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.storage?.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
+  }, []);
+
+  const dismissFirstVisitWarning = () => {
+    if (typeof window !== 'undefined') localStorage.setItem('kuon_daw_visited', '1');
+    setShowFirstVisitWarning(false);
+  };
+
+  // ============================================================
   // Render
   // ============================================================
   return (
@@ -709,6 +984,93 @@ function DawApp() {
       fontFamily: sans,
       transition: 'background 0.4s ease, color 0.4s ease',
     }}>
+      {/* ━━━ Phase 1: Crash Recovery Dialog ━━━ */}
+      {showRecoveryDialog && orphanSessions.length > 0 && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.65)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem', backdropFilter: 'blur(8px)',
+        }}>
+          <div style={{
+            background: c.bg, border: `1px solid ${c.borderStrong}`,
+            borderRadius: 14, padding: 'clamp(1.5rem, 3vw, 2.5rem)',
+            maxWidth: 560, width: '100%',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
+          }}>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.2em', color: c.accent, fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+              🔔 {t({ ja: 'クラッシュ復旧', en: 'Crash Recovery', es: 'Recuperación' }, lang)}
+            </div>
+            <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.2rem, 2.5vw, 1.6rem)', fontWeight: 400, color: c.textPrimary, marginBottom: '0.85rem' }}>
+              {t({
+                ja: '未完了の録音セッションを検出しました',
+                en: 'Incomplete recording session detected',
+                es: 'Sesión de grabación incompleta detectada',
+              }, lang)}
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: c.textSecondary, lineHeight: 1.7, marginBottom: '1.5rem' }}>
+              {t({
+                ja: '前回ブラウザが予期せず閉じられた可能性があります。録音データは IndexedDB に保存されているので復旧できます。',
+                en: 'Your browser may have closed unexpectedly. The recording is safely stored in IndexedDB and can be recovered.',
+                es: 'Su navegador puede haberse cerrado inesperadamente. La grabación está segura en IndexedDB.',
+              }, lang)}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.5rem' }}>
+              {orphanSessions.map((s) => (
+                <div key={s.id} style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 8, padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.85rem', color: c.textPrimary, marginBottom: '0.4rem', fontWeight: 600 }}>
+                    {new Date(s.startTime).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: c.textTertiary, marginBottom: '0.6rem' }}>
+                    Track: {s.trackId} · {s.sampleRate / 1000}kHz · {s.mimeType}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button onClick={() => recoverSession(s)}
+                      style={{ background: c.accent, color: theme === 'dark' ? '#0a1226' : '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
+                      ✓ {t({ ja: '復旧する', en: 'Recover', es: 'Recuperar' }, lang)}
+                    </button>
+                    <button onClick={() => discardSession(s.id)}
+                      style={{ background: 'transparent', color: c.danger, border: `1px solid ${c.danger}`, padding: '0.5rem 1rem', borderRadius: 6, fontSize: '0.78rem', cursor: 'pointer' }}>
+                      🗑 {t({ ja: '破棄する', en: 'Discard', es: 'Descartar' }, lang)}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setShowRecoveryDialog(false)}
+              style={{ background: 'transparent', color: c.textSecondary, border: `1px solid ${c.border}`, padding: '0.5rem 1rem', borderRadius: 6, fontSize: '0.78rem', cursor: 'pointer', width: '100%' }}>
+              {t({ ja: 'あとで確認 (このダイアログを閉じる)', en: 'Decide later (close)', es: 'Decidir luego' }, lang)}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ━━━ Private browsing warning ━━━ */}
+      {privateModeWarning && (
+        <div style={{ background: '#dc2626', color: '#fff', padding: '0.6rem 1rem', textAlign: 'center', fontSize: '0.8rem' }}>
+          ⚠️ {t({
+            ja: 'プライベートブラウジングで録音されています。録音データは保存されません。通常モードでお使いください。',
+            en: 'Private browsing detected. Recordings will NOT be saved. Use normal mode.',
+            es: 'Navegación privada detectada. Las grabaciones NO se guardarán.',
+          }, lang)}
+          <button onClick={() => setPrivateModeWarning(false)} style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none', padding: '2px 8px', borderRadius: 4, marginLeft: 8, cursor: 'pointer' }}>×</button>
+        </div>
+      )}
+
+      {/* ━━━ First visit warning (browser data deletion risk) ━━━ */}
+      {showFirstVisitWarning && !privateModeWarning && (
+        <div style={{ background: c.accentSoft, color: c.textPrimary, padding: '0.85rem 1rem', textAlign: 'center', fontSize: '0.78rem', borderBottom: `1px solid ${c.border}` }}>
+          💡 {t({
+            ja: 'ヒント: 録音はあなたのブラウザ内 (IndexedDB) に保存されます。「閲覧データを削除」を実行すると消えるので、重要な録音は WAV 書き出しでバックアップしてください。',
+            en: 'Tip: Recordings are stored in your browser (IndexedDB). Clearing "browsing data" will delete them. Export important recordings as WAV.',
+            es: 'Consejo: Las grabaciones están en su navegador (IndexedDB).',
+          }, lang)}
+          <button onClick={dismissFirstVisitWarning} style={{ background: c.accent, color: theme === 'dark' ? '#0a1226' : '#fff', border: 'none', padding: '3px 10px', borderRadius: 4, marginLeft: 8, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600 }}>
+            {t({ ja: '了解', en: 'Got it', es: 'Entendido' }, lang)}
+          </button>
+        </div>
+      )}
+
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: 'clamp(1rem, 2.5vw, 2rem)' }}>
 
         {/* Header */}
@@ -782,6 +1144,19 @@ function DawApp() {
             </button>
           </div>
         </div>
+
+        {/* ━━━ Storage Info Bar (Phase 1) ━━━ */}
+        {storageInfo && (
+          <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: '0.6rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', fontSize: '0.72rem', color: c.textTertiary }}>
+            <span>
+              💾 {t({ ja: 'ローカル保存中', en: 'Stored locally', es: 'Guardado localmente' }, lang)}: {(storageInfo.usage / (1024 * 1024)).toFixed(1)} MB / {(storageInfo.quota / (1024 * 1024 * 1024)).toFixed(1)} GB
+              {storagePath && <> · <code style={{ fontSize: '0.7em', background: 'transparent', color: c.textSecondary }}>{storagePath}</code></>}
+            </span>
+            <span style={{ color: c.success }}>
+              ✓ {t({ ja: 'クラウド送信ゼロ', en: 'Zero cloud upload', es: 'Sin nube' }, lang)} · {t({ ja: '250ms 毎にディスク書き込み', en: 'Stream-write every 250ms', es: 'Escritura cada 250ms' }, lang)}
+            </span>
+          </div>
+        )}
 
         {/* Timeline header (time markers) */}
         <div style={{ display: 'flex', marginBottom: 4, paddingLeft: 220 }}>

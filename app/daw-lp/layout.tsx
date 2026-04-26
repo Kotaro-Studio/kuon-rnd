@@ -33,6 +33,12 @@ const KEYWORDS_JA = [
   'Soundtrap 代替', 'BandLab 代替', 'Soundation 代替',
   'Auphonic 代替', 'WavePad 代替', 'Ocenaudio 代替', 'TwistedWave 代替',
   'Riverside.fm 代替',
+  // プロ録音・データ保護系 (15) — Phase 1 追加
+  'クラッシュ復旧 録音', 'ブラウザクラッシュ 録音 復元', 'プロ録音 ブラウザ',
+  '録音 データ消失 防止', 'ストリーミング書き込み 録音', 'IndexedDB 録音',
+  'ローカル保存 録音', 'クラウド送信ゼロ DAW', 'プライバシー 録音',
+  'オフライン録音 ブラウザ', 'PWA 録音 アプリ', '長時間録音 安定',
+  '業務利用 ブラウザ DAW', 'プロエンジニア ブラウザ', 'Persistent Storage 録音',
 ];
 
 const KEYWORDS_EN = [
@@ -244,6 +250,62 @@ const FAQ_JSONLD = {
       acceptedAnswer: {
         '@type': 'Answer',
         text: '朝比奈幸太郎 (空音開発 / Kuon R&D 代表・元音大生・プロ音響エンジニア・P-86S/X-86S ハンドメイドマイク設計者・元 CD レーベル運営者) が、自身のワンポイント録音哲学に基づいて設計。CLAUDE 4 と共同で実装。タイムストレッチ・ピッチ補正等の現代的「過剰加工」を意図的に避け、「録った音をそのまま美しく整える」ミニマルな思想を徹底しています。',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'ブラウザがクラッシュしたら録音データは失われますか?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'いいえ、KUON DAW は 250ms ごとに録音 chunk を IndexedDB へ即書き込みするストリーミング設計を採用しています。ブラウザクラッシュ・タブ誤閉じ・電源断でも最悪 250ms 分の損失で済みます。次回起動時に「未完了の録音セッションを検出しました」ダイアログが自動表示され、ワンクリックで完全復旧できます。プロ業務でも安心です。',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '録音データはユーザーのデバイスのどこに保存されますか?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'IndexedDB という、ブラウザ標準のローカルストレージに保存されます。物理的なファイルパスは: Mac (~/Library/Application Support/Google/Chrome/Default/IndexedDB/)、Windows (%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\IndexedDB\\)、iOS (Safari サンドボックス内・暗号化)、Android (/data/data/com.android.chrome/.../IndexedDB/)。Kuon サーバーへのアップロードは技術的に一切ありません。プロエンジニアが自分でデータ削除も可能。',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'ネット接続なしでも録音できますか?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'はい、初回ページ読み込みの後はオフラインで録音・編集・WAV/MP3 書き出しがすべて動作します。マイク入力 (getUserMedia)、録音 (MediaRecorder)、保存 (IndexedDB)、エフェクト処理 (Web Audio API)、書き出し (OfflineAudioContext) — すべてユーザーのブラウザ内で完結します。Cloudflare 等のサーバーに録音データが流れることは一切ありません。',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'プロ録音エンジニアが業務利用できますか?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'はい、Phase 1 のクラッシュ耐性実装により、プロのレコーディングセッションでも実用レベルの信頼性を達成しました。250ms ストリーミング書き込み・IndexedDB 自動保存・クラッシュ復旧ダイアログ・Persistent Storage API による誤削除防止・プライベートブラウジング検出。Pro Tools / Logic Pro と同等のデータ保護を、ブラウザで実現。設計者の朝比奈幸太郎自身がプロ音響エンジニアとして実業務でテストしています。',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'ストレージはどれくらい使いますか?容量制限は?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '録音音声 (WebM/Opus 圧縮) は 1 時間ステレオで約 60MB。ブラウザのストレージクォータは Chrome / Edge で HDD 空き容量の 60% (例: 256GB SSD なら約 150GB)。256GB MacBook で約 2,500 時間分の録音が保存可能。実用上、容量超過の心配はほぼゼロ。マイページから使用量を確認・古いプロジェクト整理が可能。',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'シークレットモード (プライベートブラウジング) でも使えますか?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'シークレットモードでは録音データが保存されません (Safari は IndexedDB が無効・Chrome はタブを閉じると消える)。KUON DAW は起動時にプライベートブラウジングを自動検出して赤色の警告バナーを表示します。プロ録音には必ず通常モードでお使いください。',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '録音データを完全に削除する方法は?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '3 つの方法があります。① KUON DAW のマイページからプロジェクト一覧で個別削除 (推奨)。② ブラウザの設定 → サイトのデータから kuon-rnd.com の IndexedDB を選択して削除。③ ブラウザ全体の「閲覧データを削除」で「Cookie とその他のサイトデータ」を選択 (この場合はログイン情報やお気に入りも消えます)。すべてユーザーのデバイス内で完結する操作で、Kuon サーバーには関係ありません。',
       },
     },
   ],

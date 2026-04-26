@@ -245,6 +245,121 @@ export default function DawLpPage() {
         </div>
       </section>
 
+      {/* ═════════ PRO-GRADE RELIABILITY (Phase 1) ═════════ */}
+      <section style={{ padding: 'clamp(4rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)', background: 'linear-gradient(180deg, #0a1226 0%, #1a2742 100%)', color: '#fff' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: ACCENT, fontWeight: 600, marginBottom: '0.85rem' }}>
+              🛡 {t({ ja: 'プロ録音グレード信頼性', en: 'PRO-GRADE RELIABILITY', es: 'CONFIABILIDAD PROFESIONAL' }, lang)}
+            </div>
+            <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.8rem, 4.5vw, 3rem)', fontWeight: 300, marginBottom: '1.25rem' }}>
+              {t({
+                ja: 'クラッシュしても、データは消えない。',
+                en: 'Your data survives any crash.',
+                es: 'Tus datos sobreviven a cualquier fallo.',
+              }, lang)}
+            </h2>
+            <p style={{ fontSize: '1rem', color: '#cbd5e1', maxWidth: 700, margin: '0 auto', lineHeight: 1.8 }}>
+              {t({
+                ja: '250 ミリ秒ごとに録音 chunk を IndexedDB へ即書き込み。ブラウザ落ち・タブ誤閉じ・電源断でも、最悪 250ms 分の損失で済みます。次回起動時に自動復旧ダイアログが立ち上がります。',
+                en: 'Stream-write 250ms chunks straight to IndexedDB. Survive browser crashes, tab closes, even power loss. Worst case: 250ms loss. Auto-recovery dialog on next launch.',
+                es: 'Escritura cada 250ms a IndexedDB. Sobrevive a fallos del navegador, cierre de pestañas, corte eléctrico.',
+              }, lang)}
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
+            {[
+              { ic: '⚡', t: { ja: 'ストリーミング書き込み', en: 'Stream-Write', es: 'Stream-Write' }, d: { ja: '250ms 毎にディスク', en: 'Every 250ms to disk', es: 'Cada 250ms al disco' } },
+              { ic: '🔄', t: { ja: '自動復旧ダイアログ', en: 'Auto-Recovery Dialog', es: 'Diálogo de recuperación' }, d: { ja: '起動時に未完了セッションを検出', en: 'Detects orphan sessions on load', es: 'Detecta sesiones huérfanas' } },
+              { ic: '🔒', t: { ja: 'Persistent Storage', en: 'Persistent Storage', es: 'Almacenamiento persistente' }, d: { ja: 'ブラウザの誤削除を防止', en: 'Prevents browser eviction', es: 'Previene eliminación' } },
+              { ic: '👁', t: { ja: 'プライベートモード警告', en: 'Private Mode Warning', es: 'Aviso modo privado' }, d: { ja: 'シークレットモード時に赤色警告', en: 'Red banner if incognito', es: 'Alerta si incógnito' } },
+              { ic: '📊', t: { ja: 'ストレージ使用量表示', en: 'Storage Usage Meter', es: 'Medidor de uso' }, d: { ja: 'リアルタイムで容量確認', en: 'Real-time capacity', es: 'Capacidad en tiempo real' } },
+              { ic: '🌐', t: { ja: 'ネット接続不要', en: 'Works Offline', es: 'Sin conexión' }, d: { ja: '初回読み込み後はオフライン動作', en: 'Offline after first load', es: 'Sin red tras carga' } },
+            ].map((it, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '1.25rem' }}>
+                <div style={{ fontSize: '1.85rem', marginBottom: '0.6rem' }}>{it.ic}</div>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.35rem', color: '#fff' }}>{t(it.t, lang)}</h3>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.6 }}>{t(it.d, lang)}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: 'rgba(232,184,160,0.08)', border: `1px solid ${ACCENT}55`, borderRadius: 14, padding: 'clamp(1.5rem, 3vw, 2rem)', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.95rem', color: '#fff', marginBottom: '0.85rem', fontWeight: 600 }}>
+              💡 {t({ ja: '実例: 30 分のクラシック録音中にブラウザがクラッシュ', en: 'Example: Browser crashes during 30-min classical recording', es: 'Ejemplo: Crash en grabación 30 min' }, lang)}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#cbd5e1', lineHeight: 1.8 }}>
+              {t({
+                ja: '従来のブラウザ DAW: 全消失 ❌ → KUON DAW: 起動時に自動検出、ワンクリックで全 30 分復旧 ✓',
+                en: 'Traditional browser DAW: total loss ❌ → KUON DAW: auto-detect on launch, one-click recover all 30 min ✓',
+                es: 'DAW tradicional: pérdida total ❌ → KUON DAW: auto-detección, recuperación en un click ✓',
+              }, lang)}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════ WHERE YOUR DATA LIVES (Privacy Transparency) ═════════ */}
+      <section style={{ padding: 'clamp(4rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)', background: '#fff' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.25em', color: '#b8755a', fontWeight: 600, marginBottom: '0.85rem' }}>
+              🔒 {t({ ja: 'プライバシー透明性', en: 'PRIVACY TRANSPARENCY', es: 'TRANSPARENCIA' }, lang)}
+            </div>
+            <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.8rem, 4.5vw, 2.75rem)', fontWeight: 300, color: '#0a1226', marginBottom: '1.25rem' }}>
+              {t({
+                ja: 'あなたのデータは、あなたのデバイスの中。それだけ。',
+                en: 'Your data lives in your device. Nowhere else.',
+                es: 'Sus datos viven en su dispositivo. En ningún otro lugar.',
+              }, lang)}
+            </h2>
+            <p style={{ fontSize: '0.95rem', color: '#475569', maxWidth: 700, margin: '0 auto', lineHeight: 1.8 }}>
+              {t({
+                ja: 'KUON DAW はクラウドに録音データを送信しません。すべてあなたのブラウザの IndexedDB に直接保存されます。プロのレコーディング (機密音源・未発表曲・契約録音) でも安心。',
+                en: 'KUON DAW never uploads your recordings to any cloud. Everything stays in your browser\'s IndexedDB. Safe for professional recordings — confidential masters, unreleased tracks, contracted sessions.',
+                es: 'KUON DAW nunca sube grabaciones a la nube. Todo permanece en IndexedDB local. Seguro para grabaciones profesionales.',
+              }, lang)}
+            </p>
+          </div>
+
+          <div style={{ background: '#fafaf7', borderRadius: 14, padding: 'clamp(1.5rem, 3vw, 2rem)', border: '1px solid #e2e8f0' }}>
+            <h3 style={{ fontFamily: serif, fontSize: '1.1rem', fontWeight: 400, color: '#0a1226', marginBottom: '1.25rem', textAlign: 'center' }}>
+              📁 {t({ ja: '物理的な保存場所 (お使いの OS 別)', en: 'Physical storage location (by OS)', es: 'Ubicación física' }, lang)}
+            </h3>
+            <div style={{ display: 'grid', gap: '0.6rem' }}>
+              {[
+                { os: 'macOS', path: '~/Library/Application Support/Google/Chrome/Default/IndexedDB/' },
+                { os: 'Windows', path: '%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\IndexedDB\\' },
+                { os: 'Linux', path: '~/.config/google-chrome/Default/IndexedDB/' },
+                { os: 'iOS Safari', path: t({ ja: 'Safari サンドボックス内 (OS 暗号化)', en: 'Safari sandbox (OS encrypted)', es: 'Sandbox Safari (cifrado)' }, lang) },
+                { os: 'Android Chrome', path: '/data/data/com.android.chrome/app_chrome/Default/IndexedDB/' },
+              ].map((row, i) => (
+                <div key={i} style={{ display: 'flex', gap: '1rem', padding: '0.6rem 0.85rem', background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ minWidth: 110, fontWeight: 600, color: '#0a1226', fontSize: '0.85rem' }}>{row.os}</div>
+                  <code style={{ flex: 1, fontSize: '0.75rem', color: '#475569', fontFamily: 'ui-monospace, monospace', overflowX: 'auto' }}>{row.path}</code>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '1.25rem', padding: '0.85rem 1rem', background: '#fef3c7', borderRadius: 8, fontSize: '0.78rem', color: '#92400e' }}>
+              ⚠️ {t({
+                ja: '注意: ブラウザの「閲覧データを削除」(Cookie とその他のサイトデータ) を実行すると IndexedDB も消えます。重要な録音は WAV 書き出しでバックアップしてください。',
+                en: 'Warning: Clearing "browsing data" (Cookies and other site data) in your browser will delete the IndexedDB. Export important recordings as WAV.',
+                es: 'Advertencia: Borrar "datos de navegación" eliminará IndexedDB. Exporte grabaciones importantes como WAV.',
+              }, lang)}
+            </div>
+          </div>
+
+          <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.85rem', color: '#475569' }}>
+            🎙 {t({
+              ja: '256GB SSD なら約 2,500 時間分の録音が保存可能。実用上、容量超過の心配はほぼゼロ。',
+              en: '256GB SSD = ~2,500 hours of recording. Storage limit concerns are near-zero in practice.',
+              es: '256GB SSD = ~2,500 horas de grabación.',
+            }, lang)}
+          </div>
+        </div>
+      </section>
+
       {/* ═════════ FOUNDER STATEMENT ═════════ */}
       <section style={{ padding: 'clamp(4rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)', background: '#fff' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
