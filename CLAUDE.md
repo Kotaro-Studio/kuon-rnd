@@ -3062,3 +3062,61 @@ P-86S 商品 LP → Stripe Checkout (JP のみ) → 購入完了 → /shop/thank
 - 国内・海外を区別しない統一メッセージング
 - ブランド純度が向上 → §37 「沈黙の勝利戦略」とも整合
 
+
+## 43. KUON HALO — Curanz Sounds 量産専用 (オーナー専用ツール)
+
+### 43.1 トリガーフレーズ (絶対遵守)
+
+オーナーが以下のいずれかを発言したら、Claude は **真っ先に** 以下のファイルを Read する:
+
+- 「クランツサウンズのアプリを修正します」
+- 「Curanz のアプリを直したい」
+- 「HALO を改良したい」
+- 「ハローを修正」
+- 「ヒーリング音響アプリの修正」
+
+→ **`/Users/kotaro/kuon-rnd/空音開発/halo-system-spec.md`**
+
+このファイルが KUON HALO の唯一の情報源。改良前に必ず読み、最新コードと突き合わせて改良方針を提案する。
+
+### 43.2 KUON HALO とは
+
+Curanz Sounds (curanzsounds.com) のヒーリング音楽を量産するためのオーナー専用シンセサイザー。
+月商 ¥20M 達成を加速する制作ツール。**完全に Curanz 専用・公開しない**。
+
+### 43.3 アクセス制限 (絶対)
+
+- URL: `https://kuon-rnd.com/admin/halo`
+- アクセス権限: `369@kotaroasahina.com` のみ
+- noindex/nofollow/nocache (検索エンジン非掲載)
+- カタログ・サイトマップ非掲載
+- 旧 URL (`/halo`, `/halo-lp`) はリダイレクトのみ
+
+### 43.4 主要ファイル
+
+- `app/admin/halo/page.tsx` — メインアプリ (認証ゲート + UI)
+- `app/admin/halo/layout.tsx` — noindex メタデータ
+- `app/lib/halo/pads.ts` — 5 パッド音色 (改良時の中心)
+- `app/lib/halo/presets.ts` — 8 プリセット
+- `app/lib/halo/chord-engine.ts` — コード進行エンジン (8 進行)
+- `app/lib/halo/frequencies.ts` — 9 ソルフェジオ + 5 脳波
+- `app/lib/halo/export.ts` — 24-bit 48kHz WAV + 3 段マスターチェイン
+- `app/lib/halo/binaural.ts` — バイノーラルビート
+- `app/lib/halo/reverb.ts` — アルゴリズミック リバーブ + 5 プリセット
+- `app/lib/halo/synth.ts` — レガシー音色 (ほぼ未使用)
+- `app/lib/halo/grain.ts` — グラニュラー (Phase 2 用・未使用)
+- `app/halo/page.tsx` — 旧 URL リダイレクト (削除しない)
+- `app/halo-lp/page.tsx` — 旧 LP リダイレクト (削除しない)
+
+### 43.5 改良時の鉄則
+
+1. **音割れ絶対禁止** (3 段マスターチェイン維持: 10秒フェードイン → リミッター → tanh)
+2. **耳に刺さる音は失敗** (warmth スライダーで全パッド軟化対応)
+3. **432Hz チューニング基本** (440Hz は採用しない)
+4. **ソルフェジオ周波数を軸** とする (174-963Hz 直接指定)
+5. **コード進行ベース** (1 コード 30-60 秒持続)
+6. **24-bit 48kHz WAV** (Curanz 商品標準)
+7. **完全合成** (サンプルファイル不使用)
+8. **オーナー専用維持** (公開・カタログ掲載禁止)
+
+詳細仕様・改良候補・既知の制約はすべて `空音開発/halo-system-spec.md` に集約。

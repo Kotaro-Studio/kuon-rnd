@@ -176,6 +176,10 @@
   - 正規流入は Kotaro Studio (kotarohattori.com) 外部リンクのみ
   - 例外: 購入後コンテキスト (購入確認メール / /shop/thanks / /manual/*) は OK
 - ❌ **マイク購入特典の実装** (Concerto 1ヶ月無料等は不採用が確定 / §42.5)
+- ❌ **KUON HALO を公開する** (Curanz 専用ツール・/admin/halo オーナー専用)
+  - カタログ・サイトマップ・公開 LP への追加禁止
+  - 仕様詳細: 空音開発/halo-system-spec.md
+  - トリガーフレーズ「クランツサウンズのアプリを修正します」で再開
 
 ---
 
