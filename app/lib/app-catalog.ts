@@ -478,6 +478,20 @@ export const APP_CATALOG: CatalogApp[] = [
     badges: ['NEW'],
     minPlan: 'free-with-login',
   },
+  {
+    id: 'drum',
+    name: { ja: 'DRUM MACHINE', en: 'DRUM MACHINE', es: 'DRUM MACHINE' },
+    tagline: { ja: '世界 12 文化圏のリズムを叩く', en: 'Beat the world\'s 12 cultures of rhythm', es: 'Toca ritmos de 12 culturas' },
+    href: '/drum-lp',
+    launchHref: '/drum',
+    emoji: '🥁',
+    category: 'production',
+    noLogin: true,
+    serverApp: false,
+    quotaKey: null,
+    badges: ['NEW'],
+    minPlan: 'free',
+  },
 
   // ============================================================
   // 🧘 メンタル・本番準備系 (2026-04-26 追加)
