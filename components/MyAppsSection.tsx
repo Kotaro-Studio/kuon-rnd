@@ -15,6 +15,7 @@ import {
   type AppCategory,
 } from '@/app/lib/app-catalog';
 import type { PlanTier } from '@/app/lib/pricing-display';
+import { QuotaMeter, type UsageData } from '@/components/QuotaMeter';
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -37,6 +38,8 @@ export function MyAppsSection({ userPlan, isLoggedIn }: MyAppsSectionProps) {
   const [activeCategory, setActiveCategory] = useState<AppCategory | 'all' | 'favorites'>('all');
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [usageData, setUsageData] = useState<UsageData | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -49,6 +52,25 @@ export function MyAppsSection({ userPlan, isLoggedIn }: MyAppsSectionProps) {
       // ignore
     }
   }, []);
+
+  // ── Fetch usage data from Auth Worker (Phase 2) ──
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setUsageLoading(false);
+      return;
+    }
+    let canceled = false;
+    fetch('/api/auth/usage/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!canceled && data) setUsageData(data as UsageData);
+      })
+      .catch(() => { /* silent */ })
+      .finally(() => {
+        if (!canceled) setUsageLoading(false);
+      });
+    return () => { canceled = true; };
+  }, [isLoggedIn]);
 
   const availableApps = useMemo(() => appsForPlan(userPlan, isLoggedIn), [userPlan, isLoggedIn]);
   const lockedApps = useMemo(() => appsLockedFor(userPlan, isLoggedIn), [userPlan, isLoggedIn]);
@@ -131,6 +153,9 @@ export function MyAppsSection({ userPlan, isLoggedIn }: MyAppsSectionProps) {
           }, lang)}
         </div>
       </div>
+
+      {/* ─── Quota meter (Phase 2: 今月の使用状況) ─── */}
+      <QuotaMeter data={usageData} loading={usageLoading} />
 
       {/* ─── Recommended app of the day ─── */}
       {recommended && (

@@ -214,6 +214,78 @@ function quotaFor(appName: string, plan: 'free' | 'student' | 'pro'): number {
 }
 
 // ─────────────────────────────────────────────
+// Phase 2 (2026-04-26) 新クォータ体系
+// CLAUDE.md §38.4 + Option C ハイブリッド準拠
+//
+// 現状の APP_QUOTAS は legacy plan ('free'|'student'|'pro') ベース。
+// こちらは新 planTier ('prelude'|'concerto'|'symphony'|'opus') 対応版。
+//
+// 「ピッチ分析: ほぼ無制限」表記の内部 cap も内蔵 (顧客には未公開・コスト保護のみ):
+//   intonation: Concerto 50 / Symphony 100 / Opus 200
+//
+// ブラウザアプリ (METRONOME 等) は APP_QUOTAS_TIER に含めない = 無制限
+// ─────────────────────────────────────────────
+
+type QuotaPlan = 'free' | 'prelude' | 'concerto' | 'symphony' | 'opus';
+
+const APP_QUOTAS_TIER: Record<string, Record<QuotaPlan, number>> = {
+  separator:  { free: 0, prelude: 15, concerto: 60,  symphony: 120, opus: 500 },
+  transcribe: { free: 0, prelude: 15, concerto: 40,  symphony: 80,  opus: 250 },
+  intonation: { free: 0, prelude: 30, concerto: 50,  symphony: 100, opus: 200 }, // ほぼ無制限の内部 cap
+};
+
+/**
+ * legacy plan 名と新 planTier の両方を受け付ける統一クォータ取得関数
+ */
+function quotaForTier(appName: string, planValue: string): number {
+  const map = APP_QUOTAS_TIER[appName];
+  if (!map) return -1; // -1 = unlimited (browser apps)
+
+  // legacy plan 名から新 tier 名へマッピング
+  const tierMap: Record<string, QuotaPlan> = {
+    free: 'free',
+    student: 'prelude',
+    pro: 'concerto',
+    max: 'symphony',
+    enterprise: 'opus',
+    prelude: 'prelude',
+    concerto: 'concerto',
+    symphony: 'symphony',
+    opus: 'opus',
+  };
+  const tier = tierMap[planValue] ?? 'free';
+  return map[tier] ?? 0;
+}
+
+/**
+ * このアプリは server app (クォータ管理対象) か?
+ */
+function isServerApp(appName: string): boolean {
+  return APP_QUOTAS_TIER[appName] !== undefined;
+}
+
+/**
+ * KV usage キーを生成: usage:{email}:{YYYY-MM}:{appId}
+ */
+function usageKey(email: string, month: string, appName: string): string {
+  return `usage:${email}:${month}:${appName}`;
+}
+
+/**
+ * 当月の月末日 (リセット日) を ISO 形式で返す
+ */
+function nextResetDate(month: string): string {
+  // month = "YYYY-MM"
+  const [yStr, mStr] = month.split('-');
+  const year = parseInt(yStr, 10);
+  const m = parseInt(mStr, 10);
+  // 翌月 1 日
+  const nextYear = m === 12 ? year + 1 : year;
+  const nextMonth = m === 12 ? 1 : m + 1;
+  return `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+}
+
+// ─────────────────────────────────────────────
 // Stripe helpers (Phase 7 — added 2026-04-25)
 // ─────────────────────────────────────────────
 
@@ -1115,6 +1187,201 @@ app.post('/api/auth/quota/refund', async (c) => {
     app: appName,
     used: user.appUsage[appName] || 0,
     month,
+  });
+});
+
+// ============================================================
+// Phase 2 (2026-04-26) 新クォータ API 群
+// ============================================================
+//
+// KV 構造: SESSIONS namespace に保存
+//   key:   usage:{email}:{YYYY-MM}:{appId}
+//   value: 数値文字列 (回数)
+//   TTL:   62 日 (今月 + 先月で自動消滅)
+//
+// 設計思想:
+//   - ブラウザアプリも追跡対象 (recently used / 使用履歴用)
+//   - サーバーアプリ (separator/transcribe/intonation) は強制クォータあり
+//   - 完全ブロックモード (上限到達 = 即停止)
+//   - 月跨ぎは KV キー構造で自動切替 (Cron 不要)
+// ============================================================
+
+// ─────────────────────────────────────────────
+// POST /api/auth/usage/track — 使用回数 +1
+// 全アプリ (ブラウザ + サーバー) で呼ぶ。クォータ超過チェックも含む。
+// ─────────────────────────────────────────────
+app.post('/api/auth/usage/track', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const { app: appName } = await c.req.json<{ app: string }>();
+  if (!appName) return c.json({ error: 'Missing app name' }, 400);
+
+  const raw = await c.env.USERS.get(`user:${payload.email}`);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+  const user = ensureStripeFields(JSON.parse(raw));
+
+  const month = currentMonth();
+  const key = usageKey(payload.email, month, appName);
+
+  // 現在値を取得して +1
+  const currentValue = await c.env.SESSIONS.get(key);
+  const current = currentValue ? parseInt(currentValue, 10) : 0;
+  const next = current + 1;
+
+  // クォータ取得 (server app のみ強制チェック)
+  const planValue = user.planTier || user.plan || 'free';
+  const limit = quotaForTier(appName, planValue);
+  const isServer = isServerApp(appName);
+
+  // server app かつ既に上限到達 → ブロック (track 失敗扱い)
+  if (isServer && limit === 0) {
+    return c.json({
+      error: 'Plan does not include this app',
+      code: 'NOT_INCLUDED',
+      app: appName, plan: planValue,
+      upgrade: { suggestedPlan: 'prelude' },
+    }, 403);
+  }
+  if (isServer && current >= limit) {
+    return c.json({
+      error: 'Quota exceeded',
+      code: 'QUOTA_EXCEEDED',
+      app: appName, plan: planValue,
+      used: current, limit,
+      resetDate: nextResetDate(month),
+    }, 429);
+  }
+
+  // KV 書き込み (TTL 62 日 = 今月 + 先月)
+  await c.env.SESSIONS.put(key, String(next), { expirationTtl: 62 * 24 * 60 * 60 });
+
+  return c.json({
+    ok: true,
+    app: appName,
+    used: next,
+    limit: isServer ? limit : null,
+    remaining: isServer ? Math.max(0, limit - next) : null,
+    month,
+    isServer,
+  });
+});
+
+// ─────────────────────────────────────────────
+// GET /api/auth/usage/me — 当月の全アプリ使用状況をまとめて取得
+// マイページの「今月の使用状況」表示用
+// ─────────────────────────────────────────────
+app.get('/api/auth/usage/me', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const raw = await c.env.USERS.get(`user:${payload.email}`);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+  const user = ensureStripeFields(JSON.parse(raw));
+
+  const month = currentMonth();
+  const planValue = user.planTier || user.plan || 'free';
+  const prefix = `usage:${payload.email}:${month}:`;
+
+  // KV scan で当月使用したアプリを全部取得
+  const list = await c.env.SESSIONS.list({ prefix });
+  const usage: Record<string, { used: number; limit: number | null; remaining: number | null; isServer: boolean }> = {};
+
+  for (const k of list.keys) {
+    const appName = k.name.slice(prefix.length);
+    const valueStr = await c.env.SESSIONS.get(k.name);
+    const used = valueStr ? parseInt(valueStr, 10) : 0;
+    const limit = quotaForTier(appName, planValue);
+    const isServer = isServerApp(appName);
+    usage[appName] = {
+      used,
+      limit: isServer ? limit : null,
+      remaining: isServer ? Math.max(0, limit - used) : null,
+      isServer,
+    };
+  }
+
+  // server app で「使ったことはないが上限はある」ものも 0/limit で含める
+  for (const appName of Object.keys(APP_QUOTAS_TIER)) {
+    if (!usage[appName]) {
+      const limit = quotaForTier(appName, planValue);
+      usage[appName] = {
+        used: 0,
+        limit,
+        remaining: limit,
+        isServer: true,
+      };
+    }
+  }
+
+  return c.json({
+    plan: user.plan,
+    planTier: user.planTier,
+    month,
+    resetDate: nextResetDate(month),
+    usage,
+  });
+});
+
+// ─────────────────────────────────────────────
+// POST /api/auth/usage/check — 使用可否の事前チェック (消費しない)
+// サーバーアプリ起動前にフロントから呼ぶ。
+// ─────────────────────────────────────────────
+app.post('/api/auth/usage/check', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const { app: appName } = await c.req.json<{ app: string }>();
+  if (!appName) return c.json({ error: 'Missing app name' }, 400);
+
+  const raw = await c.env.USERS.get(`user:${payload.email}`);
+  if (!raw) return c.json({ error: 'User not found' }, 404);
+  const user = ensureStripeFields(JSON.parse(raw));
+
+  const month = currentMonth();
+  const key = usageKey(payload.email, month, appName);
+  const valueStr = await c.env.SESSIONS.get(key);
+  const used = valueStr ? parseInt(valueStr, 10) : 0;
+  const planValue = user.planTier || user.plan || 'free';
+  const limit = quotaForTier(appName, planValue);
+  const isServer = isServerApp(appName);
+
+  // ブラウザアプリは常に許可
+  if (!isServer) {
+    return c.json({
+      allowed: true,
+      app: appName, used, limit: null, remaining: null,
+      isServer: false,
+    });
+  }
+
+  // プランに含まれない
+  if (limit === 0) {
+    return c.json({
+      allowed: false,
+      reason: 'NOT_INCLUDED',
+      app: appName, plan: planValue, used: 0, limit: 0, remaining: 0,
+      isServer: true,
+      resetDate: nextResetDate(month),
+    });
+  }
+
+  const remaining = Math.max(0, limit - used);
+  return c.json({
+    allowed: remaining > 0,
+    reason: remaining === 0 ? 'QUOTA_EXCEEDED' : 'OK',
+    app: appName, plan: planValue, used, limit, remaining,
+    isServer: true,
+    resetDate: nextResetDate(month),
   });
 });
 

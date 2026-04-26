@@ -258,11 +258,27 @@ export function AuthGate({ appName, children, strict = true }: AuthGateProps) {
   );
 }
 
-/** アプリ利用をバックグラウンドでトラッキング（エラーは無視） */
+/**
+ * アプリ利用をバックグラウンドでトラッキング (エラーは無視)
+ *
+ * Phase 2 (2026-04-26): 新エンドポイント /api/auth/usage/track に移行。
+ * 旧 /api/auth/track もしばらく並行稼働 (1 ヶ月後を目処に削除予定)。
+ *
+ * サーバーアプリ (separator/transcribe/intonation) でクォータ超過時は
+ * 429 が返るが、ここではログ表示のみ (実際のブロックは各アプリ側で行う)。
+ */
 function trackUsage(appName: string) {
-  fetch('/api/auth/track', {
+  fetch('/api/auth/usage/track', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ app: appName }),
-  }).catch(() => { /* silent */ });
+  }).then(async (res) => {
+    if (res.status === 429) {
+      const data = await res.json().catch(() => ({}));
+      console.warn('[Kuon] Quota exceeded for', appName, data);
+    } else if (res.status === 403) {
+      const data = await res.json().catch(() => ({}));
+      console.warn('[Kuon] App not included in plan', appName, data);
+    }
+  }).catch(() => { /* silent: network error is non-fatal for tracking */ });
 }
