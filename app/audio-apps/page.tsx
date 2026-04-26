@@ -1865,19 +1865,7 @@ function SignupBanner({ lang }: { lang: Lang }) {
             pt: 'Começar grátis', es: 'Empezar gratis',
           }, lang)}
         </Link>
-        <Link href="/microphone" style={{
-          display: 'inline-block', textDecoration: 'none',
-          padding: '12px 32px', borderRadius: 50,
-          background: 'transparent', color: '#94a3b8',
-          fontSize: 14, fontWeight: 500,
-          border: '1px solid rgba(148,163,184,0.3)',
-          transition: 'all 0.25s',
-        }}>
-          {t5({
-            ja: 'P-86S マイクを見る', en: 'View P-86S Mic', ko: 'P-86S 마이크 보기',
-            pt: 'Ver microfone P-86S', es: 'Ver micrófono P-86S',
-          }, lang)}
-        </Link>
+        {/* 2026-04-26 削除: P-86S マイクボタン (国際公平性のため・JP 国内限定販売) */}
       </div>
     </div>
   );

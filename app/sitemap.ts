@@ -8,7 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const highPriority: MetadataRoute.Sitemap = [
     { url: base, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
     { url: `${base}/audio-apps`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${base}/microphone`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+    // 2026-04-26 削除: /microphone (国際公平性のため・JP 国内限定販売・Kotaro Studio 外部リンクのみで流入)
     { url: `${base}/profile`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/gallery`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     // /certification 削除 (2026-04-25: 認定制度を採用しない決定 / CLAUDE.md §37.5)

@@ -156,24 +156,9 @@ const HomePage: React.FC = () => {
         de: 'Zum Verwenden der Apps nicht. Mit einem Konto können Sie Einstellungen speichern und Verläufe einsehen.',
       },
     },
-    {
-      q: {
-        ja: 'マイクはどこに届けてもらえますか？',
-        en: 'Where do you ship microphones?',
-        es: '¿A dónde envían los micrófonos?',
-        ko: '마이크는 어디로 배송되나요?',
-        pt: 'Para onde vocês enviam os microfones?',
-        de: 'Wohin werden die Mikrofone versendet?',
-      },
-      a: {
-        ja: '日本国内はもちろん、国際郵便が届くすべての国・地域に発送可能です。EMS・国際小包で安全にお届けします。送料は地域により異なります。',
-        en: 'We ship anywhere international postal services reach — worldwide via EMS and international parcel post. Shipping costs vary by region.',
-        es: 'Enviamos a cualquier lugar al que lleguen los servicios postales internacionales, a través de EMS y correo internacional. Los costos varían por región.',
-        ko: '국제 우편이 닿는 모든 국가·지역으로 배송 가능합니다. EMS 및 국제 소포로 안전하게 배송합니다.',
-        pt: 'Enviamos para qualquer lugar que os serviços postais internacionais alcançam — via EMS e encomenda internacional.',
-        de: 'Wir versenden überallhin, wohin der internationale Postdienst reicht — weltweit per EMS und internationalem Paketdienst. Versandkosten variieren je nach Region.',
-      },
-    },
+    // 2026-04-26 削除: マイク発送先 FAQ
+    //   理由: マイクは公開 LP から動線を遮断するため (国際公平性)。
+    //   /microphone ページ自体には残存・Kotaro Studio 経由で流入。
     {
       q: {
         ja: 'サブスクリプションはいつでも解約できますか？',
@@ -361,12 +346,12 @@ const HomePage: React.FC = () => {
         </h1>
         <p style={{ fontFamily: sans, fontSize: 'clamp(1rem, 2.5vw, 1.125rem)', color: '#64748b', maxWidth: '800px', lineHeight: 1.6, margin: '0 0 3rem 0', whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
           {t5({
-            ja: '30 以上のプロツール、ハンドメイドマイク、世界中の音楽家コミュニティ。\n練習も、録音も、配信も、ブラウザひとつで完結します。',
-            en: '30+ professional tools, handmade microphones, a global musician community.\nPractice, record, master, release — all in one browser.',
-            es: '30+ herramientas profesionales, micrófonos artesanales, comunidad global.\nPractica, graba, masteriza, publica — todo en un navegador.',
-            ko: '30+ 프로 도구, 핸드메이드 마이크, 글로벌 커뮤니티.\n연습, 녹음, 마스터링, 배포 — 브라우저 하나로.',
-            pt: '30+ ferramentas profissionais, microfones artesanais, comunidade global.\nPratique, grave, masterize, publique — tudo em um navegador.',
-            de: '30+ Profi-Tools, handgefertigte Mikrofone, weltweite Community.\nÜben, Aufnehmen, Mastern, Veröffentlichen — alles in einem Browser.',
+            ja: '30 以上のプロツール、世界中の音楽家コミュニティ、成長を可視化するダッシュボード。\n練習も、録音も、配信も、ブラウザひとつで完結します。',
+            en: '30+ professional tools, a global musician community, a dashboard that visualizes your growth.\nPractice, record, master, release — all in one browser.',
+            es: '30+ herramientas profesionales, comunidad global de músicos, un panel que visualiza tu crecimiento.\nPractica, graba, masteriza, publica — todo en un navegador.',
+            ko: '30+ 프로 도구, 글로벌 음악가 커뮤니티, 성장을 시각화하는 대시보드.\n연습, 녹음, 마스터링, 배포 — 브라우저 하나로.',
+            pt: '30+ ferramentas profissionais, comunidade global de músicos, painel que visualiza seu crescimento.\nPratique, grave, masterize, publique — tudo em um navegador.',
+            de: '30+ Profi-Tools, weltweite Musiker-Community, ein Dashboard für deine Entwicklung.\nÜben, Aufnehmen, Mastern, Veröffentlichen — alles in einem Browser.',
           }, lang)}
         </p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -560,73 +545,10 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. MICROPHONE */}
-      <section style={{ padding: 'clamp(4rem, 8%, 6rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-        <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
-          {t5({ ja: 'ソフトウェアだけじゃない。', en: 'Not just software.', es: 'No solo software.', ko: '소프트웨어만이 아닙니다.', pt: 'Não é apenas software.', de: 'Nicht nur Software.' }, lang)}
-        </h2>
-        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '3rem', fontSize: '0.95rem', maxWidth: '800px', margin: '0 auto 3rem', wordBreak: 'keep-all' }}>
-          {t5({ ja: '音大生だった創業者が、自分のために作ったマイク。数十万円の高級マイクと同等以上のクオリティを、手が届く価格で。', en: 'Microphones built by our founder, who was once a music student. Studio-quality at an accessible price.', es: 'Micrófonos construidos por nuestro fundador, que fue estudiante de música. Calidad de estudio a un precio accesible.', ko: '음대생이었던 우리의 창립자가 만든 마이크. 저렴한 가격에 스튜디오 품질.', pt: 'Microfones construídos pelo nosso fundador, que foi estudante de música. Qualidade de estúdio a um preço acessível.', de: 'Mikrofone unseres Gründers, selbst einst Musikstudent. Studioqualität zu einem erschwinglichen Preis.' }, lang)}
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-            <div style={{ position: 'relative', height: '280px', background: '#e2e8f0' }}>
-              <Image src="/mic01.jpeg" alt="P-86S" fill style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: '#0284c7', color: 'white', padding: '0.5rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>BESTSELLER</div>
-            </div>
-            <div style={{ padding: '2rem' }}>
-              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'P-86S ステレオマイクロフォン', en: 'P-86S Stereo Microphone', es: 'Micrófono Estéreo P-86S', ko: 'P-86S 스테레오 마이크로폰', pt: 'Microfone Estéreo P-86S', de: 'P-86S Stereo-Mikrofon' }, lang)}</h3>
-              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>¥13,900</div>
-              <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '1.5rem', letterSpacing: '0.03em' }}>
-                {t5({
-                  ja: '日本国内発送のみ',
-                  en: 'Shipping within Japan only',
-                  es: 'Envío solo dentro de Japón',
-                  ko: '일본 국내 배송 전용',
-                  pt: 'Envio apenas dentro do Japão',
-                  de: 'Nur Versand innerhalb Japans',
-                }, lang)}
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
-                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'プラグインパワー対応', en: 'Plug-in power compatible', es: 'Compatible con alimentación plug-in', ko: '플러그인 전원 호환', pt: 'Compatível com alimentação plug-in', de: 'Plug-in-Power-kompatibel' }, lang)}</li>
-                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '1本でABステレオ', en: 'Single-body AB stereo', es: 'Estéreo AB de un solo cuerpo', ko: '단일 바디 AB 스테레오', pt: 'Estéreo AB de corpo único', de: 'AB-Stereo aus einem Gehäuse' }, lang)}</li>
-                <li>• {t5({ ja: '手はんだ製作', en: 'Hand-soldered', es: 'Soldada a mano', ko: '손납', pt: 'Soldado à mão', de: 'Handgelötet' }, lang)}</li>
-              </ul>
-              <Link href="/microphone" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                {t5({ ja: '詳しく見る →', en: 'Learn more →', es: 'Aprende más →', ko: '자세히 보기 →', pt: 'Saiba mais →', de: 'Mehr erfahren →' }, lang)}
-              </Link>
-            </div>
-          </div>
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', opacity: 0.7, transition: 'all 0.3s ease', position: 'relative' }}>
-            <div style={{ position: 'relative', height: '280px', background: '#e2e8f0' }}>
-              <Image src="/mic03.jpeg" alt="X-86S" fill style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: '#64748b', color: 'white', padding: '0.5rem 1rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600 }}>PRO</div>
-            </div>
-            <div style={{ padding: '2rem' }}>
-              <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.5rem', color: '#0f172a' }}>{t5({ ja: 'X-86S プロフェッショナル', en: 'X-86S Professional', es: 'X-86S Profesional', ko: 'X-86S 프로페셔널', pt: 'X-86S Profissional', de: 'X-86S Professional' }, lang)}</h3>
-              <div style={{ fontSize: '1.875rem', fontWeight: 600, color: ACCENT, marginBottom: '0.25rem' }}>¥39,600</div>
-              <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '1.5rem', letterSpacing: '0.03em' }}>
-                {t5({
-                  ja: '日本国内発送のみ',
-                  en: 'Shipping within Japan only',
-                  es: 'Envío solo dentro de Japón',
-                  ko: '일본 국내 배송 전용',
-                  pt: 'Envio apenas dentro do Japão',
-                  de: 'Nur Versand innerhalb Japans',
-                }, lang)}
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
-                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: 'ミニXLR端子', en: 'Mini XLR connector', es: 'Conector XLR mini', ko: '미니 XLR 커넥터', pt: 'Conector XLR mini', de: 'Mini-XLR-Anschluss' }, lang)}</li>
-                <li style={{ marginBottom: '0.5rem' }}>• {t5({ ja: '48Vファンタム電源', en: '48V phantom power', es: 'Alimentación fantasma 48V', ko: '48V 팬텀 전원', pt: 'Alimentação fantasma 48V', de: '48V Phantomspeisung' }, lang)}</li>
-                <li>• {t5({ ja: 'スタジオ品質', en: 'Studio quality', es: 'Calidad de estudio', ko: '스튜디오 품질', pt: 'Qualidade de estúdio', de: 'Studioqualität' }, lang)}</li>
-              </ul>
-              <button style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#cbd5e1', color: '#64748b', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, border: 'none', cursor: 'not-allowed' }} disabled>
-                {t5({ ja: 'Coming Soon', en: 'Coming Soon', es: 'Próximamente', ko: '곧 출시', pt: 'Em breve', de: 'Demnächst' }, lang)}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 5. MICROPHONE — 2026-04-26 削除
+           理由: マイクは日本国内限定販売。国際公平性のため Kuon ブランド内の
+           全 LP から動線を遮断。/microphone ページ自体は維持し、Kotaro Studio
+           外部リンクからのみ流入する純度設計。詳細は CLAUDE.md §42 参照。 */}
 
       {/* 6. DISCOVER (スカウト) — 2026-04-26 削除 (LP 簡素化のため。地球音マップ・ライブ情報はフッターに移動) */}
 
@@ -1022,24 +944,10 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* マイク購入者特典バナー */}
-        <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: 'white', border: `2px dashed ${ACCENT}`, borderRadius: '12px', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: ACCENT, marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 600 }}>
-            🎙 {t5({ ja: 'マイク購入者特典', en: 'Microphone Owner Bonus', es: 'Bonificación para Dueños' }, lang)}
-          </div>
-          <div style={{ fontFamily: serif, fontSize: 'clamp(1rem, 2.5vw, 1.35rem)', color: '#0f172a', fontWeight: 400 }}>
-            {t5({
-              ja: 'P-86S / X-86S を購入すると Concerto 1ヶ月無料',
-              en: 'Buy P-86S / X-86S, get 1 month of Concerto free',
-              es: 'Compra P-86S / X-86S, obtén 1 mes de Concerto gratis',
-            }, lang)}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem' }}>
-            <Link href="/microphone" style={{ color: ACCENT, textDecoration: 'underline' }}>
-              {t5({ ja: 'マイクを見る →', en: 'View microphones →', es: 'Ver micrófonos →' }, lang)}
-            </Link>
-          </div>
-        </div>
+        {/* マイク購入者特典バナー — 2026-04-26 削除
+             理由: マイクは日本国内限定販売 → 海外ユーザーへの不公平を排除。
+             マイク特典 (Concerto 1ヶ月無料) も実装しない方針に確定。
+             詳細は CLAUDE.md §42 参照。 */}
       </section>
 
       {/* 7.5 CERTIFICATION — REMOVED 2026-04-25 (認定制度を採用しない決定 / CLAUDE.md §37.5) */}

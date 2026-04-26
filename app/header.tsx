@@ -21,7 +21,7 @@ type MenuItem = { href: string; label: L3 };
 const MENU: MenuItem[] = [
   { href: '/',                  label: { ja: 'トップ',           en: 'Top',        ko: '홈',        pt: 'Início',     es: 'Inicio',     de: 'Start'      } },
   { href: '/audio-apps',        label: { ja: 'アプリ',           en: 'Apps',       ko: '앱',        pt: 'Apps',       es: 'Apps',       de: 'Apps'       } },
-  { href: '/microphone',        label: { ja: 'マイク',           en: 'Microphone', ko: '마이크',    pt: 'Microfone',  es: 'Micrófono',  de: 'Mikrofon'   } },
+  // 2026-04-26 削除: マイクメニュー (国際公平性のため・Kotaro Studio 外部リンクのみで流入)
   { href: '/#pricing',          label: { ja: 'プラン',           en: 'Plans',      ko: '플랜',      pt: 'Planos',     es: 'Planes',     de: 'Pläne'      } },
   // 2026-04-26 削除: 地球音マップ・ライブ情報・スカウト → フッターに移動
 ];

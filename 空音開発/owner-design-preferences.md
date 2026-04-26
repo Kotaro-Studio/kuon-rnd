@@ -171,6 +171,11 @@
 - ❌ "完全無料" を否定する仕様 (Free プランの基本ツールは無制限)
 - ❌ プラン名を変えない (Prelude/Concerto/Symphony/Opus は確定)
 - ❌ サブレーベル名を勝手に決める
+- ❌ **マイクを Kuon ブランド LP に復活させない** (CLAUDE.md §42 / 国際公平性のため・2026-04-26 確定)
+  - ヘッダー・フッター・ホーム・/audio-apps・マイページ・sitemap への追加禁止
+  - 正規流入は Kotaro Studio (kotarohattori.com) 外部リンクのみ
+  - 例外: 購入後コンテキスト (購入確認メール / /shop/thanks / /manual/*) は OK
+- ❌ **マイク購入特典の実装** (Concerto 1ヶ月無料等は不採用が確定 / §42.5)
 
 ---
 

@@ -24,7 +24,7 @@ interface FooterLink {
 
 const PRODUCTS: FooterLink[] = [
   { href: '/audio-apps',  label: { ja: 'オーディオアプリ', en: 'Audio Apps', ko: '오디오 앱', pt: 'Apps de Áudio', es: 'Aplicaciones de Audio' } },
-  { href: '/microphone',  label: { ja: 'マイク', en: 'Microphone', ko: '마이크', pt: 'Microfone', es: 'Micrófono' } },
+  // 2026-04-26 削除: マイク (国際公平性のため・Kotaro Studio 外部リンクのみで流入)
   // 2026-04-26 ヘッダーから移動
   { href: '/soundmap',    label: { ja: '地球音マップ', en: 'Sound Map', ko: '지구 음향 맵', pt: 'Mapa de Sons', es: 'Mapa de Sonidos' } },
   { href: '/events-lp',   label: { ja: 'ライブ情報', en: "Today's Live", ko: '공연 정보', pt: 'Ao Vivo', es: 'En Vivo' } },

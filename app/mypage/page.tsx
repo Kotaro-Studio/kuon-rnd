@@ -1180,7 +1180,7 @@ export default function MyPage() {
         <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
           {[
             { href: '/audio-apps', label: { ja: 'アプリ一覧', en: 'All Apps', es: 'Apps' }, accent: true },
-            { href: '/microphone', label: { ja: 'マイクロフォン', en: 'Microphone', es: 'Microfono' }, accent: true },
+            // 2026-04-26 削除: /microphone (国際公平性のため・JP 国内限定販売)
             { href: '/', label: { ja: 'トップへ', en: 'Top', es: 'Inicio' }, accent: false },
           ].map(({ href, label, accent }) => (
             <Link key={href} href={href} style={{
