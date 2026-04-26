@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { MyAppsSection } from '@/components/MyAppsSection';
+import { MemberJourneyCard } from '@/components/MemberJourneyCard';
 import type { PlanTier } from '@/app/lib/pricing-display';
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
@@ -574,7 +575,7 @@ export default function MyPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', padding: 'clamp(2rem, 5vw, 4rem) 1rem' }}>
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         {/* ─── Header ─── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
@@ -592,6 +593,15 @@ export default function MyPage() {
             </button>
           </div>
         </div>
+
+        {/* ─── ★IQ180 ブランド定着フック★ MemberJourneyCard (2026-04-26) ─── */}
+        {/* 時刻別挨拶 + ストリーク + メンバー番号 + 在籍期間 + 今日の名言 */}
+        <MemberJourneyCard
+          userName={user.name || ''}
+          userEmail={user.email || ''}
+          userCreatedAt={user.createdAt}
+          planTier={user.plan}
+        />
 
         {/* ─── Avatar + Name Card ─── */}
         <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: '1.2rem', position: 'relative' }}>
