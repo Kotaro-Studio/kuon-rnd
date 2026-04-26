@@ -25,6 +25,7 @@ export type AppCategory =
   | 'recording'   // 🎛 録音・編集系 (マイク特典・ノイズ除去等)
   | 'analysis'    // 🔬 分析・プロ系 (マスター・DDP・DSD)
   | 'sharing'     // 🌍 共有・コミュニティ系
+  | 'mental'      // 🧘 メンタル・本番準備 (呼吸・チェックリスト・周波数)
   | 'ai';         // 🤖 AI 処理系 (Pro 限定)
 
 export type Badge = 'NEW' | 'PRO' | 'BETA' | 'COMING_SOON' | 'POPULAR' | 'MIC_OWNER';
@@ -446,6 +447,52 @@ export const APP_CATALOG: CatalogApp[] = [
   },
 
   // ============================================================
+  // 🧘 メンタル・本番準備系 (2026-04-26 追加)
+  // ============================================================
+  {
+    id: 'breath',
+    name: { ja: 'BREATH', en: 'BREATH', es: 'BREATH' },
+    tagline: { ja: '本番前の呼吸法ガイド', en: 'Pre-performance breathing guide', es: 'Respiración antes del show' },
+    href: '/breath-lp',
+    launchHref: '/breath',
+    emoji: '🌬',
+    category: 'mental',
+    noLogin: true,
+    serverApp: false,
+    quotaKey: null,
+    badges: ['NEW'],
+    minPlan: 'free',
+  },
+  {
+    id: 'checklist',
+    name: { ja: 'CHECKLIST', en: 'CHECKLIST', es: 'CHECKLIST' },
+    tagline: { ja: '本番当日の持ち物・タイムライン', en: 'Performance day checklist & timeline', es: 'Lista del día del concierto' },
+    href: '/checklist-lp',
+    launchHref: '/checklist',
+    emoji: '✅',
+    category: 'mental',
+    noLogin: false,
+    serverApp: false,
+    quotaKey: null,
+    badges: ['NEW'],
+    minPlan: 'free-with-login',
+  },
+  {
+    id: 'frequency',
+    name: { ja: 'FREQUENCY', en: 'FREQUENCY', es: 'FREQUENCY' },
+    tagline: { ja: 'ソルフェジオ周波数サイン波プレーヤー', en: 'Solfeggio frequency sine wave player', es: 'Reproductor de frecuencias solfeggio' },
+    href: '/frequency-lp',
+    launchHref: '/frequency',
+    emoji: '🔊',
+    category: 'mental',
+    noLogin: true,
+    serverApp: false,
+    quotaKey: null,
+    badges: ['NEW'],
+    minPlan: 'free',
+  },
+
+  // ============================================================
   // 🤖 AI 処理系 (有料プラン専用)
   // ============================================================
   {
@@ -533,6 +580,12 @@ export const CATEGORIES: CategoryMeta[] = [
     emoji: '🌍',
     label: { ja: '共有・コミュニティ', en: 'Sharing & Community', es: 'Compartir y Comunidad' },
     desc: { ja: '音源共有・ライブ情報・サウンドマップ', en: 'Audio sharing, live events, sound map', es: 'Compartir audio, eventos' },
+  },
+  {
+    id: 'mental',
+    emoji: '🧘',
+    label: { ja: 'メンタル・本番準備', en: 'Mental & Pre-Performance', es: 'Mental y Pre-actuación' },
+    desc: { ja: '呼吸法・チェックリスト・周波数・本番直前の儀式', en: 'Breathing, checklist, frequency, pre-stage rituals', es: 'Respiración, lista, frecuencia, rituales' },
   },
   {
     id: 'ai',

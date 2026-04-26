@@ -21,6 +21,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'normalize', 'resampler', 'converter', 'dsd', 'ddp-checker',
     'noise-reduction', 'dual-mono', 'tuner', 'ear-training', 'chord-quiz',
     'interval-speed', 'metronome', 'sight-reading', 'slowdown',
+    // 🧘 メンタル・本番準備 (2026-04-26 追加)
+    'breath', 'checklist', 'frequency',
   ];
 
   const appPages: MetadataRoute.Sitemap = apps.map(slug => ({
@@ -37,6 +39,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'tuner-lp', 'ear-training-lp', 'chord-quiz-lp', 'interval-speed-lp',
     'metronome-lp', 'sight-reading-lp', 'player-lp', 'events-lp', 'soundmap-lp',
     'itadaki-lp', 'slowdown-lp', 'separator-lp',
+    // 🧘 メンタル・本番準備 (2026-04-26 追加)
+    'breath-lp', 'checklist-lp', 'frequency-lp',
   ];
 
   const lpPages: MetadataRoute.Sitemap = lps.map(slug => ({

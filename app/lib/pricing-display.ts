@@ -425,6 +425,9 @@ export const FREE_NO_LOGIN_APPS = [
   'tape-remaining',
   'jazz-time',
   'voltage-db',
+  // メンタル・本番準備系 (2026-04-26 追加・即体験できる入口)
+  'breath',
+  'frequency',
 ] as const;
 
 export type FreeNoLoginApp = typeof FREE_NO_LOGIN_APPS[number];
