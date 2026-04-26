@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { MyAppsSection } from '@/components/MyAppsSection';
+import type { PlanTier } from '@/app/lib/pricing-display';
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -903,6 +905,14 @@ export default function MyPage() {
               {t3({ ja: 'まだ利用記録がありません', en: 'No usage yet', es: 'Sin uso todavia' }, lang)}
             </p>
           )}
+        </div>
+
+        {/* ─── ★最重要★ あなたが使えるアプリ可視化 (Phase 1C・2026-04-26) ─── */}
+        <div style={cardStyle}>
+          <MyAppsSection
+            userPlan={(user.plan as PlanTier | 'free' | undefined) ?? 'free'}
+            isLoggedIn={true}
+          />
         </div>
 
         {/* ─── サブスクリプション管理 (全ユーザーに表示・未契約ならエラー表示) ─── */}

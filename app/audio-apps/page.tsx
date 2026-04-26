@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
+import { CATEGORIES, appsByCategory } from '@/app/lib/app-catalog';
 
 // ─────────────────────────────────────────────
 // Design tokens
@@ -1998,6 +1999,111 @@ export default function AudioAppsPage() {
             es: 'Ingenieros, estudiantes, creadores —\nencuentra tus herramientas al instante.',
           }, lang)}
         </p>
+      </section>
+
+      {/* ═══════ CATEGORY BROWSE (2026-04-26 追加) ═══════ */}
+      {/* APP_CATALOG ベース・6 カテゴリで一覧クイックジャンプ */}
+      <section style={{
+        maxWidth: 1200,
+        margin: '0 auto clamp(40px, 7vw, 64px)',
+        padding: '0 clamp(16px, 4vw, 32px)',
+      }}>
+        <h2 style={{
+          fontFamily: '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif',
+          fontSize: 'clamp(1.4rem, 3vw, 2rem)',
+          fontWeight: 400,
+          color: '#0f172a',
+          textAlign: 'center',
+          marginBottom: 'clamp(8px, 2vw, 14px)',
+        }}>
+          {t5({
+            ja: 'カテゴリで探す',
+            en: 'Browse by Category',
+            es: 'Explorar por categoría',
+            ko: '카테고리로 찾기',
+            pt: 'Buscar por categoria',
+            de: 'Nach Kategorie suchen',
+          }, lang)}
+        </h2>
+        <p style={{
+          textAlign: 'center',
+          color: '#64748b',
+          fontSize: 'clamp(0.85rem, 1.4vw, 0.95rem)',
+          marginBottom: 'clamp(24px, 4vw, 32px)',
+          maxWidth: 600, marginLeft: 'auto', marginRight: 'auto',
+        }}>
+          {t5({
+            ja: '目的別に整理されたアプリから瞬時に必要なものを発見できます',
+            en: 'Find what you need instantly with apps organized by purpose',
+            es: 'Encuentra al instante lo que necesitas con apps organizadas por propósito',
+            ko: '목적별로 정리된 앱에서 필요한 것을 즉시 찾을 수 있습니다',
+            pt: 'Encontre instantaneamente o que precisa com apps organizados por propósito',
+            de: 'Finde sofort, was du brauchst — Apps nach Zweck geordnet',
+          }, lang)}
+        </p>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 'clamp(10px, 1.5vw, 16px)',
+        }}>
+          {CATEGORIES.map((cat) => {
+            const count = appsByCategory(cat.id).length;
+            return (
+              <Link
+                key={cat.id}
+                href="#apps"
+                style={{
+                  display: 'block',
+                  background: '#fff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 12,
+                  padding: 'clamp(14px, 2vw, 20px)',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  transition: 'all 0.25s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#0284c7';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(2,132,199,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <div style={{ fontSize: '1.75rem', marginBottom: 8 }}>{cat.emoji}</div>
+                <div style={{
+                  fontFamily: '"Helvetica Neue", Arial, sans-serif',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                  marginBottom: 4,
+                }}>
+                  {t5(cat.label, lang)}
+                </div>
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#64748b',
+                  lineHeight: 1.5,
+                  marginBottom: 8,
+                  minHeight: '2.4em',
+                }}>
+                  {t5(cat.desc, lang)}
+                </div>
+                <div style={{
+                  fontSize: '0.7rem',
+                  color: '#0284c7',
+                  fontWeight: 600,
+                }}>
+                  {count} {t5({ ja: 'アプリ', en: 'apps', es: 'apps', ko: '앱', pt: 'apps', de: 'Apps' }, lang)} →
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </section>
 
       {/* ═══════ PERSONA SELECTOR (primary nav) ═══════ */}
