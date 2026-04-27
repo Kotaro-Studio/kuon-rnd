@@ -237,17 +237,51 @@ export default function SeparatorPage() {
     setJobElapsed(0);
     pollStartTimeRef.current = Date.now();
 
-    // Replicate Files API の必須フィールド名は 'content'。
-    // Pages Function はリクエストボディを Replicate にストリームでパススルーするため、
-    // ブラウザ側で正しいフィールド名で送る必要がある。
-    const formData = new FormData();
-    formData.append('content', file);
-
     try {
-      // ── ジョブ投入 (Replicate に転送) ──
+      // ── Step 1: ファイルを R2 に直接アップロード (Pages Function はメモリ消費なし) ──
+      setJobStage('queued');
+      setJobProgress(10);
+
+      const uploadRes = await fetch('/api/separator/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,  // FormData ではなく raw body 送信 (R2 binding がストリーム転送)
+      });
+
+      if (uploadRes.status === 401) {
+        setAuthRequired(true);
+        setIsProcessing(false);
+        return;
+      }
+      if (!uploadRes.ok) {
+        let errMsg: string;
+        let bodyForDebug = '';
+        try {
+          const cloned = uploadRes.clone();
+          bodyForDebug = await cloned.text();
+        } catch { /* noop */ }
+        try {
+          const err = JSON.parse(bodyForDebug);
+          errMsg = translateError(err.detail || err.error || 'upload_failed');
+        } catch {
+          errMsg = `アップロード HTTP ${uploadRes.status}: ${bodyForDebug.slice(0, 300) || '(空応答)'}`;
+        }
+        // eslint-disable-next-line no-console
+        console.error('[separator] upload failed', uploadRes.status, bodyForDebug);
+        setError(errMsg);
+        setJobStage('failed');
+        setIsProcessing(false);
+        return;
+      }
+
+      const uploadData = await uploadRes.json() as { fileKey: string; success: boolean };
+      setJobProgress(30);
+
+      // ── Step 2: Replicate prediction 作成 (R2 URL を渡すだけ・1KB の API コール) ──
       const submitRes = await fetch('/api/separator/run', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileKey: uploadData.fileKey }),
       });
 
       if (submitRes.status === 429) {
@@ -263,23 +297,18 @@ export default function SeparatorPage() {
         return;
       }
       if (!submitRes.ok) {
-        // JSON 応答 を試す → 失敗したら text() で生レスポンスを取得して表示
         let errMsg: string;
         let bodyForDebug = '';
         try {
           const cloned = submitRes.clone();
           bodyForDebug = await cloned.text();
-        } catch {
-          /* noop */
-        }
+        } catch { /* noop */ }
         try {
           const err = JSON.parse(bodyForDebug);
           errMsg = translateError(err.detail || err.error || 'submission_failed');
         } catch {
-          // JSON ではない（多くは Cloudflare のエラーページや空応答）
           errMsg = `HTTP ${submitRes.status}: ${bodyForDebug.slice(0, 300) || '(空応答)'}`;
         }
-        // コンソールには完全な情報を出す（DevTools で見られる）
         // eslint-disable-next-line no-console
         console.error('[separator] submit failed', submitRes.status, bodyForDebug);
         setError(errMsg);
