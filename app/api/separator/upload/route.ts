@@ -79,44 +79,58 @@ async function handleUpload(request: Request): Promise<Response> {
     return Response.json({ error: 'auth_required' }, { status: 401 });
   }
 
-  // ── R2 binding 取得 ──
-  // Cloudflare Pages + Next.js + @cloudflare/next-on-pages では、bindings は
-  // ランタイムで複数の場所に注入される可能性があるため、すべての場所をチェック:
-  //   1. request.env  (Cloudflare Workers 標準)
-  //   2. globalThis.env  (古いパターン)
-  //   3. process.env  (next-on-pages が AsyncLocalStorage 経由で注入)
-  //   4. globalThis.SEPARATOR_BUCKET 直接 (一部の Edge runtime)
-  const reqEnv = (request as unknown as { env?: Record<string, unknown> }).env;
-  const globalEnv = (globalThis as unknown as { env?: Record<string, unknown> }).env;
-  const procEnv = process.env as unknown as Record<string, unknown>;
-  const directGlobal = (globalThis as unknown as Record<string, unknown>).SEPARATOR_BUCKET;
+  // ── R2 binding 取得（Object.keys 不使用・Proxy 安全） ──
+  // 直接プロパティアクセスのみ。Object.keys は次世代 Proxy で例外を投げる可能性あり。
+  let bucket: R2Bucket | undefined;
+  let foundIn = 'none';
 
-  const bucket = (
-    (reqEnv?.SEPARATOR_BUCKET as R2Bucket | undefined) ||
-    (globalEnv?.SEPARATOR_BUCKET as R2Bucket | undefined) ||
-    (procEnv?.SEPARATOR_BUCKET as R2Bucket | undefined) ||
-    (directGlobal as R2Bucket | undefined)
-  );
+  // 1. request.env
+  try {
+    const reqEnv = (request as unknown as { env?: { SEPARATOR_BUCKET?: R2Bucket } }).env;
+    if (reqEnv?.SEPARATOR_BUCKET) {
+      bucket = reqEnv.SEPARATOR_BUCKET;
+      foundIn = 'request.env';
+    }
+  } catch { /* ignore */ }
+
+  // 2. globalThis.env
+  if (!bucket) {
+    try {
+      const globalEnv = (globalThis as unknown as { env?: { SEPARATOR_BUCKET?: R2Bucket } }).env;
+      if (globalEnv?.SEPARATOR_BUCKET) {
+        bucket = globalEnv.SEPARATOR_BUCKET;
+        foundIn = 'globalThis.env';
+      }
+    } catch { /* ignore */ }
+  }
+
+  // 3. process.env (next-on-pages backward compat)
+  if (!bucket) {
+    try {
+      const procBucket = (process.env as unknown as { SEPARATOR_BUCKET?: R2Bucket }).SEPARATOR_BUCKET;
+      if (procBucket) {
+        bucket = procBucket;
+        foundIn = 'process.env';
+      }
+    } catch { /* ignore */ }
+  }
+
+  // 4. globalThis 直接
+  if (!bucket) {
+    try {
+      const directBucket = (globalThis as unknown as { SEPARATOR_BUCKET?: R2Bucket }).SEPARATOR_BUCKET;
+      if (directBucket) {
+        bucket = directBucket;
+        foundIn = 'globalThis.SEPARATOR_BUCKET';
+      }
+    } catch { /* ignore */ }
+  }
 
   if (!bucket) {
-    // デバッグ用: 何が実際に runtime からアクセスできるかを返す
-    const debugKeys = Object.keys(procEnv || {})
-      .filter((k) => !k.toLowerCase().startsWith('next_'))
-      .slice(0, 50);
     return Response.json(
       {
         error: 'r2_not_bound',
-        detail:
-          'SEPARATOR_BUCKET binding が見つかりません。Cloudflare Pages → kuon-rnd → Settings → Bindings で R2 binding を確認してください。',
-        debug: {
-          hasRequestEnv: !!reqEnv,
-          requestEnvKeys: reqEnv ? Object.keys(reqEnv).slice(0, 50) : [],
-          hasGlobalEnv: !!globalEnv,
-          globalEnvKeys: globalEnv ? Object.keys(globalEnv).slice(0, 50) : [],
-          hasProcessEnv: typeof process !== 'undefined' && !!process.env,
-          processEnvKeys: debugKeys,
-          hasDirectGlobal: !!directGlobal,
-        },
+        detail: `SEPARATOR_BUCKET binding が見つかりません。試した場所: request.env / globalThis.env / process.env / globalThis 全部 undefined。foundIn=${foundIn}`,
       },
       { status: 503 }
     );
