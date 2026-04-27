@@ -34,11 +34,11 @@ const content = {
     proTipLabel: 'PRO TIP',
     proTipTitle: '修復後のポストプロダクション',
     proTipDesc: 'KUON ITADAKIは限界を突破したピークを無傷のまま保存するため「32bit Float」でWAVを出力します。DAWに読み込んだ後、必ず全体をノーマライズし、ラウドネス規格に合わせてリミッティングを行ってください。これにより、再クリップを防ぎつつ、息を呑むほどクリアな音源が完成します。',
-    priceLabel: '買い切りアクセス権',
-    priceValue: '¥1,980',
-    priceSub: '一度の購入で永続利用可能',
-    ctaBtn: 'パスワードを購入してアプリを開く',
-    ctaSub: 'Stripe決済 — SSL暗号化通信',
+    priceLabel: 'Concerto プランで解禁',
+    priceValue: '¥1,480 / 月〜',
+    priceSub: '月額・年額・初月50%OFFあり / Concerto プランの全 32 アプリと一緒に',
+    ctaBtn: 'プランを見る',
+    ctaSub: 'Stripe 決済 — いつでもキャンセル可能',
     footerCopy: '© 2025 空音開発 Kuon R&D. All rights reserved.',
   },
   en: {
@@ -71,11 +71,11 @@ const content = {
     proTipLabel: 'PRO TIP',
     proTipTitle: 'Post-Processing Your Restored File',
     proTipDesc: 'KUON ITADAKI exports in 32-bit Float WAV to safely store the newly expanded peaks without re-clipping. Once imported into your DAW, normalize or manage gain carefully, then apply your standard loudness processing. The result: a breathtakingly clear final mix.',
-    priceLabel: 'Lifetime Access',
-    priceValue: '$14.99',
-    priceSub: 'One-time purchase, permanent access',
-    ctaBtn: 'Get Password & Open App',
-    ctaSub: 'Stripe Checkout — SSL Encrypted',
+    priceLabel: 'Unlocked with Concerto Plan',
+    priceValue: 'From $14.99/mo',
+    priceSub: 'Monthly · annual · 50% off first month / Bundled with all 32 Concerto apps',
+    ctaBtn: 'View Plans',
+    ctaSub: 'Stripe Checkout — Cancel anytime',
     footerCopy: '© 2025 Kuon R&D. All rights reserved.',
   },
   es: {
@@ -108,11 +108,11 @@ const content = {
     proTipLabel: 'PRO TIP',
     proTipTitle: 'Post-procesado del archivo restaurado',
     proTipDesc: 'KUON ITADAKI exporta en WAV de 32-bit Float para almacenar de forma segura los picos recién expandidos sin re-clipear. Una vez importado en tu DAW, normaliza o gestiona el gain con cuidado y luego aplica tu procesamiento de loudness estándar. El resultado: una mezcla final asombrosamente clara.',
-    priceLabel: 'Acceso de por vida',
-    priceValue: '$14.99',
-    priceSub: 'Compra única, acceso permanente',
-    ctaBtn: 'Obtener contraseña y abrir la app',
-    ctaSub: 'Stripe Checkout — cifrado SSL',
+    priceLabel: 'Desbloqueado con plan Concerto',
+    priceValue: 'Desde $7.99/mes',
+    priceSub: 'Mensual · anual · 50% el primer mes / Junto con las 32 apps de Concerto',
+    ctaBtn: 'Ver planes',
+    ctaSub: 'Stripe Checkout — Cancela cuando quieras',
     footerCopy: '© 2025 Kuon R&D. Todos los derechos reservados.',
   }
 };
@@ -432,12 +432,14 @@ export default function ItadakiLandingPage() {
 
         {[
           {
-            src: '/スクリーンショット 0008-03-26 11.07.47.png',
+            // 全体波形 (overall) — ユーザー指定: 一枚目 ダウンロード.png → ASCII リネーム
+            src: '/itadaki-evidence-overall.png',
             caption: t.evidenceOverallCaption,
             label: 'FIGURE 01',
           },
           {
-            src: '/ダウンロード.png',
+            // 拡大波形 (zoom) — ユーザー指定: 2枚目 スクリーンショット 0008-03-26 11.07.47.png → ASCII リネーム
+            src: '/itadaki-evidence-zoom.png',
             caption: t.evidenceZoomCaption,
             label: 'FIGURE 02',
           },
@@ -550,7 +552,7 @@ export default function ItadakiLandingPage() {
             </span>
           </div>
           <img
-            src="/スクリーンショット 0008-03-26 14.07.26.png"
+            src="/itadaki-app-ui.png"
             alt="App UI"
             style={{ width: '100%', height: 'auto', display: 'block' }}
           />
@@ -626,7 +628,7 @@ export default function ItadakiLandingPage() {
             {t.priceSub}
           </div>
           <a
-            href="https://kuon-rnd.com/purchase"
+            href="/#pricing"
             className="cta-btn"
             style={{
               display: 'inline-block',

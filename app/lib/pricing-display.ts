@@ -417,7 +417,10 @@ export const FREE_NO_LOGIN_APPS = [
   // 技術的 SEO 差別化 (世界的にユニーク)
   'dsd',
   'converter',
+  'analyzer',      // 2026-04-27 Free 復帰: 課金勢育成のため Free でも利用可能に
   'normalize',     // マイク購入者特典 (パスワード kuon で別途保護)
+  // メンタル・本番準備 (登録なしで即体験できる優れた SEO 入口)
+  'checklist',     // 2026-04-27 Free 復帰: 課金勢育成のため Free でも利用可能に
   // ANALOG-TOOLS 系 (専門ニッチ集客)
   'analog-tools',
   'analog-machine-speed',
