@@ -21,8 +21,10 @@ const AUTH_WORKER_BASE = 'https://kuon-rnd-auth-worker.369-1d5.workers.dev';
 const APP_NAME = 'separator';
 const REPLICATE_API_BASE = 'https://api.replicate.com/v1';
 
-// Demucs モデル: cjwbw/demucs (Replicate で最も枯れている Demucs 実装)
-const REPLICATE_MODEL_OWNER = 'cjwbw';
+// Demucs モデル: 2026-04-27 修正 cjwbw/demucs → ryan5453/demucs
+// 理由: cjwbw/demucs は Replicate から削除されており 404 を返すため。
+// ryan5453/demucs は現在もメンテされている Demucs v4 実装で、4-stem 分離対応。
+const REPLICATE_MODEL_OWNER = 'ryan5453';
 const REPLICATE_MODEL_NAME = 'demucs';
 
 function getCookie(request: Request, name: string): string | null {
