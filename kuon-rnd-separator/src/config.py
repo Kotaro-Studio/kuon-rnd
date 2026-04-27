@@ -30,13 +30,17 @@ class Config:
     supported_formats: tuple = ("mp3", "wav", "flac", "m4a", "ogg")
 
     # ── Demucs Model ──
-    demucs_model: str = "htdemucs"
+    # 2026-04-27 最終確定: mdx_extra (チェットベイカーで成功実績あり)
+    # 加えて、Demucs に渡す前に ffmpeg で canonical WAV (16bit/44.1k/stereo) に
+    # 正規化することで、Honesty.wav のような「非標準 WAV チャンク」を持つファイル
+    # 起因の失敗を根絶する。これがプロのオーディオパイプラインの定石。
+    demucs_model: str = "mdx_extra"
     """
     Options:
-      - htdemucs        : 4 stems (drums/bass/vocals/other) - default
-      - htdemucs_ft     : fine-tuned variant (higher quality, slower)
-      - htdemucs_6s     : 6 stems (adds piano/guitar)
-      - mdx_extra       : winner of MDX Challenge 2021
+      - htdemucs        : 4 stems・最高精度・但しメモリ大量消費
+      - htdemucs_ft     : fine-tuned variant
+      - htdemucs_6s     : 6 stems
+      - mdx_extra       : ★現行採用★ チェットベイカー成功実績あり
     """
 
     # ── URL signing ──

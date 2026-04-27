@@ -27,8 +27,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Demucs モデルを事前ダウンロード（cold start 時のモデル取得を回避）
-# htdemucs は約 80MB、初回推論時ではなくビルド時にキャッシュ
-RUN python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
+# 2026-04-27 最終確定: mdx_extra (チェットベイカー成功実績) を canonical モデルに採用
+# Honesty.wav のような非標準 WAV ファイル対応は ffmpeg pre-conversion で吸収する。
+RUN python -c "from demucs.pretrained import get_model; get_model('mdx_extra')"
 
 # ──────────────────────────────────────────────
 # Stage 2: Runtime

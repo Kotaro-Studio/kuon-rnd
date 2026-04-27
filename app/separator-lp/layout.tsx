@@ -86,9 +86,11 @@ export const metadata: Metadata = {
     site: '@kotaro_asahina',
     creator: '@kotaro_asahina',
   },
+  // 2026-04-27: Replicate API への乗せ替え完了まで noindex/nofollow で隠す。
+  // ページ自体は残るが、検索エンジンには載らない。乗せ替え後に true に戻す。
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
     'max-image-preview': 'large',
     'max-snippet': -1,
     'max-video-preview': -1,

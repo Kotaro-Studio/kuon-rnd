@@ -234,13 +234,16 @@ const HomePage: React.FC = () => {
   ];
 
   const apps: { emoji: string; name: string; desc: L5; href: string; badge?: L5 }[] = [
-    {
-      emoji: '🎛️',
-      name: 'SEPARATOR',
-      desc: { ja: 'AI音源分離 — ボーカル/ドラム/ベース抽出', en: 'AI stem separation — vocals, drums, bass', es: 'Separación de pistas IA — voz, batería, bajo', ko: 'AI 스템 분리 — 보컬/드럼/베이스 추출', pt: 'Separação de stems com IA — voz, bateria, baixo', de: 'KI-Stem-Separation — Vocals, Drums, Bass' },
-      href: '/separator-lp',
-      badge: { ja: 'NEW Meta Demucs v4', en: 'NEW Meta Demucs v4', es: 'NUEVO Meta Demucs v4', ko: 'NEW Meta Demucs v4', pt: 'NOVO Meta Demucs v4', de: 'NEU Meta Demucs v4' },
-    },
+    // 2026-04-27 公開停止: SEPARATOR
+    // Cloud Run 単体運用が不安定なため、Replicate API 乗せ替え完了まで非公開。
+    // /separator-lp と /separator の URL は残存するが、ホームのカードからは外す。
+    // {
+    //   emoji: '🎛️',
+    //   name: 'SEPARATOR',
+    //   desc: { ja: 'AI音源分離 — ボーカル/ドラム/ベース抽出', en: 'AI stem separation — vocals, drums, bass', es: 'Separación de pistas IA — voz, batería, bajo', ko: 'AI 스템 분리 — 보컬/드럼/베이스 추출', pt: 'Separação de stems com IA — voz, bateria, baixo', de: 'KI-Stem-Separation — Vocals, Drums, Bass' },
+    //   href: '/separator-lp',
+    //   badge: { ja: 'NEW Meta Demucs v4', en: 'NEW Meta Demucs v4', es: 'NUEVO Meta Demucs v4', ko: 'NEW Meta Demucs v4', pt: 'NOVO Meta Demucs v4', de: 'NEU Meta Demucs v4' },
+    // },
     {
       emoji: '🐢',
       name: 'SLOWDOWN',

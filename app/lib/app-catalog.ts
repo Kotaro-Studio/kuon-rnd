@@ -535,20 +535,25 @@ export const APP_CATALOG: CatalogApp[] = [
   // ============================================================
   // 🤖 AI 処理系 (有料プラン専用)
   // ============================================================
-  {
-    id: 'separator',
-    name: { ja: 'SEPARATOR', en: 'SEPARATOR', es: 'SEPARATOR' },
-    tagline: { ja: 'AI 音源分離 (vocals/drums/bass/others)', en: 'AI stem separation (vocals/drums/bass/others)', es: 'Separación de pistas con IA' },
-    href: '/separator-lp',
-    launchHref: '/separator',
-    emoji: '🎛',
-    category: 'ai',
-    noLogin: false,
-    serverApp: true,
-    quotaKey: 'separator',
-    badges: ['NEW', 'PRO'],
-    minPlan: 'prelude',
-  },
+  // 2026-04-27 公開停止: SEPARATOR
+  // Cloud Run CPU 単体での Demucs 運用が長尺ファイルで不安定なため、サイト掲載を停止。
+  // 将来 Replicate API 等の専業サービスへ乗せ替え後に再公開予定。
+  // /separator-lp および /separator の URL は残存するが、カタログ・ホーム・サイトマップには
+  // 一切露出させない (CLAUDE.md §43 付近に方針記載)。
+  // {
+  //   id: 'separator',
+  //   name: { ja: 'SEPARATOR', en: 'SEPARATOR', es: 'SEPARATOR' },
+  //   tagline: { ja: 'AI 音源分離 (vocals/drums/bass/others)', en: 'AI stem separation (vocals/drums/bass/others)', es: 'Separación de pistas con IA' },
+  //   href: '/separator-lp',
+  //   launchHref: '/separator',
+  //   emoji: '🎛',
+  //   category: 'ai',
+  //   noLogin: false,
+  //   serverApp: true,
+  //   quotaKey: 'separator',
+  //   badges: ['NEW', 'PRO'],
+  //   minPlan: 'prelude',
+  // },
   {
     id: 'transcribe',
     name: { ja: 'TRANSCRIBER', en: 'TRANSCRIBER', es: 'TRANSCRIBER' },

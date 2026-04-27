@@ -41,12 +41,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'analyzer-lp', 'normalize-lp', 'resampler-lp', 'dsd-lp', 'ddp-checker-lp',
     'tuner-lp', 'ear-training-lp', 'chord-quiz-lp', 'interval-speed-lp',
     'metronome-lp', 'sight-reading-lp', 'player-lp', 'events-lp', 'soundmap-lp',
-    'itadaki-lp', 'slowdown-lp', 'separator-lp',
+    'itadaki-lp', 'slowdown-lp',
     // 🧘 メンタル・本番準備 (2026-04-26 追加)
     'breath-lp', 'checklist-lp', 'frequency-lp',
     // 🎚 制作・スタジオ (2026-04-26 追加)
     'comping-lp', 'daw-lp',
     // 2026-04-26 開発保留: 'drum-lp' (URL は残存・サイトマップには非掲載)
+    // 2026-04-27 公開停止: 'separator-lp' (Cloud Run 単体運用が安定しないため
+    //   将来 Replicate API 等への乗せ替えと共に再公開予定。アプリ本体コードは温存)
   ];
 
   const lpPages: MetadataRoute.Sitemap = lps.map(slug => ({

@@ -57,7 +57,7 @@ const T = {
     es: 'MP3 / WAV / FLAC / M4A · máx. 100MB · hasta 12 min',
   } as L3,
   startBtn:    { ja: '分離を開始', en: 'Start separation', es: 'Iniciar separación' } as L3,
-  processing:  { ja: '処理中 (4-6 分かかります)...', en: 'Processing (takes 4-6 min)...', es: 'Procesando (tarda 4-6 min)...' } as L3,
+  processing:  { ja: '処理中 (1-2 分かかります)...', en: 'Processing (takes 1-2 min)...', es: 'Procesando (tarda 1-2 min)...' } as L3,
   successTitle:{ ja: '分離完了', en: 'Separation complete', es: 'Separación completa' } as L3,
   download:    { ja: 'ダウンロード', en: 'Download', es: 'Descargar' } as L3,
   newJob:      { ja: '新しい音源を分離', en: 'Separate another track', es: 'Separar otra pista' } as L3,
@@ -218,7 +218,7 @@ export default function SeparatorPage() {
     if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
   };
 
-  // ── Submit (非同期パターン: jobs 投稿 → ポーリング) ──
+  // ── Submit (Replicate 非同期パターン: prediction 作成 → ポーリング) ──
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current !== null) {
       window.clearInterval(pollIntervalRef.current);
@@ -240,42 +240,125 @@ export default function SeparatorPage() {
     const formData = new FormData();
     formData.append('audio', file);
 
-    setJobStage('separating');
-    setJobProgress(50);
-
     try {
-      // 動作実証済みの同期 /run を呼び出し (4 分曲で 2 分処理・成功実績あり)
-      const res = await fetch('/api/separator/run', {
+      // ── ジョブ投入 (Replicate に転送) ──
+      const submitRes = await fetch('/api/separator/run', {
         method: 'POST',
         body: formData,
       });
 
-      if (res.status === 429) {
-        const payload = await res.json() as QuotaExceededResponse;
+      if (submitRes.status === 429) {
+        const payload = await submitRes.json() as QuotaExceededResponse;
         setUpgradeInfo(payload);
         setQuota({ plan: payload.plan, used: payload.used, limit: payload.limit, remaining: 0 });
+        setIsProcessing(false);
         return;
       }
-      if (res.status === 401) {
+      if (submitRes.status === 401) {
         setAuthRequired(true);
+        setIsProcessing(false);
         return;
       }
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'unknown' }));
-        setError(translateError(err.detail || err.error || 'Separation failed'));
+      if (!submitRes.ok) {
+        const err = await submitRes.json().catch(() => ({ error: 'unknown' }));
+        setError(translateError(err.detail || err.error || 'Job submission failed'));
         setJobStage('failed');
+        setIsProcessing(false);
         return;
       }
 
-      const data = await res.json() as SeparationResult;
-      setResult(data);
-      if (data.quota) setQuota(data.quota);
-      setJobStage('completed');
-      setJobProgress(100);
+      const submitData = await submitRes.json() as {
+        jobId: string;
+        predictionId: string;
+        status: string;
+        quota?: Quota;
+      };
+
+      if (submitData.quota) setQuota(submitData.quota);
+      setJobStage('separating');
+      setJobProgress(20);
+
+      // ── ポーリング開始 (3 秒間隔) ──
+      const predictionId = submitData.predictionId;
+      const jobId = submitData.jobId;
+      let consecutiveErrors = 0;
+
+      pollIntervalRef.current = window.setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/separator/status/${predictionId}`);
+          if (!statusRes.ok) {
+            consecutiveErrors += 1;
+            if (consecutiveErrors >= 5) {
+              stopPolling();
+              setError('ステータス取得が連続して失敗しました');
+              setJobStage('failed');
+              setIsProcessing(false);
+            }
+            return;
+          }
+          consecutiveErrors = 0;
+
+          const statusData = await statusRes.json() as {
+            predictionId: string;
+            status: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
+            output: Record<string, string> | null;
+            error: string | null;
+            processingTimeSec?: number;
+          };
+
+          // 経過時間を更新
+          const elapsed = (Date.now() - pollStartTimeRef.current) / 1000;
+          setJobElapsed(Math.floor(elapsed));
+
+          // 進捗バー (推定値・Replicate は厳密な % を返さないため経過時間ベース)
+          if (statusData.status === 'starting') {
+            setJobStage('queued');
+            setJobProgress(15);
+          } else if (statusData.status === 'processing') {
+            setJobStage('separating');
+            // 4 分曲 ≈ 60 秒前後で完了する想定で 30→85% の範囲を埋める
+            const pct = Math.min(85, 30 + Math.floor(elapsed * 1.0));
+            setJobProgress(pct);
+          } else if (statusData.status === 'succeeded') {
+            stopPolling();
+            if (!statusData.output || Object.keys(statusData.output).length < 4) {
+              setError('処理は完了しましたがステムを取得できませんでした (モデル出力形式が想定と異なります)');
+              setJobStage('failed');
+              setIsProcessing(false);
+              return;
+            }
+            // SeparationResult 形式に変換
+            setResult({
+              jobId,
+              model: 'htdemucs (via Replicate)',
+              inputDurationSec: 0,
+              processingTimeSec: statusData.processingTimeSec || elapsed,
+              urls: statusData.output,
+              expiresInSec: 24 * 3600,
+              quota: undefined,
+            });
+            setJobStage('completed');
+            setJobProgress(100);
+            setIsProcessing(false);
+          } else if (statusData.status === 'failed' || statusData.status === 'canceled') {
+            stopPolling();
+            setError(translateError(statusData.error || 'separation_failed'));
+            setJobStage('failed');
+            setIsProcessing(false);
+          }
+        } catch (e) {
+          consecutiveErrors += 1;
+          if (consecutiveErrors >= 5) {
+            stopPolling();
+            setError(e instanceof Error ? e.message : String(e));
+            setJobStage('failed');
+            setIsProcessing(false);
+          }
+        }
+      }, 3000);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setJobStage('failed');
-    } finally {
       setIsProcessing(false);
     }
   };
