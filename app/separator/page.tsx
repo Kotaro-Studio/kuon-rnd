@@ -240,116 +240,43 @@ export default function SeparatorPage() {
     const formData = new FormData();
     formData.append('audio', file);
 
+    setJobStage('separating');
+    setJobProgress(50);
+
     try {
-      // Step 1: ジョブ投入
-      const submitRes = await fetch('/api/separator/jobs', {
+      // 動作実証済みの同期 /run を呼び出し (4 分曲で 2 分処理・成功実績あり)
+      const res = await fetch('/api/separator/run', {
         method: 'POST',
         body: formData,
       });
 
-      if (submitRes.status === 429) {
-        const payload = await submitRes.json() as QuotaExceededResponse;
+      if (res.status === 429) {
+        const payload = await res.json() as QuotaExceededResponse;
         setUpgradeInfo(payload);
         setQuota({ plan: payload.plan, used: payload.used, limit: payload.limit, remaining: 0 });
-        setIsProcessing(false);
-        setJobStage('idle');
         return;
       }
-      if (submitRes.status === 401) {
+      if (res.status === 401) {
         setAuthRequired(true);
-        setIsProcessing(false);
-        setJobStage('idle');
         return;
       }
-      if (!submitRes.ok) {
-        const err = await submitRes.json().catch(() => ({ error: 'unknown' }));
-        setError(translateError(err.detail || err.error || 'Submission failed'));
-        setIsProcessing(false);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'unknown' }));
+        setError(translateError(err.detail || err.error || 'Separation failed'));
         setJobStage('failed');
         return;
       }
 
-      const submitData = await submitRes.json() as {
-        jobId: string;
-        status: string;
-        inputDurationSec?: number;
-        estimatedProcessingSec?: number;
-        quota?: Quota;
-      };
-      if (submitData.quota) setQuota(submitData.quota);
-      if (submitData.estimatedProcessingSec) setJobEtaSec(submitData.estimatedProcessingSec);
-
-      // Step 2: ポーリング (5 秒間隔)
-      const jobId = submitData.jobId;
-      let consecutiveErrors = 0;
-      const maxConsecutiveErrors = 5;
-
-      pollIntervalRef.current = window.setInterval(async () => {
-        setJobElapsed(Math.floor((Date.now() - pollStartTimeRef.current) / 1000));
-        try {
-          const statusRes = await fetch(`/api/separator/jobs/${jobId}`);
-          if (!statusRes.ok) {
-            consecutiveErrors++;
-            if (consecutiveErrors >= maxConsecutiveErrors) {
-              stopPolling();
-              setError('サーバーとの通信に失敗しました。少し待ってから再試行してください。');
-              setIsProcessing(false);
-              setJobStage('failed');
-            }
-            return;
-          }
-          consecutiveErrors = 0;
-          const job = await statusRes.json() as {
-            status: string;
-            stage?: string;
-            progress?: number;
-            error?: string;
-            detail?: string;
-            urls?: Record<string, string>;
-            model?: string;
-            input_duration_sec?: number;
-            processing_time_sec?: number;
-            expires_in_sec?: number;
-          };
-
-          if (job.stage) setJobStage(job.stage as typeof jobStage);
-          else setJobStage(job.status as typeof jobStage);
-          if (typeof job.progress === 'number') setJobProgress(job.progress);
-
-          if (job.status === 'completed' && job.urls) {
-            stopPolling();
-            setResult({
-              jobId,
-              model: job.model || 'htdemucs',
-              inputDurationSec: job.input_duration_sec || 0,
-              processingTimeSec: job.processing_time_sec || 0,
-              urls: job.urls as SeparationResult['urls'],
-              expiresInSec: job.expires_in_sec || 86400,
-              quota: undefined,
-            });
-            setJobStage('completed');
-            setJobProgress(100);
-            setIsProcessing(false);
-          } else if (job.status === 'failed') {
-            stopPolling();
-            setError(translateError(job.detail || job.error || 'Separation failed'));
-            setIsProcessing(false);
-            setJobStage('failed');
-          }
-        } catch (e) {
-          consecutiveErrors++;
-          if (consecutiveErrors >= maxConsecutiveErrors) {
-            stopPolling();
-            setError(`通信エラー: ${e instanceof Error ? e.message : String(e)}`);
-            setIsProcessing(false);
-            setJobStage('failed');
-          }
-        }
-      }, 5000);
+      const data = await res.json() as SeparationResult;
+      setResult(data);
+      if (data.quota) setQuota(data.quota);
+      setJobStage('completed');
+      setJobProgress(100);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setIsProcessing(false);
       setJobStage('failed');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
