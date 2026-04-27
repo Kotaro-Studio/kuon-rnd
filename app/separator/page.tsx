@@ -22,8 +22,8 @@ const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans  = '"Helvetica Neue", Arial, sans-serif';
 const ACCENT = '#7c3aed';        // violet-600
 const ACCENT_DARK = '#6d28d9';   // violet-700
-const MAX_SIZE = 50 * 1024 * 1024;  // 50MB
-const MAX_DURATION_SEC = 600;        // 10 min
+const MAX_SIZE = 100 * 1024 * 1024;  // 100MB (2026-04-27: 高音質 WAV 対応)
+const MAX_DURATION_SEC = 720;         // 12 min (2026-04-27: ジャズ長尺曲対応)
 
 const STEM_COLORS: Record<string, string> = {
   drums:  '#ef4444',  // red
@@ -52,9 +52,9 @@ const T = {
   dropOr:     { ja: 'または', en: 'or', es: 'o' } as L3,
   selectFile: { ja: 'ファイルを選択', en: 'Select file', es: 'Seleccionar archivo' } as L3,
   dropHint:   {
-    ja: 'MP3 / WAV / FLAC / M4A・最大 50MB・10 分以内',
-    en: 'MP3 / WAV / FLAC / M4A · max 50MB · up to 10 min',
-    es: 'MP3 / WAV / FLAC / M4A · máx. 50MB · hasta 10 min',
+    ja: 'MP3 / WAV / FLAC / M4A・最大 100MB・12 分以内',
+    en: 'MP3 / WAV / FLAC / M4A · max 100MB · up to 12 min',
+    es: 'MP3 / WAV / FLAC / M4A · máx. 100MB · hasta 12 min',
   } as L3,
   startBtn:    { ja: '分離を開始', en: 'Start separation', es: 'Iniciar separación' } as L3,
   processing:  { ja: '処理中 (4-6 分かかります)...', en: 'Processing (takes 4-6 min)...', es: 'Procesando (tarda 4-6 min)...' } as L3,
@@ -128,7 +128,7 @@ function translateError(raw: string): string {
   if (!raw) return '不明なエラーが発生しました';
   const map: Record<string, string> = {
     unsupported_format: '対応していないファイル形式です。MP3 / WAV / FLAC / M4A をお試しください',
-    file_too_large: 'ファイルサイズが大きすぎます (50MB 以下にしてください)',
+    file_too_large: 'ファイルサイズが大きすぎます (100MB 以下にしてください)',
     duration_too_long: '曲が長すぎます (10 分以内にしてください)',
     unreadable_audio: '音源ファイルを読み込めませんでした。ファイルが破損していないかご確認ください',
     separation_failed: '音源分離に失敗しました。別の曲でお試しください',
@@ -201,7 +201,7 @@ export default function SeparatorPage() {
   const handleFileSelect = useCallback((f: File) => {
     setError(null);
     if (f.size > MAX_SIZE) {
-      setError(`File too large (${(f.size / 1024 / 1024).toFixed(1)}MB > 50MB)`);
+      setError(`File too large (${(f.size / 1024 / 1024).toFixed(1)}MB > 100MB)`);
       return;
     }
     const ext = f.name.split('.').pop()?.toLowerCase() || '';

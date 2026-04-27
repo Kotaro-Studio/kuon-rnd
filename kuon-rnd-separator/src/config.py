@@ -23,8 +23,10 @@ class Config:
     r2_bucket: str = "kuon-rnd-separator"
 
     # ── Processing Limits ──
-    max_file_size_mb: int = 50
-    max_duration_seconds: int = 600  # 10 分
+    # 2026-04-27 拡張: ジャズの長尺曲 (10 分超のモーダルジャズ・ライブ録音) に対応
+    # WAV 24bit/96kHz の高音質ファイルも受け入れられるようにサイズ制限も拡張
+    max_file_size_mb: int = 100              # 50 → 100MB (高音質 WAV 対応)
+    max_duration_seconds: int = 720          # 600 → 720s (10 分 → 12 分・ジャズ対応)
     supported_formats: tuple = ("mp3", "wav", "flac", "m4a", "ogg")
 
     # ── Demucs Model ──

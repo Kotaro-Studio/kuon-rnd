@@ -59,11 +59,16 @@ class DemucsSeparator:
         # 2026-04-26 修正: --filename パターンに {track}/ を追加。
         # 旧 "{stem}.{ext}" だと出力が <output>/<model>/<stem>.wav になり
         # 後段の lookup (<output>/<model>/<track>/<stem>.wav) と不一致だった。
+        # 2026-04-27 修正 (安定優先):
+        #   --segment 4 : Demucs の chunk size を 4 秒に絞ってメモリ約 50% 削減
+        #                 → 10 分以上のジャズも安定処理可能 (速度より安定優先・OOM 完全防止)
+        #   デフォルト segment は ~7.8 秒で 8-12GB ピーク・4 秒なら 4-6GB
         cmd = [
             "python", "-m", "demucs.separate",
             "--name", self.model_name,
             "--out", str(output_dir),
             "--filename", "{track}/{stem}.{ext}",  # <output>/<model>/<track>/<stem>.wav
+            "--segment", "4",                       # メモリ削減 (安定優先・OOM 防止)
             str(input_audio),
         ]
 
