@@ -21,11 +21,12 @@ const AUTH_WORKER_BASE = 'https://kuon-rnd-auth-worker.369-1d5.workers.dev';
 const APP_NAME = 'separator';
 const REPLICATE_API_BASE = 'https://api.replicate.com/v1';
 
-// Demucs モデル: 2026-04-27 修正 cjwbw/demucs → ryan5453/demucs
-// 理由: cjwbw/demucs は Replicate から削除されており 404 を返すため。
-// ryan5453/demucs は現在もメンテされている Demucs v4 実装で、4-stem 分離対応。
-const REPLICATE_MODEL_OWNER = 'ryan5453';
-const REPLICATE_MODEL_NAME = 'demucs';
+// Demucs モデル: ryan5453/demucs (現在メンテされている Demucs v4 実装・GPU A100・~32秒)
+// 2026-04-27 重要発見: /v1/models/{owner}/{name}/predictions は **公式モデル専用** エンドポイント。
+// コミュニティモデルでは 404 が返る。代わりに /v1/predictions に version ハッシュを渡す形式を使う。
+// version ハッシュは Replicate のモデルページ → "Versions" タブから取得。
+// 失効したら更新が必要。
+const REPLICATE_MODEL_VERSION = 'b26a4313b4d75983d60657f80dfa93b9beb354f6e4fa29ecd27ffe14d60117f6';
 
 function getCookie(request: Request, name: string): string | null {
   const cookies = request.headers.get('Cookie') || '';
@@ -142,15 +143,17 @@ async function handleRun(request: Request): Promise<Response> {
 
   // ── DIAG: ログ ──
   // eslint-disable-next-line no-console
-  console.log('[separator/run] step=before_replicate_fetch', { model: `${REPLICATE_MODEL_OWNER}/${REPLICATE_MODEL_NAME}` });
+  console.log('[separator/run] step=before_replicate_fetch', { version: REPLICATE_MODEL_VERSION.slice(0, 12) });
 
   try {
     // タイムアウト 25 秒 (Cloudflare のリクエスト wall time 30 秒に間に合うように)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000);
 
+    // コミュニティモデル用 endpoint (/v1/predictions + version field)
+    // /v1/models/{owner}/{name}/predictions は公式モデル専用なので 404 が返る
     const predRes = await fetch(
-      `${REPLICATE_API_BASE}/models/${REPLICATE_MODEL_OWNER}/${REPLICATE_MODEL_NAME}/predictions`,
+      `${REPLICATE_API_BASE}/predictions`,
       {
         method: 'POST',
         headers: {
@@ -158,11 +161,13 @@ async function handleRun(request: Request): Promise<Response> {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          version: REPLICATE_MODEL_VERSION,
           input: {
             audio: audioUrl,
-            model_name: 'htdemucs',                  // Demucs v4 hybrid transformer
-            stems: 'vocals_drums_bass_other',         // 4 ステム
-            shifts: 1,                                // 精度 vs 速度のバランス
+            // ryan5453/demucs の input schema: stems, model, shifts 等
+            // モデルは htdemucs (Demucs v4 hybrid transformer)
+            stems: 'vocals_drums_bass_other',
+            shifts: 1,
           },
         }),
         signal: controller.signal,
