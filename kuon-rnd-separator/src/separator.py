@@ -56,12 +56,14 @@ class DemucsSeparator:
         )
 
         # --two-stems=vocals だと 2 ステムのみ。デフォルトは 4 ステム
+        # 2026-04-26 修正: --filename パターンに {track}/ を追加。
+        # 旧 "{stem}.{ext}" だと出力が <output>/<model>/<stem>.wav になり
+        # 後段の lookup (<output>/<model>/<track>/<stem>.wav) と不一致だった。
         cmd = [
             "python", "-m", "demucs.separate",
             "--name", self.model_name,
             "--out", str(output_dir),
-            "--filename", "{stem}.{ext}",  # <output>/<model>/<track>/<stem>.wav
-            "--mp3-bitrate", "320",
+            "--filename", "{track}/{stem}.{ext}",  # <output>/<model>/<track>/<stem>.wav
             str(input_audio),
         ]
 

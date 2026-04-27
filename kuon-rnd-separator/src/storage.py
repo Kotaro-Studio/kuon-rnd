@@ -1,7 +1,8 @@
 """R2 (Cloudflare) ストレージクライアント — S3 互換 API を使用。"""
+import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.client import Config as BotoConfig
@@ -53,3 +54,25 @@ class R2Storage:
             Params={"Bucket": self.config.r2_bucket, "Key": object_key},
             ExpiresIn=expiry_seconds or self.config.presigned_url_expiry_seconds,
         )
+
+    def upload_json(self, object_key: str, data: Dict[str, Any]) -> None:
+        """JSON データを R2 にアップロード (ジョブステータス保存用)。"""
+        body = json.dumps(data, ensure_ascii=False).encode("utf-8")
+        self.client.put_object(
+            Bucket=self.config.r2_bucket,
+            Key=object_key,
+            Body=body,
+            ContentType="application/json",
+            CacheControl="no-store",
+        )
+
+    def fetch_json(self, object_key: str) -> Optional[Dict[str, Any]]:
+        """R2 から JSON データを取得 (ジョブステータス読込用)。"""
+        try:
+            res = self.client.get_object(Bucket=self.config.r2_bucket, Key=object_key)
+            return json.loads(res["Body"].read().decode("utf-8"))
+        except self.client.exceptions.NoSuchKey:
+            return None
+        except Exception as e:
+            logger.warning("fetch_json_failed", extra={"key": object_key, "error": str(e)})
+            return None

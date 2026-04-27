@@ -41,12 +41,12 @@ steps:
       - "--image=asia-northeast1-docker.pkg.dev/$PROJECT_ID/kuon-separator/worker:$BUILD_ID"
       - "--region=asia-northeast1"
       - "--platform=managed"
-      - "--cpu=4"
-      - "--memory=16Gi"
-      - "--timeout=1800"  # 30 分
-      - "--concurrency=1"  # 同時 1 リクエスト（OOM 防止）
-      - "--max-instances=10"  # スケール上限（コスト防御）
-      - "--min-instances=0"   # アイドル時ゼロ課金
+      - "--cpu=8"           # 8 vCPU
+      - "--memory=32Gi"     # 32Gi で十分 (htdemucs ピーク 12-15GB)
+      - "--timeout=1800"    # 30 分
+      - "--concurrency=1"   # 同時 1 リクエスト/インスタンス (OOM 防止)
+      - "--max-instances=10"   # GCP リージョンクォータ 200 vCPU 内 (8CPU × 10 = 80 vCPU・余裕あり)
+      - "--min-instances=0"    # アイドル時ゼロ課金
       - "--cpu-boost"          # cold start 高速化
       - "--execution-environment=gen2"
       - "--allow-unauthenticated"     # パブリック。認証は共有シークレットで行う
