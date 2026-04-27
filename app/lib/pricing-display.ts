@@ -292,46 +292,46 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
   },
   prelude: {
     separator: {
-      ja: 'AI音源分離: 月15回',
-      en: 'AI separation: 15/mo',
-      es: 'Separación IA: 15/mes',
-      ko: 'AI 분리: 월 15회',
-      pt: 'Separação IA: 15/mês',
-      de: 'KI-Trennung: 15/Mo',
+      ja: 'AI音源分離: 月2回 (お試し)',
+      en: 'AI separation: 2/mo (trial)',
+      es: 'Separación IA: 2/mes (prueba)',
+      ko: 'AI 분리: 월 2회 (체험)',
+      pt: 'Separação IA: 2/mês (teste)',
+      de: 'KI-Trennung: 2/Mo (Test)',
     },
     transcriber: {
-      ja: '譜起こし: 月15回',
-      en: 'Transcription: 15/mo',
-      es: 'Transcripción: 15/mes',
-      ko: '채보: 월 15회',
-      pt: 'Transcrição: 15/mês',
-      de: 'Notation: 15/Mo',
+      ja: '譜起こし: 月5回 (お試し)',
+      en: 'Transcription: 5/mo (trial)',
+      es: 'Transcripción: 5/mes (prueba)',
+      ko: '채보: 월 5회 (체험)',
+      pt: 'Transcrição: 5/mês (teste)',
+      de: 'Notation: 5/Mo (Test)',
     },
     intonation: {
-      ja: 'ピッチ分析: 月30回',
-      en: 'Pitch analysis: 30/mo',
-      es: 'Análisis tonal: 30/mes',
-      ko: '피치 분석: 월 30회',
-      pt: 'Análise tonal: 30/mês',
-      de: 'Tonhöhenanalyse: 30/Mo',
+      ja: 'ピッチ分析: 月10回 (お試し)',
+      en: 'Pitch analysis: 10/mo (trial)',
+      es: 'Análisis tonal: 10/mes (prueba)',
+      ko: '피치 분석: 월 10회 (체험)',
+      pt: 'Análise tonal: 10/mês (teste)',
+      de: 'Tonhöhenanalyse: 10/Mo (Test)',
     },
   },
   concerto: {
     separator: {
-      ja: 'AI音源分離: 月60回',
-      en: 'AI separation: 60/mo',
-      es: 'Separación IA: 60/mes',
-      ko: 'AI 분리: 월 60회',
-      pt: 'Separação IA: 60/mês',
-      de: 'KI-Trennung: 60/Mo',
+      ja: 'AI音源分離: 月20回',
+      en: 'AI separation: 20/mo',
+      es: 'Separación IA: 20/mes',
+      ko: 'AI 분리: 월 20회',
+      pt: 'Separação IA: 20/mês',
+      de: 'KI-Trennung: 20/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月40回',
-      en: 'Transcription: 40/mo',
-      es: 'Transcripción: 40/mes',
-      ko: '채보: 월 40회',
-      pt: 'Transcrição: 40/mês',
-      de: 'Notation: 40/Mo',
+      ja: '譜起こし: 月30回',
+      en: 'Transcription: 30/mo',
+      es: 'Transcripción: 30/mes',
+      ko: '채보: 월 30회',
+      pt: 'Transcrição: 30/mês',
+      de: 'Notation: 30/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: ほぼ無制限',
@@ -344,20 +344,20 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
   },
   symphony: {
     separator: {
-      ja: 'AI音源分離: 月120回',
-      en: 'AI separation: 120/mo',
-      es: 'Separación IA: 120/mes',
-      ko: 'AI 분리: 월 120회',
-      pt: 'Separação IA: 120/mês',
-      de: 'KI-Trennung: 120/Mo',
+      ja: 'AI音源分離: 月80回',
+      en: 'AI separation: 80/mo',
+      es: 'Separación IA: 80/mes',
+      ko: 'AI 분리: 월 80회',
+      pt: 'Separação IA: 80/mês',
+      de: 'KI-Trennung: 80/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月80回',
-      en: 'Transcription: 80/mo',
-      es: 'Transcripción: 80/mes',
-      ko: '채보: 월 80회',
-      pt: 'Transcrição: 80/mês',
-      de: 'Notation: 80/Mo',
+      ja: '譜起こし: 月100回',
+      en: 'Transcription: 100/mo',
+      es: 'Transcripción: 100/mes',
+      ko: '채보: 월 100회',
+      pt: 'Transcrição: 100/mês',
+      de: 'Notation: 100/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: 無制限 + 優先処理',
@@ -370,20 +370,20 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
   },
   opus: {
     separator: {
-      ja: 'AI音源分離: 月500回',
-      en: 'AI separation: 500/mo',
-      es: 'Separación IA: 500/mes',
-      ko: 'AI 분리: 월 500회',
-      pt: 'Separação IA: 500/mês',
-      de: 'KI-Trennung: 500/Mo',
+      ja: 'AI音源分離: 月300回',
+      en: 'AI separation: 300/mo',
+      es: 'Separación IA: 300/mes',
+      ko: 'AI 분리: 월 300회',
+      pt: 'Separação IA: 300/mês',
+      de: 'KI-Trennung: 300/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月250回',
-      en: 'Transcription: 250/mo',
-      es: 'Transcripción: 250/mes',
-      ko: '채보: 월 250회',
-      pt: 'Transcrição: 250/mês',
-      de: 'Notation: 250/Mo',
+      ja: '譜起こし: 月300回',
+      en: 'Transcription: 300/mo',
+      es: 'Transcripción: 300/mes',
+      ko: '채보: 월 300회',
+      pt: 'Transcrição: 300/mês',
+      de: 'Notation: 300/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: 無制限 + 商用利用可',
@@ -406,18 +406,18 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
 // 将来的にこのリストは縮小・拡大される可能性がある。
 // ============================================================
 
+// 2026-04-27 階層再編: Free を SEO 入口に絞り込み (登録なしで使える)
+// 旧 Free 多めの設計から、Free=数アプリだけ・Prelude=正規スタートへ移行
+//
+// 移動: master-check / ddp-checker / slowdown / ear-training / chord-quiz /
+//        sight-reading / breath / frequency → Prelude or Concerto
+// 残留: dsd / converter / analog-tools 系 (SEO ニッチ集客に必要)
+//        normalize (マイク購入者特典の legacy・パスワード kuon で保護)
 export const FREE_NO_LOGIN_APPS = [
-  // SEO 強い差別化ツール
-  'master-check',
+  // 技術的 SEO 差別化 (世界的にユニーク)
   'dsd',
-  'ddp-checker',
-  'normalize',     // マイク購入者特典 (パスワード kuon で別途保護)
   'converter',
-  // 学習系・教育系 (個人練習に直結・登録ハードルを上げない)
-  'slowdown',
-  'ear-training',
-  'chord-quiz',
-  'sight-reading',
+  'normalize',     // マイク購入者特典 (パスワード kuon で別途保護)
   // ANALOG-TOOLS 系 (専門ニッチ集客)
   'analog-tools',
   'analog-machine-speed',
@@ -425,9 +425,6 @@ export const FREE_NO_LOGIN_APPS = [
   'tape-remaining',
   'jazz-time',
   'voltage-db',
-  // メンタル・本番準備系 (2026-04-26 追加・即体験できる入口)
-  'breath',
-  'frequency',
 ] as const;
 
 export type FreeNoLoginApp = typeof FREE_NO_LOGIN_APPS[number];
