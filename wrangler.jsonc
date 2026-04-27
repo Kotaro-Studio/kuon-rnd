@@ -1,0 +1,29 @@
+{
+  // ─────────────────────────────────────────────────────────────
+  // Cloudflare Pages 設定 (wrangler.jsonc)
+  //
+  // 役割:
+  //   - Cloudflare ダッシュボードのバインディング設定を上書きする
+  //   - dashboard 経由の R2 バインディングが内部的に "invalid jurisdiction" を
+  //     付けてしまうバグへの対処
+  //   - jurisdiction を一切記述しないため、デフォルト (制約なし) が使われる
+  //
+  // 効果範囲:
+  //   - r2_buckets ブロックは既存の dashboard binding を完全に置き換える
+  //   - secrets (STRIPE_SECRET_KEY 等) は別レイヤーで管理されているので影響なし
+  //   - compatibility_date / flags は dashboard と同値で揃えている
+  // ─────────────────────────────────────────────────────────────
+  "$schema": "https://json.schemastore.org/wrangler",
+  "name": "kuon-rnd",
+  "compatibility_date": "2026-03-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": ".vercel/output/static",
+
+  "r2_buckets": [
+    {
+      "binding": "SEPARATOR_BUCKET",
+      "bucket_name": "kuon-rnd-separator"
+      // jurisdiction フィールドは意図的に省略 → デフォルト (制約なし) になる
+    }
+  ]
+}
