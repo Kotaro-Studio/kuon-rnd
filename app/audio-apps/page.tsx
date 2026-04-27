@@ -1485,7 +1485,7 @@ function SubscriptionPreview({ lang }: { lang: Lang }) {
       yearlyAmount: 0,
       accent: '#059669',
       features: [
-        { ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' },
+        { ja: '11 アプリが利用可能', en: '11 apps included', es: '11 apps incluidas', ko: '11개 앱 이용 가능', pt: '11 apps incluídos', de: '11 Apps inklusive' },
         PLAN_QUOTAS.free.separator,
         { ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ya, sin registro', ko: '등록 없이 바로 사용', pt: 'Use agora, sem inscrição', de: 'Sofort nutzen, keine Registrierung' },
       ],
@@ -1497,7 +1497,7 @@ function SubscriptionPreview({ lang }: { lang: Lang }) {
       yearlyAmount: preludeY,
       accent: '#0284c7',
       features: [
-        { ja: 'ブラウザアプリ全て無制限', en: 'All browser apps unlimited', es: 'Todas las apps de navegador ilimitadas', ko: '브라우저 앱 전부 무제한', pt: 'Todos os apps no navegador ilimitados', de: 'Alle Browser-Apps unbegrenzt' },
+        { ja: '29 アプリが無制限 (Free から +18)', en: '29 apps unlimited (+18 from Free)', es: '29 apps ilimitadas (+18 de Free)', ko: '29개 앱 무제한 (Free + 18)', pt: '29 apps ilimitados (+18 do Free)', de: '29 Apps unbegrenzt (+18 von Free)' },
         PLAN_QUOTAS.prelude.separator,
         PLAN_QUOTAS.prelude.transcriber,
         { ja: '練習ログ・成長記録', en: 'Practice logs & growth tracking', es: 'Registros de práctica y crecimiento', ko: '연습 로그·성장 기록', pt: 'Registros de prática e crescimento', de: 'Übungsprotokolle und Wachstum' },
@@ -1511,6 +1511,7 @@ function SubscriptionPreview({ lang }: { lang: Lang }) {
       yearlyAmount: concertoY,
       accent: '#7c3aed',
       features: [
+        { ja: '全 32 アプリが無制限 (業務系 +3)', en: 'All 32 apps unlimited (+3 pro)', es: 'Las 32 apps ilimitadas (+3 pro)', ko: '전체 32개 앱 무제한 (+3 프로)', pt: 'Todos 32 apps ilimitados (+3 pro)', de: 'Alle 32 Apps unbegrenzt (+3 Pro)' },
         PLAN_QUOTAS.concerto.separator,
         PLAN_QUOTAS.concerto.transcriber,
         PLAN_QUOTAS.concerto.intonation,

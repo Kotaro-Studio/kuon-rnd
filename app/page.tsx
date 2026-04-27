@@ -612,7 +612,7 @@ const HomePage: React.FC = () => {
             <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.85rem', textTransform: 'uppercase', fontWeight: 500 }}>{t5(PLAN_SUBTITLES.free, lang)}</div>
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>{formatPrice(0, currency)}</div>
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상의 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '11 アプリが利用可能', en: '11 apps included', es: '11 apps incluidas', ko: '11개 앱 이용 가능', pt: '11 apps incluídos', de: '11 Apps inklusive' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.free.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.free.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.free.intonation, lang)}</li>
@@ -673,7 +673,7 @@ const HomePage: React.FC = () => {
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상의 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '29 アプリが無制限 (Free から +18 アプリ解禁)', en: '29 apps unlimited (+18 from Free)', es: '29 apps ilimitadas (+18 de Free)', ko: '29개 앱 무제한 (Free + 18)', pt: '29 apps ilimitados (+18 do Free)', de: '29 Apps unbegrenzt (+18 von Free)' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.prelude.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.prelude.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.prelude.intonation, lang)}</li>
@@ -740,7 +740,7 @@ const HomePage: React.FC = () => {
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상의 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全 32 アプリが無制限 (業務エンジニア向け 3 アプリ追加)', en: 'All 32 apps unlimited (+3 pro-engineer apps)', es: 'Las 32 apps ilimitadas (+3 pro)', ko: '전체 32개 앱 무제한 (+3 프로)', pt: 'Todos os 32 apps ilimitados (+3 pro)', de: 'Alle 32 Apps unbegrenzt (+3 Pro)' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.concerto.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.concerto.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.concerto.intonation, lang)}</li>
@@ -810,7 +810,7 @@ const HomePage: React.FC = () => {
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '25種類以上のブラウザアプリが無制限', en: '25+ browser apps, unlimited', es: '25+ apps de navegador, ilimitadas', ko: '25개 이상의 브라우저 앱 무제한', pt: '25+ apps de navegador, ilimitados', de: '25+ Browser-Apps, unbegrenzt' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全 32 アプリが無制限・サーバー枠 4 倍', en: 'All 32 apps unlimited · 4× server quota', es: 'Las 32 apps ilimitadas · cuota 4×', ko: '전체 32개 앱 무제한 · 서버 4배', pt: 'Todos 32 apps ilimitados · 4× servidor', de: 'Alle 32 Apps unbegrenzt · 4× Server' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.symphony.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.symphony.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.symphony.intonation, lang)}</li>
@@ -879,7 +879,8 @@ const HomePage: React.FC = () => {
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '業務利用・教室・スタジオ向け', en: 'For business, schools, studios', es: 'Negocios, escuelas, estudios', ko: '업무·교실·스튜디오용', pt: 'Para empresas, escolas, estúdios', de: 'Für Unternehmen, Schulen, Studios' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全 32 アプリが無制限・業務利用可', en: 'All 32 apps unlimited · commercial use', es: 'Las 32 apps ilimitadas · uso comercial', ko: '전체 32개 앱 무제한 · 상업적 이용', pt: 'Todos 32 apps ilimitados · uso comercial', de: 'Alle 32 Apps unbegrenzt · kommerziell' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '教室・スタジオ・大規模利用向け', en: 'For schools, studios, large-scale use', es: 'Para escuelas, estudios, uso a gran escala', ko: '교실·스튜디오·대규모 이용', pt: 'Para escolas, estúdios, uso em larga escala', de: 'Für Schulen, Studios, Großnutzung' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.opus.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.opus.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.opus.intonation, lang)}</li>
