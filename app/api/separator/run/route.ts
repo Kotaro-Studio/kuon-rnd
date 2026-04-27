@@ -103,6 +103,10 @@ async function handleRun(request: Request): Promise<Response> {
   // R2 公開 URL を組み立て
   const audioUrl = `${r2PublicBase.replace(/\/$/, '')}/${fileKey}`;
 
+  // ── DIAG: ログ ──
+  // eslint-disable-next-line no-console
+  console.log('[separator/run] step=audio_url_built', { audioUrl, fileKey });
+
   // ── クォータ消費 (原子的) ──
   const consumeRes = await fetch(`${AUTH_WORKER_BASE}/api/auth/quota/consume`, {
     method: 'POST',
@@ -134,7 +138,15 @@ async function handleRun(request: Request): Promise<Response> {
   let predictionId: string;
   let predictionStatus: string;
 
+  // ── DIAG: ログ ──
+  // eslint-disable-next-line no-console
+  console.log('[separator/run] step=before_replicate_fetch', { model: `${REPLICATE_MODEL_OWNER}/${REPLICATE_MODEL_NAME}` });
+
   try {
+    // タイムアウト 25 秒 (Cloudflare のリクエスト wall time 30 秒に間に合うように)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
     const predRes = await fetch(
       `${REPLICATE_API_BASE}/models/${REPLICATE_MODEL_OWNER}/${REPLICATE_MODEL_NAME}/predictions`,
       {
@@ -151,11 +163,18 @@ async function handleRun(request: Request): Promise<Response> {
             shifts: 1,                                // 精度 vs 速度のバランス
           },
         }),
+        signal: controller.signal,
       }
     );
+    clearTimeout(timeoutId);
+
+    // eslint-disable-next-line no-console
+    console.log('[separator/run] step=after_replicate_fetch', { status: predRes.status });
 
     if (!predRes.ok) {
       const errText = await predRes.text().catch(() => '');
+      // eslint-disable-next-line no-console
+      console.error('[separator/run] replicate_error', { status: predRes.status, body: errText.slice(0, 500) });
       await refundQuota(token).catch(() => void 0);
       return Response.json(
         {
@@ -169,12 +188,20 @@ async function handleRun(request: Request): Promise<Response> {
     const predData = await predRes.json() as { id: string; status: string };
     predictionId = predData.id;
     predictionStatus = predData.status;
+
+    // eslint-disable-next-line no-console
+    console.log('[separator/run] step=prediction_created', { predictionId, predictionStatus });
   } catch (e) {
+    const errStr = String(e);
+    // eslint-disable-next-line no-console
+    console.error('[separator/run] step=replicate_exception', { error: errStr });
     await refundQuota(token).catch(() => void 0);
     return Response.json(
       {
         error: 'service_unreachable',
-        detail: `Replicate ネットワークエラー: ${String(e)}`,
+        detail: errStr.includes('aborted') || errStr.includes('AbortError')
+          ? `Replicate がタイムアウト (25秒) しました。R2 公開URL (${audioUrl.slice(0, 80)}...) を取得できなかった可能性が高い。`
+          : `Replicate ネットワークエラー: ${errStr.slice(0, 200)}`,
       },
       { status: 502 }
     );
