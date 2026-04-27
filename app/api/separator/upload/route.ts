@@ -80,17 +80,43 @@ async function handleUpload(request: Request): Promise<Response> {
   }
 
   // ── R2 binding 取得 ──
-  const env = (request as unknown as { env?: { SEPARATOR_BUCKET?: R2Bucket } }).env
-    || (globalThis as unknown as { env?: { SEPARATOR_BUCKET?: R2Bucket } }).env
-    || {};
-  const bucket = env.SEPARATOR_BUCKET;
+  // Cloudflare Pages + Next.js + @cloudflare/next-on-pages では、bindings は
+  // ランタイムで複数の場所に注入される可能性があるため、すべての場所をチェック:
+  //   1. request.env  (Cloudflare Workers 標準)
+  //   2. globalThis.env  (古いパターン)
+  //   3. process.env  (next-on-pages が AsyncLocalStorage 経由で注入)
+  //   4. globalThis.SEPARATOR_BUCKET 直接 (一部の Edge runtime)
+  const reqEnv = (request as unknown as { env?: Record<string, unknown> }).env;
+  const globalEnv = (globalThis as unknown as { env?: Record<string, unknown> }).env;
+  const procEnv = process.env as unknown as Record<string, unknown>;
+  const directGlobal = (globalThis as unknown as Record<string, unknown>).SEPARATOR_BUCKET;
+
+  const bucket = (
+    (reqEnv?.SEPARATOR_BUCKET as R2Bucket | undefined) ||
+    (globalEnv?.SEPARATOR_BUCKET as R2Bucket | undefined) ||
+    (procEnv?.SEPARATOR_BUCKET as R2Bucket | undefined) ||
+    (directGlobal as R2Bucket | undefined)
+  );
 
   if (!bucket) {
+    // デバッグ用: 何が実際に runtime からアクセスできるかを返す
+    const debugKeys = Object.keys(procEnv || {})
+      .filter((k) => !k.toLowerCase().startsWith('next_'))
+      .slice(0, 50);
     return Response.json(
       {
         error: 'r2_not_bound',
         detail:
           'SEPARATOR_BUCKET binding が見つかりません。Cloudflare Pages → kuon-rnd → Settings → Bindings で R2 binding を確認してください。',
+        debug: {
+          hasRequestEnv: !!reqEnv,
+          requestEnvKeys: reqEnv ? Object.keys(reqEnv).slice(0, 50) : [],
+          hasGlobalEnv: !!globalEnv,
+          globalEnvKeys: globalEnv ? Object.keys(globalEnv).slice(0, 50) : [],
+          hasProcessEnv: typeof process !== 'undefined' && !!process.env,
+          processEnvKeys: debugKeys,
+          hasDirectGlobal: !!directGlobal,
+        },
       },
       { status: 503 }
     );
