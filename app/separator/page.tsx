@@ -260,8 +260,26 @@ export default function SeparatorPage() {
         return;
       }
       if (!submitRes.ok) {
-        const err = await submitRes.json().catch(() => ({ error: 'unknown' }));
-        setError(translateError(err.detail || err.error || 'Job submission failed'));
+        // JSON 応答 を試す → 失敗したら text() で生レスポンスを取得して表示
+        let errMsg: string;
+        let bodyForDebug = '';
+        try {
+          const cloned = submitRes.clone();
+          bodyForDebug = await cloned.text();
+        } catch {
+          /* noop */
+        }
+        try {
+          const err = JSON.parse(bodyForDebug);
+          errMsg = translateError(err.detail || err.error || 'submission_failed');
+        } catch {
+          // JSON ではない（多くは Cloudflare のエラーページや空応答）
+          errMsg = `HTTP ${submitRes.status}: ${bodyForDebug.slice(0, 300) || '(空応答)'}`;
+        }
+        // コンソールには完全な情報を出す（DevTools で見られる）
+        // eslint-disable-next-line no-console
+        console.error('[separator] submit failed', submitRes.status, bodyForDebug);
+        setError(errMsg);
         setJobStage('failed');
         setIsProcessing(false);
         return;

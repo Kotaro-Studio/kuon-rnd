@@ -40,6 +40,29 @@ function randomJobId(): string {
 }
 
 export async function POST(request: Request) {
+  // ── 全体を try/catch で囲み、何が起きても JSON を返す ──
+  // これにより「エラー: unknown」(= 非 JSON 応答) を根絶し、
+  // 失敗箇所が即座に画面に表示されるようにする。
+  try {
+    return await handlePOST(request);
+  } catch (err) {
+    // 任意の同期/非同期エラーをキャッチ
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error('[separator/run] uncaught', message, stack);
+    return Response.json(
+      {
+        error: 'internal_error',
+        detail: `内部エラー: ${message}`,
+        // スタックトレースの先頭 500 文字（デバッグ容易化）
+        debug_stack: stack ? stack.slice(0, 500) : undefined,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+async function handlePOST(request: Request): Promise<Response> {
   const token = getCookie(request, 'kuon_token');
   if (!token) {
     return Response.json({ error: 'auth_required' }, { status: 401 });
