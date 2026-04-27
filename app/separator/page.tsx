@@ -237,8 +237,11 @@ export default function SeparatorPage() {
     setJobElapsed(0);
     pollStartTimeRef.current = Date.now();
 
+    // Replicate Files API の必須フィールド名は 'content'。
+    // Pages Function はリクエストボディを Replicate にストリームでパススルーするため、
+    // ブラウザ側で正しいフィールド名で送る必要がある。
     const formData = new FormData();
-    formData.append('audio', file);
+    formData.append('content', file);
 
     try {
       // ── ジョブ投入 (Replicate に転送) ──

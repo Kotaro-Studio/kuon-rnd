@@ -110,30 +110,56 @@ async function handlePOST(request: Request): Promise<Response> {
     remaining: number;
   };
 
-  // ── Step 2: ファイル受信 ──
-  const formData = await request.formData();
-  const audio = formData.get('audio');
-  if (!audio || !(audio instanceof File)) {
+  // ── Step 2: Content-Type / Content-Length 検証 ──
+  // 大事: request.formData() は本体をメモリに全部バッファするため、Cloudflare Workers の
+  // 128MB メモリ上限 + JS ランタイムオーバーヘッドにより 30MB のファイルでも 502 で死ぬ。
+  // 代わりに request.body を ReadableStream のまま Replicate に "pass-through" する。
+  // ブラウザ側で FormData の field 名は 'content' に統一済み（Replicate が要求する名前）。
+  const contentType = request.headers.get('content-type') || '';
+  if (!contentType.startsWith('multipart/form-data')) {
     await refundQuota(token).catch(() => void 0);
-    return Response.json({ error: 'missing_audio' }, { status: 400 });
+    return Response.json(
+      { error: 'invalid_content_type', detail: `Expected multipart/form-data, got: ${contentType}` },
+      { status: 400 }
+    );
+  }
+
+  // 早期サイズチェック (Content-Length ヘッダで判定)
+  const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+  const MAX_BODY_BYTES = 105 * 1024 * 1024;  // 100MB ファイル + multipart オーバーヘッド余裕
+  if (contentLength > MAX_BODY_BYTES) {
+    await refundQuota(token).catch(() => void 0);
+    return Response.json(
+      {
+        error: 'file_too_large',
+        detail: `リクエストサイズが大きすぎます (${(contentLength / 1024 / 1024).toFixed(1)} MB > 100 MB)`,
+      },
+      { status: 413 }
+    );
+  }
+
+  if (!request.body) {
+    await refundQuota(token).catch(() => void 0);
+    return Response.json({ error: 'missing_audio', detail: 'リクエストボディが空です' }, { status: 400 });
   }
 
   const jobId = randomJobId();
 
-  // ── Step 3: Replicate Files API にファイルをアップロード ──
-  // Replicate は audio パラメータに「公開 URL or data URL」を要求する。
-  // Files API 経由で一時的にホストしてもらうのが最もクリーン (24h で自動削除)。
-  const uploadForm = new FormData();
-  uploadForm.append('content', audio);
-
+  // ── Step 3: Replicate Files API にストリームでパススルー ──
+  // duplex:'half' は Cloudflare Workers で body に ReadableStream を渡すときに必須。
+  // これにより 30-100MB のファイルでも Pages Function はメモリを数 KB しか使わない。
   let fileUrl: string;
   try {
     const fileRes = await fetch(`${REPLICATE_API_BASE}/files`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${replicateToken}`,
+        // multipart boundary ごと再利用（ブラウザが生成したものをそのまま）
+        'Content-Type': contentType,
       },
-      body: uploadForm,
+      body: request.body,
+      // @ts-expect-error: Cloudflare Workers requires duplex when body is ReadableStream
+      duplex: 'half',
     });
 
     if (!fileRes.ok) {
