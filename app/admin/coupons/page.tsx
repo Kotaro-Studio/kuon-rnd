@@ -232,6 +232,32 @@ export default function AdminCouponsPage() {
           </div>
         </div>
 
+        {/* 教師向け説明 LP リンクカード (隠しページ・営業前送付用) */}
+        <div className="admin-card" style={{ background: 'linear-gradient(135deg, rgba(180,83,9,0.12), rgba(251,191,36,0.06))', border: '1px solid rgba(180,83,9,0.4)', borderRadius: 12, padding: '1.2rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#fbbf24', letterSpacing: '0.08em', marginBottom: 4, textTransform: 'uppercase' }}>
+              📋 教師向け説明 LP（隠しページ・営業用）
+            </div>
+            <div style={{ fontSize: '0.88rem', color: '#cbd5e1', lineHeight: 1.7 }}>
+              教師にクーポンを発行する前の事前案内として送付。本番サイトには一切リンクなし。
+              パスワード <code style={{ background: '#0f172a', padding: '1px 6px', borderRadius: 4, fontFamily: mono, color: '#fbbf24', fontSize: '0.82rem' }}>kuon</code> でゲート。
+              月額 / 年額の両ロジック、12 ヶ月節約額、FAQ 8 問付き。
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+            <a href="/for-teachers" target="_blank" rel="noreferrer"
+              style={{ padding: '0.55rem 1.1rem', background: '#fbbf24', color: '#7c2d12', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none', fontFamily: sans, whiteSpace: 'nowrap' }}>
+              LP を開く →
+            </a>
+            <button
+              type="button"
+              onClick={() => copyToClipboard('https://kuon-rnd.com/for-teachers', 'LP の URL')}
+              style={{ padding: '0.55rem 0.9rem', background: 'transparent', color: '#fbbf24', border: '1px solid #fbbf24', borderRadius: 8, fontSize: '0.8rem', cursor: 'pointer', fontFamily: sans, whiteSpace: 'nowrap' }}>
+              URL コピー
+            </button>
+          </div>
+        </div>
+
         {/* ── 割引ロジック解説 (営業時の参照用) ── */}
         <div className="admin-card" style={{ background: '#1e293b', borderRadius: 12, padding: '1.5rem', border: '1px solid #334155', marginBottom: '1.5rem' }}>
           <h2 style={{ fontFamily: serif, fontSize: '1.1rem', fontWeight: 400, color: '#f8fafc', marginTop: 0, marginBottom: '0.5rem' }}>
@@ -241,7 +267,10 @@ export default function AdminCouponsPage() {
             教師が学生にコードを渡すとき、以下の流れで割引が自動適用されます。営業時の説明用に常時このページから参照できます。
           </p>
 
-          {/* タイムライン */}
+          {/* 月額タイムライン (3 段階) */}
+          <div style={{ fontSize: '0.7rem', color: '#fbbf24', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+            🗓️ 月額プランの場合（2 段階適用）
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.8rem', marginBottom: '1.2rem' }}>
             {[
               {
@@ -275,6 +304,42 @@ export default function AdminCouponsPage() {
             ))}
           </div>
 
+          {/* 年額タイムライン (2 段階) */}
+          <div style={{ fontSize: '0.7rem', color: '#fbbf24', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+            📅 年額プランの場合（1 段階で完結）
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.8rem', marginBottom: '1.2rem' }}>
+            {[
+              {
+                label: '年 1（最初の 1 年）',
+                title: '30% OFF',
+                color: '#7dd3fc',
+                desc: 'STUDENT_30_12MO を Promotion Code で直接 attach。Concerto ¥10,360 / Prelude ¥5,460 で 1 年分一括前払い。',
+                tag: 'HALF50 は monthly 限定なので skip → 即 STUDENT を適用',
+              },
+              {
+                label: '年 2 〜（自動更新）',
+                title: '通常価格',
+                color: '#a78bfa',
+                desc: 'クーポン失効 → Concerto ¥14,800 / Prelude ¥7,800 に自動回復。Webhook 切替不要 (1 段階で完結)。',
+                tag: 'Stripe duration_in_months: 12 が自然失効',
+              },
+            ].map((s) => (
+              <div key={s.label} style={{ background: '#0f172a', borderRadius: 10, padding: '1rem', border: `1px solid ${s.color}33` }}>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', letterSpacing: '0.08em', marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: s.color, marginBottom: 6, fontFamily: mono }}>{s.title}</div>
+                <div style={{ fontSize: '0.75rem', color: '#cbd5e1', lineHeight: 1.6, marginBottom: 8 }}>{s.desc}</div>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', fontStyle: 'italic' }}>⚙ {s.tag}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, padding: '0.7rem 1rem', marginBottom: '1.2rem' }}>
+            💡 <strong style={{ color: '#fbbf24' }}>年額が顧客にとって最もお得：</strong>
+            年額には既に「2 ヶ月無料」が組み込まれており、そこに 30% off が重なるため**実質約 42% 割引**になる。
+            Kuon にとっても 1 年分のキャッシュ前倒し + 解約リスク激減で長期的に有利。
+            営業時に「年払いを選ぶとさらにお得です」と伝えるとアップセルが効く。
+          </div>
+
           {/* 12 ヶ月支払い額の試算表 */}
           <div style={{ background: '#0f172a', borderRadius: 10, padding: '1rem', border: '1px solid #334155', marginBottom: '1rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#7dd3fc', letterSpacing: '0.06em', marginBottom: '0.6rem' }}>
@@ -293,24 +358,37 @@ export default function AdminCouponsPage() {
                 </thead>
                 <tbody>
                   <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                    <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>Prelude</td>
+                    <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>Prelude <span style={{ fontSize: '0.65rem', color: '#64748b' }}>月額</span></td>
                     <td style={{ padding: '0.5rem', textAlign: 'right', color: '#34d399' }}>¥390</td>
                     <td style={{ padding: '0.5rem', textAlign: 'right', color: '#7dd3fc' }}>¥546 × 11</td>
                     <td style={{ padding: '0.5rem', textAlign: 'right', color: '#f8fafc', fontWeight: 700 }}>¥6,396</td>
                     <td style={{ padding: '0.5rem', textAlign: 'right', color: '#fbbf24' }}>¥2,964</td>
                   </tr>
-                  <tr>
-                    <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>Concerto</td>
+                  <tr style={{ borderBottom: '1px solid #1e293b', background: 'rgba(125,211,252,0.04)' }}>
+                    <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>Prelude <span style={{ fontSize: '0.65rem', color: '#7dd3fc', fontWeight: 700 }}>年額</span></td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#7dd3fc' }} colSpan={2}>¥5,460 一括</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#f8fafc', fontWeight: 700 }}>¥5,460</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#fbbf24', fontWeight: 700 }}>¥3,900</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                    <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>Concerto <span style={{ fontSize: '0.65rem', color: '#64748b' }}>月額</span></td>
                     <td style={{ padding: '0.5rem', textAlign: 'right', color: '#34d399' }}>¥740</td>
                     <td style={{ padding: '0.5rem', textAlign: 'right', color: '#7dd3fc' }}>¥1,036 × 11</td>
                     <td style={{ padding: '0.5rem', textAlign: 'right', color: '#f8fafc', fontWeight: 700 }}>¥12,136</td>
                     <td style={{ padding: '0.5rem', textAlign: 'right', color: '#fbbf24' }}>¥5,624</td>
                   </tr>
+                  <tr style={{ background: 'rgba(125,211,252,0.04)' }}>
+                    <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>Concerto <span style={{ fontSize: '0.65rem', color: '#7dd3fc', fontWeight: 700 }}>年額</span></td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#7dd3fc' }} colSpan={2}>¥10,360 一括</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#f8fafc', fontWeight: 700 }}>¥10,360</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#fbbf24', fontWeight: 700 }}>¥7,400</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
             <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.6rem', fontStyle: 'italic' }}>
-              ※ 通常 12 ヶ月支払い額: Prelude ¥9,360 / Concerto ¥17,760。学割で最大 32% お得
+              ※ 通常 12 ヶ月支払い額: Prelude 月額 ¥9,360 / 年額 ¥7,800、Concerto 月額 ¥17,760 / 年額 ¥14,800。
+              年額 + 学割の組み合わせで最大 42% お得
             </div>
           </div>
 
