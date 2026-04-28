@@ -1486,8 +1486,7 @@ function SubscriptionPreview({ lang }: { lang: Lang }) {
       accent: '#059669',
       features: [
         { ja: '13 アプリが利用可能', en: '13 apps included', es: '13 apps incluidas', ko: '13개 앱 이용 가능', pt: '13 apps incluídos', de: '13 Apps inklusive' },
-        PLAN_QUOTAS.free.separator,
-        { ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ya, sin registro', ko: '등록 없이 바로 사용', pt: 'Use agora, sem inscrição', de: 'Sofort nutzen, keine Registrierung' },
+        { ja: 'メールアドレス登録のみ・カード不要', en: 'Email signup only · no card', es: 'Solo email · sin tarjeta', ko: '이메일 가입만 · 카드 불필요', pt: 'Apenas email · sem cartão', de: 'Nur E-Mail · keine Karte' },
       ],
     },
     {

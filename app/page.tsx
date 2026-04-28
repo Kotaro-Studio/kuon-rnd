@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
@@ -560,8 +559,21 @@ const HomePage: React.FC = () => {
         <h2 style={{ fontFamily: serif, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, textAlign: 'center', marginBottom: '0.5rem', color: '#0f172a' }}>
           {t5({ ja: 'はじめ方', en: 'Choose your plan', es: 'Elige tu plan', ko: '계획 선택', pt: 'Escolha seu plano', de: 'Wähle deinen Plan' }, lang)}
         </h2>
-        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '2rem', fontSize: '1rem', wordBreak: 'keep-all' }}>
+        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '0.4rem', fontSize: '1rem', wordBreak: 'keep-all' }}>
           {t5({ ja: 'まずは無料で。もっと使いたくなったらプランを選べます。', en: 'Start free. Upgrade when you want more.', es: 'Empieza gratis. Actualiza cuando quieras más.', ko: '무료로 시작하세요. 더 필요하면 업그레이드하세요.', pt: 'Comece grátis. Atualize quando quiser mais.', de: 'Kostenlos starten. Upgrade, wenn du mehr willst.' }, lang)}
+        </p>
+        {/* 2026-04-27: 90/10 framing (honest version) — ブラウザアプリは Free から大部分使える、
+            サーバー処理が必要な AI 系のみ Prelude から。Free が「サブセット」ではなく「主要部分」と
+            知覚されるための重要な 1 行。 */}
+        <p style={{ textAlign: 'center', color: '#94a3b8', marginBottom: '2rem', fontSize: '0.85rem', wordBreak: 'keep-all', fontStyle: 'italic' }}>
+          {t5({
+            ja: 'ブラウザで動くアプリは Free から大半が使えます。AI 処理の本格ツールは Prelude から。',
+            en: 'Most browser apps are accessible from Free. AI-powered tools start at Prelude.',
+            es: 'La mayoría de las apps del navegador están disponibles desde Free. Las herramientas con IA desde Prelude.',
+            ko: '대부분의 브라우저 앱은 Free 부터 사용 가능. AI 기반 도구는 Prelude 부터.',
+            pt: 'A maioria das apps do navegador acessível desde Free. Ferramentas com IA a partir do Prelude.',
+            de: 'Die meisten Browser-Apps sind ab Free zugänglich. KI-Tools ab Prelude.',
+          }, lang)}
         </p>
         {/* Billing toggle — 2ヶ月無料 */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginBottom: '3rem', flexWrap: 'wrap' }}>
@@ -613,13 +625,10 @@ const HomePage: React.FC = () => {
             <div style={{ fontSize: '2rem', fontWeight: 600, color: ACCENT, marginBottom: '1.5rem' }}>{formatPrice(0, currency)}</div>
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '13 アプリが利用可能', en: '13 apps included', es: '13 apps incluidas', ko: '13개 앱 이용 가능', pt: '13 apps incluídos', de: '13 Apps inklusive' }, lang)}</li>
-              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.free.separator, lang)}</li>
-              <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.free.transcriber, lang)}</li>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.free.intonation, lang)}</li>
-              <li>✓ {t5({ ja: '登録不要で今すぐ使える', en: 'Use now, no signup', es: 'Úsalo ahora, sin registro', ko: '지금 사용, 가입 불필요', pt: 'Use agora, sem inscrição', de: 'Sofort nutzen, keine Registrierung' }, lang)}</li>
+              <li>✓ {t5({ ja: 'メールアドレス登録のみ・カード不要', en: 'Email signup only · no card', es: 'Solo email · sin tarjeta', ko: '이메일 가입만 · 카드 불필요', pt: 'Apenas email · sem cartão', de: 'Nur E-Mail · keine Karte' }, lang)}</li>
             </ul>
-            <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-              {t5({ ja: '登録なしで今すぐ使う', en: 'Use Now — No Signup', es: 'Usar Ahora — Sin Registro', ko: '가입 없이 지금 사용', pt: 'Usar Agora — Sem Inscrição', de: 'Jetzt nutzen — ohne Registrierung' }, lang)}
+            <Link href="/auth/login" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: ACCENT, color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#0369a1'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
+              {t5({ ja: '登録して今すぐ使う', en: 'Sign Up & Start Now', es: 'Registrarse y Empezar', ko: '가입하고 지금 시작', pt: 'Cadastrar-se e Começar', de: 'Registrieren & Starten' }, lang)}
             </Link>
           </div>
           <div style={{ background: 'white', border: `2px solid ${ACCENT}`, borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center', position: 'relative' }}>
@@ -978,34 +987,32 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 9. FOUNDER */}
+      {/* 9. VISION (旧: FOUNDER)
+            2026-04-27 IQ180 リファクタ:
+            「創業者の想い」+ 朝比奈幸太郎の名前と顔写真を前面に出す設計を撤去。
+            音楽家ユーザーが課金時に「誰かの実績を積み上げる」と無意識に感じる
+            心理的負担を排除し、ブランド主導のビジョンに変更。創業者プロフィールは
+            /profile に格納し、興味ある人だけが辿る導線に。 */}
       <section style={{ padding: 'clamp(5rem, 10%, 8rem) clamp(1rem, 3%, 4rem)', background: 'white', maxWidth: '900px', margin: '0 auto', width: '100%', textAlign: 'center' }}>
-        <p style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#64748b', marginBottom: '1rem', textTransform: 'uppercase' }}>Founder</p>
-        <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 400, marginBottom: '2.5rem', color: '#0f172a' }}>
-          {t5({ ja: '創業者の想い', en: 'The Vision Behind Kuon R&D', es: 'La visión detrás de Kuon R&D', ko: '창립자의 비전', pt: 'A visão por trás da Kuon R&D', de: 'Die Vision hinter Kuon R&D' }, lang)}
+        <p style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: '#64748b', marginBottom: '1rem', textTransform: 'uppercase' }}>Our Vision</p>
+        <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 400, marginBottom: '2rem', color: '#0f172a' }}>
+          {t5({ ja: '空音開発の想い', en: 'What We Believe', es: 'Nuestra visión', ko: '공음개발의 비전', pt: 'Nossa visão', de: 'Unsere Vision' }, lang)}
         </h2>
-        <div style={{ marginBottom: '2rem' }}>
-          <Image src="/kotaro.jpeg" alt="Kotaro Asahina" width={140} height={140} style={{ borderRadius: '50%', margin: '0 auto', display: 'block', border: '3px solid #e2e8f0' }} />
-        </div>
-        <h3 style={{ fontFamily: serif, fontSize: '1.5rem', fontWeight: 400, marginBottom: '0.3rem', color: '#0f172a' }}>
-          {t5({ ja: '朝比奈 幸太郎', en: 'Kotaro Asahina', es: 'Kotaro Asahina', ko: '아사히나 코타로', pt: 'Kotaro Asahina', de: 'Kotaro Asahina' }, lang)}
-        </h3>
-        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '2rem', letterSpacing: '0.05em' }}>
-          {t5({ ja: '音響エンジニア / マイク設計者 / 音楽プロデューサー', en: 'Audio Engineer / Microphone Designer / Music Producer', es: 'Ingeniero de Audio / Diseñador de Micrófonos / Productor Musical', ko: '오디오 엔지니어 / 마이크 설계자 / 음악 프로듀서', pt: 'Engenheiro de Áudio / Designer de Microfones / Produtor Musical', de: 'Tontechniker / Mikrofondesigner / Musikproduzent' }, lang)}
-        </p>
         <blockquote style={{ fontFamily: serif, fontSize: 'clamp(1rem, 2vw, 1.15rem)', lineHeight: 2.0, color: '#334155', maxWidth: '700px', margin: '0 auto 2rem', padding: 'clamp(1rem, 3vw, 1.5rem) clamp(1.25rem, 4vw, 2rem)', background: '#f8fafc', borderRadius: '12px', borderLeft: `4px solid ${ACCENT}`, textAlign: 'left', overflowWrap: 'break-word', fontStyle: 'normal', boxSizing: 'border-box' }}>
           {t5({
-            ja: '世界の音楽文化が発展し、音楽家がより創造性に集中できる世界を。エンジニアがより表現に専念できるように。音楽家同士が国境を越えて繋がり、世界のあらゆる場所で文化と表現、そして何より芸術が芽を出すような世界にしたい。——その想いで空音開発を立ち上げました。',
-            en: 'I want a world where musical culture thrives, where musicians can focus purely on creativity, where engineers can dedicate themselves to expression, and where artists connect across borders — so that culture, expression, and above all, art can flourish everywhere. That is why I founded Kuon R&D.',
-            es: 'Quiero un mundo donde la cultura musical prospere, donde los músicos puedan concentrarse puramente en la creatividad, donde los ingenieros puedan dedicarse a la expresión, y donde los artistas se conecten más allá de las fronteras. Por eso fundé Kuon R&D.',
-            ko: '음악 문화가 발전하고 음악가가 창의성에만 집중할 수 있는 세상, 엔지니어가 표현에 전념할 수 있는 세상, 국경을 넘어 음악가들이 연결되어 전 세계에서 문화와 예술이 싹틔는 세상을 만들고 싶었습니다. 그래서 공음개발을 설립했습니다.',
-            pt: 'Quero um mundo onde a cultura musical prospere, onde os músicos possam focar puramente na criatividade, onde os engenheiros possam se dedicar à expressão, e onde os artistas se conectem além das fronteiras. Por isso fundei a Kuon R&D.',
-            de: 'Ich möchte eine Welt, in der die Musikkultur gedeiht, in der sich Musiker voll auf ihre Kreativität konzentrieren können, in der Tontechniker sich dem Ausdruck widmen können und in der Künstler über Grenzen hinweg verbunden sind – damit Kultur, Ausdruck und vor allem Kunst überall erblühen können. Deshalb habe ich Kuon R&D gegründet.',
+            ja: '音楽文化が世界中で発展していく未来を信じています。音楽家が創造性に、エンジニアが表現に、それぞれが本来やるべきことに集中できる環境を。国境を越えた繋がりの中で、文化と表現、そして何より芸術がいたるところで芽を出す世界を。空音開発は、その未来のための道具をつくります。',
+            en: 'We believe in a future where musical culture thrives worldwide. Where musicians focus on creativity, where engineers focus on expression — each on what they were meant to do. Where connections across borders let culture, expression, and above all art take root everywhere. Kuon R&D builds the tools for that future.',
+            es: 'Creemos en un futuro donde la cultura musical prospere en todo el mundo. Donde los músicos se concentren en la creatividad y los ingenieros en la expresión — cada uno en lo que les corresponde. Donde las conexiones más allá de las fronteras permitan que la cultura, la expresión y, sobre todo, el arte echen raíces en todas partes. Kuon R&D construye las herramientas para ese futuro.',
+            ko: '음악 문화가 전 세계에서 발전하는 미래를 믿습니다. 음악가는 창의성에, 엔지니어는 표현에 — 각자 본래 해야 할 일에 집중할 수 있는 환경을. 국경을 넘어선 연결 속에서 문화와 표현, 그리고 무엇보다 예술이 전 세계에 뿌리내리는 세상을. 공음개발은 그 미래를 위한 도구를 만듭니다.',
+            pt: 'Acreditamos em um futuro onde a cultura musical prospere em todo o mundo. Onde os músicos foquem na criatividade e os engenheiros na expressão — cada um no que foram destinados a fazer. Onde conexões através das fronteiras permitam que a cultura, a expressão e, acima de tudo, a arte criem raízes em todos os lugares. A Kuon R&D constrói as ferramentas para esse futuro.',
+            de: 'Wir glauben an eine Zukunft, in der die Musikkultur weltweit gedeiht. In der sich Musiker auf Kreativität und Tontechniker auf Ausdruck konzentrieren — jeder auf das, wofür er bestimmt ist. In der Verbindungen über Grenzen hinweg dafür sorgen, dass Kultur, Ausdruck und vor allem Kunst überall Wurzeln schlagen. Kuon R&D baut die Werkzeuge für diese Zukunft.',
           }, lang)}
         </blockquote>
-        <div style={{ marginBottom: '2.5rem' }} />
-        <Link href="/profile" style={{ display: 'inline-block', padding: '0.875rem 2.5rem', border: `2px solid ${ACCENT}`, color: ACCENT, borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', background: 'white', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(2,132,199,0.2)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-          {t5({ ja: 'プロフィールを見る', en: 'View Full Profile', es: 'Ver Perfil Completo', ko: '프로필 보기', pt: 'Ver Perfil Completo', de: 'Vollständiges Profil ansehen' }, lang)}
+        <p style={{ color: '#94a3b8', fontSize: '0.78rem', letterSpacing: '0.05em', marginTop: '1.5rem', marginBottom: '2rem' }}>
+          {t5({ ja: '— 空音開発', en: '— Kuon R&D', es: '— Kuon R&D', ko: '— 공음개발', pt: '— Kuon R&D', de: '— Kuon R&D' }, lang)}
+        </p>
+        <Link href="/profile" style={{ display: 'inline-block', fontSize: '0.85rem', color: '#64748b', textDecoration: 'underline', textUnderlineOffset: '4px', transition: 'color 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.color = ACCENT; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; }}>
+          {t5({ ja: '創業者について', en: 'About the founder', es: 'Sobre el fundador', ko: '창립자에 대하여', pt: 'Sobre o fundador', de: 'Über den Gründer' }, lang)}
         </Link>
       </section>
 

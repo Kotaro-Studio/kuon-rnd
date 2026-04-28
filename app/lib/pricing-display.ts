@@ -291,29 +291,33 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
     },
   },
   prelude: {
+    // 2026-04-27: 「お試し」を撤去。
+    // 顧客は Prelude の時点で既にお金を払う有料会員。「試し」と表記すると
+    // 所有感・承認欲求・優越感を毀損する。回数は明記、ニュアンスは控える。
+    // 数字自体が Concerto の月20回と並ぶことで体験のグレードが伝わる。
     separator: {
-      ja: 'AI音源分離: 月2回 (お試し)',
-      en: 'AI separation: 2/mo (trial)',
-      es: 'Separación IA: 2/mes (prueba)',
-      ko: 'AI 분리: 월 2회 (체험)',
-      pt: 'Separação IA: 2/mês (teste)',
-      de: 'KI-Trennung: 2/Mo (Test)',
+      ja: 'AI音源分離: 月2回',
+      en: 'AI separation: 2/mo',
+      es: 'Separación IA: 2/mes',
+      ko: 'AI 분리: 월 2회',
+      pt: 'Separação IA: 2/mês',
+      de: 'KI-Trennung: 2/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月5回 (お試し)',
-      en: 'Transcription: 5/mo (trial)',
-      es: 'Transcripción: 5/mes (prueba)',
-      ko: '채보: 월 5회 (체험)',
-      pt: 'Transcrição: 5/mês (teste)',
-      de: 'Notation: 5/Mo (Test)',
+      ja: '譜起こし: 月5回',
+      en: 'Transcription: 5/mo',
+      es: 'Transcripción: 5/mes',
+      ko: '채보: 월 5회',
+      pt: 'Transcrição: 5/mês',
+      de: 'Notation: 5/Mo',
     },
     intonation: {
-      ja: 'ピッチ分析: 月10回 (お試し)',
-      en: 'Pitch analysis: 10/mo (trial)',
-      es: 'Análisis tonal: 10/mes (prueba)',
-      ko: '피치 분석: 월 10회 (체험)',
-      pt: 'Análise tonal: 10/mês (teste)',
-      de: 'Tonhöhenanalyse: 10/Mo (Test)',
+      ja: 'ピッチ分析: 月10回',
+      en: 'Pitch analysis: 10/mo',
+      es: 'Análisis tonal: 10/mes',
+      ko: '피치 분석: 월 10회',
+      pt: 'Análise tonal: 10/mês',
+      de: 'Tonhöhenanalyse: 10/Mo',
     },
   },
   concerto: {
