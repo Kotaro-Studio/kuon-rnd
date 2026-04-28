@@ -1044,6 +1044,86 @@ app.post('/api/auth/track', async (c) => {
 });
 
 // ─────────────────────────────────────────────
+// FAVORITES (お気に入りアプリ) — Phase 2 機能
+//
+// 設計:
+//   - KV キー: favorites:{email} → JSON: { ids: string[], updatedAt: string }
+//   - GET: 自分のお気に入りリスト取得 (順序付き)
+//   - PUT: リスト全体を置き換え (並び替え・追加・削除を 1 リクエストで)
+//   - 全プランで利用可能 (Free 含む) — リテンション機能なので有料に閉じない
+//   - アプリ ID は APP_CATALOG の id と一致 (型保証はしないがフロントが管理)
+//   - 上限: 20 個 (リスト肥大化を防ぐ)
+// ─────────────────────────────────────────────
+
+interface FavoritesData {
+  ids: string[];           // app id (catalog) を順序付きで保持
+  updatedAt: string;       // ISO timestamp
+}
+
+const MAX_FAVORITES = 20;
+
+app.get('/api/auth/favorites', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  const raw = await c.env.USERS.get(`favorites:${payload.email}`);
+  if (!raw) {
+    // 初期状態: 空リスト
+    return c.json({ ids: [], updatedAt: '' });
+  }
+  try {
+    const data = JSON.parse(raw) as FavoritesData;
+    return c.json({
+      ids: Array.isArray(data.ids) ? data.ids : [],
+      updatedAt: data.updatedAt || '',
+    });
+  } catch {
+    return c.json({ ids: [], updatedAt: '' });
+  }
+});
+
+app.put('/api/auth/favorites', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload) return c.json({ error: 'Invalid token' }, 401);
+
+  let body: { ids?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid JSON' }, 400);
+  }
+
+  // バリデーション: 配列・全要素 string・上限内・重複排除
+  if (!Array.isArray(body.ids)) {
+    return c.json({ error: 'ids must be an array' }, 400);
+  }
+  const cleaned: string[] = [];
+  for (const v of body.ids) {
+    if (typeof v !== 'string') continue;
+    if (v.length === 0 || v.length > 64) continue;
+    // セキュリティ: app id は英数小文字とハイフンのみ許可
+    if (!/^[a-z0-9-]+$/.test(v)) continue;
+    if (cleaned.includes(v)) continue;
+    cleaned.push(v);
+    if (cleaned.length >= MAX_FAVORITES) break;
+  }
+
+  const data: FavoritesData = {
+    ids: cleaned,
+    updatedAt: new Date().toISOString(),
+  };
+  await c.env.USERS.put(`favorites:${payload.email}`, JSON.stringify(data));
+
+  return c.json({ ok: true, ids: cleaned, updatedAt: data.updatedAt });
+});
+
+// ─────────────────────────────────────────────
 // GET /api/auth/quota?app=separator — Read-only quota status
 // Used by UI to show "あと X 回" before user initiates a job.
 // Does NOT consume the quota.

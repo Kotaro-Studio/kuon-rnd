@@ -7,6 +7,7 @@ import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { MyAppsSection } from '@/components/MyAppsSection';
 import { MemberJourneyCard } from '@/components/MemberJourneyCard';
+import { FavoritesCard } from '@/components/FavoritesCard';
 import type { PlanTier } from '@/app/lib/pricing-display';
 
 const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
@@ -602,6 +603,10 @@ export default function MyPage() {
           userCreatedAt={user.createdAt}
           planTier={user.plan}
         />
+
+        {/* ─── ★IQ180 リテンション機能★ お気に入りアプリ (Phase 2・2026-04-27) ─── */}
+        {/* よく使うアプリを「自分の道具箱」化。所有感を生み、解約率を下げる。 */}
+        <FavoritesCard userPlan={(user.plan as PlanTier | 'free' | undefined) ?? 'free'} />
 
         {/* ─── Avatar + Name Card ─── */}
         <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: '1.2rem', position: 'relative' }}>
