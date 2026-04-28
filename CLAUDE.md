@@ -3415,4 +3415,119 @@ Worker デプロイで「**Current Version ID**」が出ることを必ず確認
 8. 学生が URL クリック → Stripe Checkout → HALF50 → STUDENT_30_12MO 自動切替
 ```
 
+### 44.10 クォータ最適化 + AI アプリ実装計画（2026-04-28 確定）
+
+#### Symphony / Concerto クォータ調整（保守的スタート版）
+
+事業構造的にサーバーコスト/MRR 比率を 10-15% に収めるため、AI クォータを保守的に設定。
+**「後から増やせるが減らせない」原則**に基づき、初期はあえて少なめにスタート。
+
+| アプリ | 旧 Symphony | **新 Symphony** | 旧 Concerto | **新 Concerto** | 比率 (S/C) |
+|---|---|---|---|---|---|
+| SEPARATOR | 月 150 回 | **月 35 回** | 月 20 回 | **月 15 回** | **2.33×** |
+| TRANSCRIBER | 月 200 回 | **月 60 回** | 月 30 回 | 月 30 回 | 2.0× |
+| INTONATION | ほぼ無制限 | ほぼ無制限 | ほぼ無制限 | ほぼ無制限 | ∞ |
+| HARMONY 等 CPU 系 | ほぼ無制限 | ほぼ無制限 | 月 30 回 | 月 30 回 | ∞ |
+
+**市場比較（2026-04-28 時点）**：
+
+| サービス | 価格帯 | 月間分離数 | 1 回単価 | ポジション |
+|---|---|---|---|---|
+| LALAL.AI Lite | $10/月 | 約 22 回 | ¥66 | 分離特化 |
+| LALAL.AI Plus | $15/月 | 約 75 回 | ¥30 | 分離特化 |
+| Audioshake Pro | $20/月 | 100 回 | ¥30 | 分離特化 |
+| Moises Pro | $10/月 | 無制限 | — | バンドル |
+| **Kuon Concerto** | ¥1,480/月 | **15 回** | ¥99 | **33 アプリバンドル** |
+| **Kuon Symphony** | ¥2,480/月 | **35 回** | ¥71 | **33 アプリバンドル** |
+
+純粋分離単価では Kuon は LALAL.AI より割高だが、Kuon の対象は**音楽教育・プロ志望個人**で、譜起こし/和声/聴音/楽典/DAW 等 33 アプリのバンドル価値で勝負する設計。
+
+**設計思想**:
+- UI 表記 (`PLAN_QUOTAS`) と Worker 内部 cap (`APP_QUOTAS_TIER`) を **完全一致**（透明性・隠しバッファ廃止）
+- 「Concerto の 2.5 倍」というシンプルな比率で**数字のマジック**を効かせる（絶対値ではなく比率で上位プラン感を演出）
+- CPU 系 (HARMONY / CHORD / INTONATION) は Symphony 「ほぼ無制限」で**ブランド価値**を維持
+- GPU 系 (SEPARATOR / TRANSCRIBER) のみ明確な上限で**コスト保護**
+
+#### 改訂後の経済性
+
+**Concerto ¥1,480/月（separator 月 15 回）**:
+
+| 利用パターン | サーバー費 | Stripe (3.6%) | 純利 | 粗利率 |
+|---|---|---|---|---|
+| 平均（50% 使用）| ¥124 | ¥53 | ¥1,303 | **88.0%** |
+| 最悪（100% 使用）| ¥248 | ¥53 | ¥1,179 | **79.7%** |
+
+**Symphony ¥2,480/月（separator 月 35 回）**:
+
+| 利用パターン | サーバー費 | Stripe (3.6%) | 純利 | 粗利率 |
+|---|---|---|---|---|
+| 平均（50% 使用）| ¥252 | ¥89 | ¥2,139 | **86.3%** |
+| 最悪（100% 使用）| ¥504 | ¥89 | ¥1,887 | **76.1%** |
+
+**最悪ケースでも粗利率 76-80%** = 全プランで SaaS 健全水準を大きく上回る。
+今後ユーザー実態を見て**増やす方向の調整のみ**を行う（減らさない原則）。
+
+#### Enterprise / Maestro プランは新設しない（恒久決定）
+
+- **Enterprise**: ¥9,800 帯の業務向けプランは作らない。理由：このセグメント (大量利用が必要なプロ) は既に ProTools / iZotope / Cedar 等の老舗ソフトを使っており、新興 AI に乗り換える動機がない。獲得コスト > LTV
+- **Maestro (¥1,980)**: Concerto と Symphony の中間プランも作らない。理由：プラン数増加 = 認知負荷増。シンプルさを保つ
+- 4 プラン体制 (Free / Prelude / Concerto / Symphony) を恒久維持
+
+#### AI アプリ実装先の分類
+
+ブラウザ完結 / GCP Cloud Run (CPU) / Replicate API (GPU) の 3 階層で開発計画を整理。
+
+##### 🟢 GCP Cloud Run（CPU・¥2-3/use）
+
+軽量 Python 処理に最適。$300 無料クレジット + 月 200 万リクエスト無料枠。
+
+| アプリ名 | 技術 | 用途 |
+|---|---|---|
+| KUON HARMONY | music21 | 和声分析・対位法チェック |
+| KUON INTONATION ANALYZER | CREPE / pyin | セント精度ピッチ分析 |
+| KUON CHORD ANALYZER | madmom / chromagram | リアルタイム和音検出 |
+| KUON PERFORMANCE COMPARATOR | DTW + feature extraction | プロ演奏との比較分析 |
+| KUON SCORE FOLLOWER | HMM (WebSocket) | リアルタイム楽譜追従 |
+| KUON BREATH PRO | 高度呼吸解析 | 管楽器・声楽の呼吸質評価 |
+| KUON RHYTHM ANALYZER | Onset + tempo | リズム精度の客観評価 |
+| KUON VIBRATO ANALYZER | FFT + envelope | ビブラート速度・深さ・規則性 |
+
+##### 🔴 Replicate API（GPU・¥6-12/use）
+
+重 GPU モデル。常時 GPU 起動コストを避けて pay-per-second。
+
+| アプリ名 | モデル | 単価 | 用途 |
+|---|---|---|---|
+| KUON SEPARATOR ✅稼働中 | Demucs v4 | ¥6-8/use | ステム分離 (4-stem) |
+| KUON TRANSCRIBER | Whisper large-v3 | ¥10/時間音声 | 高精度書き起こし |
+| KUON SCORE GENERATOR | basic-pitch → MusicXML | ¥6/use | 音源 → 楽譜 PDF |
+| KUON KARAOKE | Demucs vocals + pitch shift | ¥10/use | 自動カラオケ生成 |
+| KUON LESSON RECORDER | Whisper + pyannote | ¥15/時間 | レッスン録音書き起こし |
+| KUON CLASSICAL SEPARATOR (Phase 4) | 6-stem 専用モデル | ¥10/use | クラシック特化分離 |
+
+##### ⚪ ブラウザ完結（コスト ¥0）
+
+現在 33 アプリ + 拡張余地 5-10 アプリ → 最大 **38-43 アプリ無料運営可能**。
+
+#### 24 ヶ月後の到達像
+
+| 指標 | 目標値 |
+|---|---|
+| 総アプリ数 | **50-57** |
+| AI アプリ（サーバー処理） | 14（GCP 8 + Replicate 6） |
+| ブラウザ完結 | 36-43 |
+| サーバーコスト/MRR | **12-15%**（クォータ最適化後） |
+| 粗利率（Symphony） | **76-80%** |
+| 粗利率（全体平均） | **80-83%** |
+
+#### 開発フェーズ（IQ180 推奨順）
+
+| Phase | 期間 | アプリ |
+|---|---|---|
+| Phase 1 | 〜3 ヶ月 | KUON SEPARATOR (✅) + KUON HARMONY + KUON INTONATION ANALYZER |
+| Phase 2 | 4-6 ヶ月 | KUON TRANSCRIBER + KUON SCORE GENERATOR |
+| Phase 3 | 7-12 ヶ月 | KUON SCORE FOLLOWER + KUON CHORD ANALYZER + KUON PERFORMANCE COMPARATOR |
+| Phase 4 | 13-18 ヶ月 | KUON LESSON RECORDER + KUON KARAOKE + KUON CLASSICAL SEPARATOR |
+| Phase 5 | 18+ ヶ月 | ブラウザ拡張群 (SPECTRUM PRO / LOUDNESS METER 等) |
+
 詳細仕様・改良候補・既知の制約はすべて `空音開発/halo-system-spec.md` に集約。

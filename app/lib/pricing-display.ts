@@ -325,13 +325,15 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
     },
   },
   concerto: {
+    // 2026-04-28 保守的スタート: 月20→15。後から増やせるが減らせない原則。
+    // LALAL.AI Plus ($15/月で約75回) より少ないが、Kuon は 33 アプリバンドルで勝負
     separator: {
-      ja: 'AI音源分離: 月20回',
-      en: 'AI separation: 20/mo',
-      es: 'Separación IA: 20/mes',
-      ko: 'AI 분리: 월 20회',
-      pt: 'Separação IA: 20/mês',
-      de: 'KI-Trennung: 20/Mo',
+      ja: 'AI音源分離: 月15回',
+      en: 'AI separation: 15/mo',
+      es: 'Separación IA: 15/mes',
+      ko: 'AI 분리: 월 15회',
+      pt: 'Separação IA: 15/mês',
+      de: 'KI-Trennung: 15/Mo',
     },
     transcriber: {
       ja: '譜起こし: 月30回',
@@ -351,22 +353,26 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
     },
   },
   symphony: {
-    // 2026-04-27 Opus 廃止に伴い Symphony を最上位プランに昇格・枠を増加
+    // 2026-04-28 保守的スタート版:
+    //   旧: separator 150 / transcriber 200 → 最悪ケースで MRR の 27% を消費する設計
+    //   新: separator 35  / transcriber 60  → 粗利率 76-86% を維持
+    // 「Concerto 月15回 / Symphony 月35回」= 約 2.3 倍比率で数字のマジック
+    // 後から増やせるが減らせない原則のため、初期は絞る
     separator: {
-      ja: 'AI音源分離: 月150回',
-      en: 'AI separation: 150/mo',
-      es: 'Separación IA: 150/mes',
-      ko: 'AI 분리: 월 150회',
-      pt: 'Separação IA: 150/mês',
-      de: 'KI-Trennung: 150/Mo',
+      ja: 'AI音源分離: 月35回',
+      en: 'AI separation: 35/mo',
+      es: 'Separación IA: 35/mes',
+      ko: 'AI 분리: 월 35회',
+      pt: 'Separação IA: 35/mês',
+      de: 'KI-Trennung: 35/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月200回',
-      en: 'Transcription: 200/mo',
-      es: 'Transcripción: 200/mes',
-      ko: '채보: 월 200회',
-      pt: 'Transcrição: 200/mês',
-      de: 'Notation: 200/Mo',
+      ja: '譜起こし: 月60回',
+      en: 'Transcription: 60/mo',
+      es: 'Transcripción: 60/mes',
+      ko: '채보: 월 60회',
+      pt: 'Transcrição: 60/mês',
+      de: 'Notation: 60/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: 無制限 + 優先処理',

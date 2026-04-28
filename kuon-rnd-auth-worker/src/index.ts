@@ -228,10 +228,16 @@ function quotaFor(appName: string, plan: 'free' | 'student' | 'pro'): number {
 
 type QuotaPlan = 'free' | 'prelude' | 'concerto' | 'symphony' | 'opus';
 
+// 2026-04-28 サーバーコスト健全化 + 保守的スタート (CLAUDE.md §44.10)
+//   旧: Symphony separator 120 / transcribe 80
+//   新: Symphony separator 35  / transcribe 60
+//   原則: 「後から増やせるが減らせない」のため初期は絞る
+// 設計思想: UI 表記 (PLAN_QUOTAS) と完全一致 (隠しバッファ廃止・透明性)
+// Concerto 15 / Symphony 35 = 約 2.3 倍比率で「最上位プラン感」を心理的に演出
 const APP_QUOTAS_TIER: Record<string, Record<QuotaPlan, number>> = {
-  separator:  { free: 0, prelude: 15, concerto: 60,  symphony: 120, opus: 500 },
-  transcribe: { free: 0, prelude: 15, concerto: 40,  symphony: 80,  opus: 250 },
-  intonation: { free: 0, prelude: 30, concerto: 50,  symphony: 100, opus: 200 }, // ほぼ無制限の内部 cap
+  separator:  { free: 0, prelude: 2,  concerto: 15, symphony: 35, opus: 300 },
+  transcribe: { free: 0, prelude: 5,  concerto: 30, symphony: 60, opus: 300 },
+  intonation: { free: 0, prelude: 30, concerto: 50, symphony: 100, opus: 200 }, // ほぼ無制限の内部 cap
 };
 
 /**
