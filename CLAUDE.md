@@ -3285,4 +3285,83 @@ Worker デプロイで「**Current Version ID**」が出ることを必ず確認
 - [ ] `/mypage` で DAW 等の Prelude+ アプリにアクセスできる（オーナーオーバーライド確認）
 - [ ] Opus 用の直接 Checkout API 叩き（`{ plan: 'opus', cycle: 'monthly' }`）が 410 Gone で弾かれる
 
+### 44.8 教師経由学生クーポンの 2 段階適用ロジック（HALF50 → STUDENT_30_12MO 自動切替）
+
+教師経由で来た学生に**初月 50% off + 月 2-13 を 30% off**の最大インセンティブを与えるため、Stripe Checkout 単独では実現できない 2 段階適用を Webhook で実装。
+
+#### 設計判断（IQ180）
+
+| 観点 | 選択 | 根拠 |
+|---|---|---|
+| 初月の活性化 | HALF50 (¥740) で「破格」帯に到達 | Weber-Fechner 法則：50% off 以下は対数的に活性化が逓減 |
+| 月 2-12 の継続 | STUDENT_30_12MO (¥1,036/月) | 学生 LTV を最大化 |
+| 単純な月 1 スタック (¥296〜518) | 採用しない | 実装コスト 10 倍・ブランド「投げ売り感」のリスク |
+| Subscription Schedule カスタム Checkout | 採用しない | 4-6 時間の重い実装 |
+| **HALF50 → STUDENT 自動切替（webhook）** | **採用** | 30 行・30 分・Stripe Checkout で完結 |
+
+#### タイムライン
+
+```
+月 0 (Checkout):
+  Worker: HALF50_{TIER} を attach
+        + subscription.metadata に teacherEmail / teacherPromoCode / pendingStudentSwitch='1' を保存
+  Customer: ¥740 (Concerto) / ¥390 (Prelude) を支払い
+
+月 1 (initial billing):
+  Stripe: invoice.paid Webhook 発火 (billing_reason='subscription_create')
+  Worker: subscription.metadata.pendingStudentSwitch === '1' を確認
+        → stripe.subscriptions.update(id, { discounts: [{ coupon: 'STUDENT_30_12MO' }] })
+        → metadata.pendingStudentSwitch = '0' でフラグクリア (冪等性確保)
+
+月 2-13:
+  Stripe: STUDENT_30_12MO 適用中 (duration: repeating, duration_in_months: 12)
+  Customer: ¥1,036 (Concerto) / ¥546 (Prelude) を毎月支払い
+
+月 14:
+  Stripe: STUDENT_30_12MO 自動失効 (12 ヶ月経過)
+  Customer: 通常価格 ¥1,480 (Concerto) / ¥780 (Prelude) に自動回復
+```
+
+#### 12 ヶ月顧客支払い試算
+
+| プラン | 月 1 | 月 2-12 | 12 ヶ月計 | 通常 12 ヶ月 | 節約 |
+|---|---|---|---|---|---|
+| Prelude | ¥390 | ¥546 × 11 = ¥6,006 | **¥6,396** | ¥9,360 | ¥2,964 (-32%) |
+| Concerto | ¥740 | ¥1,036 × 11 = ¥11,396 | **¥12,136** | ¥17,760 | ¥5,624 (-32%) |
+
+#### Worker 実装箇所
+
+| ファイル | 関数 / 場所 | 役割 |
+|---|---|---|
+| `kuon-rnd-auth-worker/src/index.ts` | `app.post('/api/auth/stripe/checkout')` | HALF50 を attach + `metadata.pendingStudentSwitch='1'` を埋め込み |
+| `kuon-rnd-auth-worker/src/index.ts` | `handleInvoicePaid()` | invoice.paid イベント受信時に Subscription を STUDENT_30_12MO へ切替 |
+
+#### エッジケース
+
+| ケース | 挙動 |
+|---|---|
+| HALF50 利用済みユーザーが教師コード使用 | HALF50 が attach されない → 直接 STUDENT_30_12MO を Promotion Code 経由で attach (1 段階で完了) |
+| 年額契約 + 教師コード | HALF50 は monthly 限定なので skip → 直接 STUDENT_30_12MO attach |
+| 初回請求支払い失敗 | サブスク `incomplete` 状態 → invoice.paid 未発火 → pendingStudentSwitch フラグ残存 → 後の成功時に再試行 |
+| Webhook 失敗 (Stripe API エラー) | フラグ '0' に書き換えない → Stripe の自動リトライで再試行 |
+| 既存課金者が教師コード使用試行 | Stripe Promotion Code の `first_time_transaction: true` で自動ブロック |
+| 教師コード期限切れ | Worker 側のコード検証で空を返す → HALF50 のみ適用 (フォールバック) |
+
+#### attribution データ
+
+`subscription.metadata` に以下が永続記録される:
+- `teacherEmail`: 紹介元教師の email
+- `teacherPromoCode`: Stripe Promotion Code ID (例: `promo_xxx`)
+- `studentSwitchedAt`: STUDENT_30_12MO に切替えたタイムスタンプ
+
+将来 `/teacher` ダッシュボード実装時に、教師ごとの紹介数・転換数・MRR 寄与の集計に使う。
+
+#### `/admin/coupons` ダッシュボード上の解説
+
+割引ロジックの解説セクションをダッシュボードに常設。営業時に教師に説明する際、いつでも参照可能:
+- タイムライン (月 1 / 月 2-13 / 月 14 の 3 段階表示)
+- 12 ヶ月顧客支払い試算表 (Prelude / Concerto)
+- 教師への説明テンプレート (コピペで使える文面)
+- 技術的詳細 (折りたたみ details: エッジケース 6 件)
+
 詳細仕様・改良候補・既知の制約はすべて `空音開発/halo-system-spec.md` に集約。

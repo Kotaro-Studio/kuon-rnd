@@ -232,6 +232,117 @@ export default function AdminCouponsPage() {
           </div>
         </div>
 
+        {/* ── 割引ロジック解説 (営業時の参照用) ── */}
+        <div className="admin-card" style={{ background: '#1e293b', borderRadius: 12, padding: '1.5rem', border: '1px solid #334155', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontFamily: serif, fontSize: '1.1rem', fontWeight: 400, color: '#f8fafc', marginTop: 0, marginBottom: '0.5rem' }}>
+            💡 教師に説明する割引ロジック
+          </h2>
+          <p style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 0, marginBottom: '1.2rem', lineHeight: 1.6 }}>
+            教師が学生にコードを渡すとき、以下の流れで割引が自動適用されます。営業時の説明用に常時このページから参照できます。
+          </p>
+
+          {/* タイムライン */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.8rem', marginBottom: '1.2rem' }}>
+            {[
+              {
+                label: '月 1（初月）',
+                title: '50% OFF',
+                color: '#34d399',
+                desc: 'HALF50 適用。Concerto なら ¥740、Prelude なら ¥390。「ほぼお試し」価格で活性化',
+                tag: 'Checkout 時に自動適用',
+              },
+              {
+                label: '月 2 〜 13',
+                title: '30% OFF × 12 ヶ月',
+                color: '#7dd3fc',
+                desc: 'STUDENT_30_12MO に自動切替。Concerto ¥1,036 / Prelude ¥546 が 12 ヶ月続く',
+                tag: '初回請求支払い後に Webhook が自動切替',
+              },
+              {
+                label: '月 14 〜',
+                title: '通常価格',
+                color: '#a78bfa',
+                desc: 'Concerto ¥1,480 / Prelude ¥780 に自動回復。学生は習慣化済みなので解約率低め',
+                tag: 'Stripe duration_in_months: 12 で自動',
+              },
+            ].map((s) => (
+              <div key={s.label} style={{ background: '#0f172a', borderRadius: 10, padding: '1rem', border: `1px solid ${s.color}33` }}>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', letterSpacing: '0.08em', marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: s.color, marginBottom: 6, fontFamily: mono }}>{s.title}</div>
+                <div style={{ fontSize: '0.75rem', color: '#cbd5e1', lineHeight: 1.6, marginBottom: 8 }}>{s.desc}</div>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', fontStyle: 'italic' }}>⚙ {s.tag}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 12 ヶ月支払い額の試算表 */}
+          <div style={{ background: '#0f172a', borderRadius: 10, padding: '1rem', border: '1px solid #334155', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#7dd3fc', letterSpacing: '0.06em', marginBottom: '0.6rem' }}>
+              12 ヶ月の顧客支払い試算
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', fontSize: '0.78rem', borderCollapse: 'collapse', fontFamily: mono }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #334155', color: '#64748b' }}>
+                    <th style={{ padding: '0.4rem 0.5rem', textAlign: 'left', fontSize: '0.7rem', fontWeight: 600 }}>プラン</th>
+                    <th style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontSize: '0.7rem', fontWeight: 600 }}>月 1</th>
+                    <th style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontSize: '0.7rem', fontWeight: 600 }}>月 2-12</th>
+                    <th style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontSize: '0.7rem', fontWeight: 600 }}>12ヶ月計</th>
+                    <th style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontSize: '0.7rem', fontWeight: 600 }}>節約額</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                    <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>Prelude</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#34d399' }}>¥390</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#7dd3fc' }}>¥546 × 11</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#f8fafc', fontWeight: 700 }}>¥6,396</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#fbbf24' }}>¥2,964</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>Concerto</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#34d399' }}>¥740</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#7dd3fc' }}>¥1,036 × 11</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#f8fafc', fontWeight: 700 }}>¥12,136</td>
+                    <td style={{ padding: '0.5rem', textAlign: 'right', color: '#fbbf24' }}>¥5,624</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.6rem', fontStyle: 'italic' }}>
+              ※ 通常 12 ヶ月支払い額: Prelude ¥9,360 / Concerto ¥17,760。学割で最大 32% お得
+            </div>
+          </div>
+
+          {/* 教師への説明スクリプト */}
+          <div style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.06), rgba(56,189,248,0.04))', borderRadius: 10, padding: '1rem', border: '1px solid rgba(167,139,250,0.25)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#a78bfa', letterSpacing: '0.06em', marginBottom: '0.6rem' }}>
+              📣 教師への説明テンプレート
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.7, margin: 0 }}>
+              「先生の学生さん専用に発行するコードです。学生さんがこの URL をクリックして購入すると、<br />
+              <strong style={{ color: '#34d399' }}>初月は 50% オフ、その後 12 ヶ月間 30% オフ</strong>がずっと続きます。<br />
+              先生のお名前のコードなので、学生さんから「○○先生のおかげで安く使えてる」と感じてもらえる仕組みです。<br />
+              先生から学生さんへの紹介数は私たちのダッシュボードで把握しているので、何かあれば気軽にお声がけください。」
+            </p>
+          </div>
+
+          {/* エッジケース */}
+          <details style={{ marginTop: '1rem' }}>
+            <summary style={{ fontSize: '0.75rem', color: '#64748b', cursor: 'pointer', padding: '0.4rem 0' }}>
+              ▼ 技術的詳細・エッジケース
+            </summary>
+            <ul style={{ fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.7, marginTop: '0.5rem', paddingLeft: '1.2rem' }}>
+              <li><strong>2 段階適用の仕組み</strong>: Stripe は 1 サブスクに 1 クーポンしか持てないため、初回請求支払い後に Webhook が <code style={{ color: '#7dd3fc' }}>HALF50_*</code> から <code style={{ color: '#7dd3fc' }}>STUDENT_30_12MO</code> へ自動切替</li>
+              <li><strong>HALF50 の二重利用防止</strong>: 一度使うと <code style={{ color: '#7dd3fc' }}>half50:&lt;email&gt;</code> フラグが立ち再利用不可。教師コード経由で再加入しようとしても初月割引は付かず、直接 STUDENT_30_12MO が attach される</li>
+              <li><strong>年額契約の場合</strong>: HALF50 は monthly のみ。年額 + 教師コードなら STUDENT_30_12MO が直接 attach される（年額に 50% off は深すぎるため）</li>
+              <li><strong>初回請求が失敗した場合</strong>: <code style={{ color: '#7dd3fc' }}>pendingStudentSwitch</code> フラグが残るため、後で支払いが成功した時点で再試行される</li>
+              <li><strong>教師コードの first_time_transaction 制限</strong>: 既存課金者は教師コードで Checkout できない (Stripe 側で自動ブロック)。これは抜け道塞ぎ</li>
+              <li><strong>attribution の保持</strong>: <code style={{ color: '#7dd3fc' }}>subscription.metadata.teacherEmail</code> に教師の email が記録される。将来 <code style={{ color: '#7dd3fc' }}>/teacher</code> ダッシュボードで集計予定</li>
+            </ul>
+          </details>
+        </div>
+
         {/* Stats */}
         {data && (
           <div className="admin-card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.8rem', marginBottom: '1.5rem' }}>

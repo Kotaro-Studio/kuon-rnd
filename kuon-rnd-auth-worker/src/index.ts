@@ -570,18 +570,82 @@ async function handleSubscriptionDeleted(env: Env, event: Stripe.Event): Promise
 }
 
 /**
- * invoice.paid: 支払い成功記録。
- * 現状は log のみ。LTV トラッキングは後日実装。
+ * invoice.paid: 支払い成功記録 + 教師経由学生クーポンの 2 段階適用
+ *
+ * 教師経由学生クーポン (CLAUDE.md §44.4 / §44.8):
+ *   月 0 Checkout: HALF50 を attach (50% off 月 1)
+ *   月 1 ここ: 初回請求支払い完了 → STUDENT_30_12MO に切替 (30% off × 12 months 開始)
+ *   月 14: 自動的に通常価格に回復 (Stripe duration_in_months: 12 で実現)
+ *
+ * 切替条件:
+ *   subscription.metadata.pendingStudentSwitch === '1'
+ *   AND invoice.billing_reason === 'subscription_create' (初回請求のみ)
+ *   AND subscription.status === 'active' (支払い成功で active 状態)
+ *
+ * 失敗時: log のみ。Stripe 側で自動リトライされる Webhook なので、
+ * 後続のイベントで成功する。冪等性は metadata.pendingStudentSwitch を
+ * '0' に書き換えることで担保。
  */
 async function handleInvoicePaid(env: Env, event: Stripe.Event): Promise<void> {
   const invoice = event.data.object as Stripe.Invoice;
   const stripeCustomerId = extractCustomerId(invoice.customer ?? null);
+
   console.log(
     '[webhook:invoice.paid]',
     stripeCustomerId,
     'amount=', invoice.amount_paid,
     'currency=', invoice.currency,
+    'reason=', invoice.billing_reason,
   );
+
+  // 初回請求のみ処理 (subscription_create = 新規サブスク作成時の最初の請求)
+  if (invoice.billing_reason !== 'subscription_create') return;
+
+  // Subscription ID を取得 (新しい Stripe API では parent.subscription_details に格納)
+  type InvoiceWithLegacySub = Stripe.Invoice & { subscription?: string | { id: string } | null };
+  const inv = invoice as InvoiceWithLegacySub;
+  const subFromParent = invoice.parent?.subscription_details?.subscription;
+  const subscriptionId =
+    typeof subFromParent === 'string'
+      ? subFromParent
+      : subFromParent?.id ||
+        (typeof inv.subscription === 'string' ? inv.subscription : inv.subscription?.id) ||
+        '';
+  if (!subscriptionId) return;
+
+  const stripe = getStripe(env);
+
+  let sub: Stripe.Subscription;
+  try {
+    sub = await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (err) {
+    console.error('[webhook:invoice.paid] retrieve sub failed:', err);
+    return;
+  }
+
+  // 教師経由スイッチが pending か確認
+  const pending = sub.metadata?.pendingStudentSwitch;
+  if (pending !== '1') return;
+
+  const teacherEmail = sub.metadata?.teacherEmail || '';
+  console.log('[webhook:invoice.paid] applying STUDENT_30_12MO to', subscriptionId, 'teacher=', teacherEmail);
+
+  // Subscription に STUDENT_30_12MO を attach + フラグをクリア (冪等性確保)
+  // Stripe SDK v22+: 単一 coupon の場合は discounts: [{ coupon }] または直接 coupon フィールド使用可
+  try {
+    await stripe.subscriptions.update(subscriptionId, {
+      discounts: [{ coupon: COUPON_IDS.student_30_12mo }],
+      metadata: {
+        ...sub.metadata,
+        pendingStudentSwitch: '0',
+        studentSwitchedAt: new Date().toISOString(),
+      },
+    });
+    console.log('[webhook:invoice.paid] STUDENT_30_12MO attached, subscription=', subscriptionId);
+  } catch (err) {
+    console.error('[webhook:invoice.paid] STUDENT_30_12MO attach failed:', err);
+    // 失敗時はフラグを '0' に書き換えない → 次の機会に再試行
+  }
 }
 
 /**
@@ -2657,20 +2721,27 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     await updateUserStripe(c.env, email, { stripeCustomerId });
   }
 
-  // ── Discount 戦略 (CLAUDE.md §44.4 教師経由学生クーポンに対応) ──
-  // Stripe Checkout は `discounts` (事前 attach) と `allow_promotion_codes` (入力欄) が排他的。
-  // ここでは事前 attach のみを使う。優先順位:
-  //   1. URL ?coupon=XXX 経由の Promotion Code (例: ASAHINA-30 → STUDENT_30_12MO 30% × 12mo)
-  //   2. HALF50 (初月 50% off × 全プラン・初回のみ・monthly 限定)
-  // Promotion Code が validate できれば HALF50 は skip (排他的・学生クーポンが圧倒的に有利)。
+  // ── Discount 戦略 (CLAUDE.md §44.4 + §44.8 教師経由学生クーポンの 2 段階適用) ──
+  //
+  // Stripe Checkout は単一サブスクに 1 つの discount しか持てないため、
+  // 「初月 50% off + 月 2-12 30% off」を実現するには 2 段階適用が必要:
+  //
+  //   月 0 (Checkout): HALF50 を attach (初月 50% off)
+  //   月 1 (invoice.paid Webhook): STUDENT_30_12MO に切替 → 月 2-13 が 30% off
+  //   月 14: 自動的に通常価格に回復
+  //
+  // 教師コードがあるなら subscription.metadata に pendingStudentSwitch='1' と
+  // teacherPromoCode / teacherEmail を保存。Webhook がこれを見て切替を実行する。
+  //
   // discounts 配列は { coupon } または { promotion_code } のいずれか 1 件のみ。
   const discounts: Array<{ coupon: string } | { promotion_code: string }> = [];
   let appliedTeacherEmail = '';
   let appliedPromoCodeId = '';
+  let pendingStudentSwitch = false;
   let half50Applied = false;
 
+  // 1. 教師 Promotion Code 検証 (発見できれば後でスイッチするフラグを立てる)
   if (requestedCouponCode && /^[A-Z0-9-]{3,50}$/.test(requestedCouponCode)) {
-    // URL coupon: Stripe で active な Promotion Code を引いて検証
     try {
       const found = await stripe.promotionCodes.list({
         code: requestedCouponCode,
@@ -2681,20 +2752,18 @@ app.post('/api/auth/stripe/checkout', async (c) => {
         const promo = found.data[0];
         appliedPromoCodeId = promo.id;
         appliedTeacherEmail = (promo.metadata?.teacherEmail as string) || '';
-        discounts.push({ promotion_code: promo.id });
-        console.log('[checkout] promo code applied:', requestedCouponCode, '→', promo.id, 'teacher=', appliedTeacherEmail);
+        pendingStudentSwitch = true;
+        console.log('[checkout] teacher code validated:', requestedCouponCode, 'teacher=', appliedTeacherEmail, '→ will switch after first invoice');
       } else {
-        console.log('[checkout] promo code not found or inactive:', requestedCouponCode);
-        // 見つからなくても致命傷ではない: HALF50 にフォールバック
+        console.log('[checkout] teacher code not found or inactive:', requestedCouponCode);
       }
     } catch (err) {
-      console.error('[checkout] promo lookup failed:', err);
-      // 失敗時もフォールバック (Stripe 一時エラー等で購入を妨げない)
+      console.error('[checkout] teacher code lookup failed:', err);
     }
   }
 
-  // Promotion Code が attach されなかった場合のみ HALF50 にフォールバック
-  if (discounts.length === 0 && billingCycle === 'monthly') {
+  // 2. HALF50 を attach (初月 50% off・全顧客対象・初回のみ・monthly 限定)
+  if (billingCycle === 'monthly') {
     const alreadyUsed = await hasUsedHalf50(c.env, email);
     if (!alreadyUsed) {
       const couponMap = COUPON_IDS.half50 as Record<string, string>;
@@ -2708,6 +2777,15 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     }
   }
 
+  // 3. HALF50 が attach できなかった場合 (annual or HALF50 利用済み) で
+  //    教師コードがある場合は、Promotion Code を直接 attach (1 段階で済ませる)
+  //    この場合 pendingStudentSwitch は不要 (既に attach 済み)
+  if (discounts.length === 0 && pendingStudentSwitch && appliedPromoCodeId) {
+    discounts.push({ promotion_code: appliedPromoCodeId });
+    pendingStudentSwitch = false;
+    console.log('[checkout] direct STUDENT_30_12MO attach (no HALF50 eligibility)');
+  }
+
   // Checkout Session 作成
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
@@ -2719,13 +2797,15 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     cancel_url: 'https://kuon-rnd.com/pricing?canceled=true',
     // metadata で Webhook 側のユーザー特定を確実に
     // half50Applied は checkout.completed Webhook で half50-used フラグを立てる判定用
-    // teacherPromoCode / teacherEmail は教師経由学生クーポンの attribution 追跡用 (将来集計)
+    // pendingStudentSwitch='1' は invoice.paid Webhook で STUDENT_30_12MO 切替を実行する判定用
+    // teacherPromoCode / teacherEmail は教師経由学生クーポンの attribution 追跡用
     metadata: {
       userEmail: email,
       planTier,
       billingCycle,
       pricingRegion: region,
       half50Applied: half50Applied ? '1' : '0',
+      pendingStudentSwitch: pendingStudentSwitch ? '1' : '0',
       teacherPromoCode: appliedPromoCodeId,
       teacherEmail: appliedTeacherEmail,
     },
@@ -2736,6 +2816,7 @@ app.post('/api/auth/stripe/checkout', async (c) => {
         billingCycle,
         pricingRegion: region,
         half50Applied: half50Applied ? '1' : '0',
+        pendingStudentSwitch: pendingStudentSwitch ? '1' : '0',
         teacherPromoCode: appliedPromoCodeId,
         teacherEmail: appliedTeacherEmail,
       },
