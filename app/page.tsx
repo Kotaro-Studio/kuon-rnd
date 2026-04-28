@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
@@ -27,6 +27,23 @@ const HomePage: React.FC = () => {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [yearly, setYearly] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState<string | null>(null);
+  // 教師経由学生クーポン (CLAUDE.md §44.4): URL ?coupon=XXX または localStorage に保存済み
+  // ハイドレーション安全のため初期値は null。useEffect 内でクライアント側のみ取得。
+  const [activeCouponCode, setActiveCouponCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem('kuon_pending_coupon');
+      if (stored) {
+        const parsed = JSON.parse(stored) as { code?: string; capturedAt?: number };
+        const age = Date.now() - (parsed.capturedAt ?? 0);
+        if (parsed.code && age < 30 * 24 * 60 * 60 * 1000) {
+          setActiveCouponCode(parsed.code);
+        }
+      }
+    } catch { /* silent */ }
+  }, []);
 
   // 多通貨対応: 言語に応じて表示通貨が切替わる (Stripe Phase 4 currency_options と整合)
   // ja → JPY / en → USD / es → USD (LatAm) / de → EUR / ko & pt → USD
@@ -68,10 +85,27 @@ const HomePage: React.FC = () => {
         window.location.href = '/auth/login';
         return;
       }
+      // 教師経由学生クーポン: localStorage に保存された ?coupon=XXX を Checkout に同梱
+      // (CLAUDE.md §44.4) Worker 側で Promotion Code を解決して STUDENT_30_12MO を attach
+      let couponCode: string | undefined;
+      try {
+        const stored = localStorage.getItem('kuon_pending_coupon');
+        if (stored) {
+          const parsed = JSON.parse(stored) as { code?: string; capturedAt?: number };
+          // 30 日 TTL: 古い情報は無視
+          const age = Date.now() - (parsed.capturedAt ?? 0);
+          if (parsed.code && age < 30 * 24 * 60 * 60 * 1000) {
+            couponCode = parsed.code;
+          } else {
+            localStorage.removeItem('kuon_pending_coupon');
+          }
+        }
+      } catch { /* silent */ }
+
       const checkoutRes = await fetch('/api/auth/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, cycle }),
+        body: JSON.stringify({ plan, cycle, couponCode }),
       });
       if (!checkoutRes.ok) {
         const err = (await checkoutRes.json().catch(() => ({}))) as { error?: string; message?: string };
@@ -575,6 +609,51 @@ const HomePage: React.FC = () => {
             de: 'Die meisten Browser-Apps sind ab Free zugänglich. KI-Tools ab Prelude.',
           }, lang)}
         </p>
+        {/* 教師経由学生クーポン適用中バナー (CLAUDE.md §44.4) */}
+        {activeCouponCode && (
+          <div style={{
+            maxWidth: 720, margin: '0 auto 2rem',
+            padding: '1rem 1.4rem',
+            background: 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(56,189,248,0.06))',
+            border: '1px solid #34d399',
+            borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: '0.75rem', flexWrap: 'wrap',
+          }}>
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#059669', letterSpacing: '0.08em', marginBottom: 4 }}>
+                🎓 {t5({ ja: '学生クーポン適用中', en: 'Student coupon applied', es: 'Cupón de estudiante aplicado', ko: '학생 쿠폰 적용 중', pt: 'Cupom de estudante aplicado', de: 'Studenten-Gutschein angewendet' }, lang)}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: '#0f172a' }}>
+                <code style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: 4, fontFamily: '"SF Mono", monospace', fontSize: '0.85rem', fontWeight: 700 }}>
+                  {activeCouponCode}
+                </code>
+                <span style={{ marginLeft: 8, color: '#64748b' }}>
+                  {t5({
+                    ja: '— Prelude / Concerto に 30% off × 12 ヶ月が自動適用されます',
+                    en: '— 30% off × 12 months on Prelude / Concerto applied automatically',
+                    es: '— 30% de descuento × 12 meses en Prelude / Concerto aplicado automáticamente',
+                    ko: '— Prelude / Concerto 에 30% 할인 × 12 개월 자동 적용',
+                    pt: '— 30% off × 12 meses em Prelude / Concerto aplicado automaticamente',
+                    de: '— 30% Rabatt × 12 Monate auf Prelude / Concerto wird automatisch angewendet',
+                  }, lang)}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') localStorage.removeItem('kuon_pending_coupon');
+                setActiveCouponCode(null);
+              }}
+              style={{ padding: '4px 10px', background: 'transparent', border: '1px solid #94a3b8', borderRadius: 6, color: '#64748b', fontSize: '0.7rem', cursor: 'pointer', fontFamily: sans }}
+              aria-label="Remove coupon"
+            >
+              {t5({ ja: '使わない', en: 'Remove', es: 'Quitar', ko: '제거', pt: 'Remover', de: 'Entfernen' }, lang)}
+            </button>
+          </div>
+        )}
+
         {/* Billing toggle — 2ヶ月無料 */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginBottom: '3rem', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.9rem', color: yearly ? '#94a3b8' : '#0f172a', fontWeight: yearly ? 400 : 600, transition: 'color 0.2s ease' }}>

@@ -2599,9 +2599,11 @@ app.post('/api/auth/stripe/checkout', async (c) => {
   }
 
   // リクエスト body 検証
-  const body = await c.req.json<{ plan?: string; cycle?: string }>().catch(() => ({} as { plan?: string; cycle?: string }));
+  const body = await c.req.json<{ plan?: string; cycle?: string; couponCode?: string }>().catch(() => ({} as { plan?: string; cycle?: string; couponCode?: string }));
   const plan = body.plan;
   const cycle = body.cycle;
+  // 教師経由学生クーポン (CLAUDE.md §44.4): URL ?coupon=XXX 経由で運ばれた Promotion Code
+  const requestedCouponCode = (body.couponCode || '').trim().toUpperCase();
 
   if (!plan || !['prelude', 'concerto', 'symphony', 'opus'].includes(plan)) {
     return c.json({ error: 'Invalid plan' }, 400);
@@ -2655,18 +2657,51 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     await updateUserStripe(c.env, email, { stripeCustomerId });
   }
 
-  // HALF50 Coupon を attach (monthly + 全プラン対応 + 初回のみ)
-  // 2026-04-25 切替: FIRST100 (Concerto/Symphony で赤字) → HALF50 (全プラン黒字)
-  // annual は対象外 (年額に 50% off は深すぎるため)
-  // 2026-04-26 抜け道塞ぎ: 1 ユーザー 1 回のみ。再加入では attach しない。
-  const discounts: { coupon: string }[] = [];
-  if (billingCycle === 'monthly') {
+  // ── Discount 戦略 (CLAUDE.md §44.4 教師経由学生クーポンに対応) ──
+  // Stripe Checkout は `discounts` (事前 attach) と `allow_promotion_codes` (入力欄) が排他的。
+  // ここでは事前 attach のみを使う。優先順位:
+  //   1. URL ?coupon=XXX 経由の Promotion Code (例: ASAHINA-30 → STUDENT_30_12MO 30% × 12mo)
+  //   2. HALF50 (初月 50% off × 全プラン・初回のみ・monthly 限定)
+  // Promotion Code が validate できれば HALF50 は skip (排他的・学生クーポンが圧倒的に有利)。
+  // discounts 配列は { coupon } または { promotion_code } のいずれか 1 件のみ。
+  const discounts: Array<{ coupon: string } | { promotion_code: string }> = [];
+  let appliedTeacherEmail = '';
+  let appliedPromoCodeId = '';
+  let half50Applied = false;
+
+  if (requestedCouponCode && /^[A-Z0-9-]{3,50}$/.test(requestedCouponCode)) {
+    // URL coupon: Stripe で active な Promotion Code を引いて検証
+    try {
+      const found = await stripe.promotionCodes.list({
+        code: requestedCouponCode,
+        active: true,
+        limit: 1,
+      });
+      if (found.data.length > 0) {
+        const promo = found.data[0];
+        appliedPromoCodeId = promo.id;
+        appliedTeacherEmail = (promo.metadata?.teacherEmail as string) || '';
+        discounts.push({ promotion_code: promo.id });
+        console.log('[checkout] promo code applied:', requestedCouponCode, '→', promo.id, 'teacher=', appliedTeacherEmail);
+      } else {
+        console.log('[checkout] promo code not found or inactive:', requestedCouponCode);
+        // 見つからなくても致命傷ではない: HALF50 にフォールバック
+      }
+    } catch (err) {
+      console.error('[checkout] promo lookup failed:', err);
+      // 失敗時もフォールバック (Stripe 一時エラー等で購入を妨げない)
+    }
+  }
+
+  // Promotion Code が attach されなかった場合のみ HALF50 にフォールバック
+  if (discounts.length === 0 && billingCycle === 'monthly') {
     const alreadyUsed = await hasUsedHalf50(c.env, email);
     if (!alreadyUsed) {
       const couponMap = COUPON_IDS.half50 as Record<string, string>;
       const couponId = couponMap[planTier];
       if (couponId) {
         discounts.push({ coupon: couponId });
+        half50Applied = true;
       }
     } else {
       console.log('[checkout] HALF50 skipped (already used):', email, planTier);
@@ -2684,12 +2719,15 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     cancel_url: 'https://kuon-rnd.com/pricing?canceled=true',
     // metadata で Webhook 側のユーザー特定を確実に
     // half50Applied は checkout.completed Webhook で half50-used フラグを立てる判定用
+    // teacherPromoCode / teacherEmail は教師経由学生クーポンの attribution 追跡用 (将来集計)
     metadata: {
       userEmail: email,
       planTier,
       billingCycle,
       pricingRegion: region,
-      half50Applied: discounts.length > 0 ? '1' : '0',
+      half50Applied: half50Applied ? '1' : '0',
+      teacherPromoCode: appliedPromoCodeId,
+      teacherEmail: appliedTeacherEmail,
     },
     subscription_data: {
       metadata: {
@@ -2697,7 +2735,9 @@ app.post('/api/auth/stripe/checkout', async (c) => {
         planTier,
         billingCycle,
         pricingRegion: region,
-        half50Applied: discounts.length > 0 ? '1' : '0',
+        half50Applied: half50Applied ? '1' : '0',
+        teacherPromoCode: appliedPromoCodeId,
+        teacherEmail: appliedTeacherEmail,
       },
     },
     // 顧客ロケール (Stripe が自動で言語を判定)
@@ -2713,7 +2753,10 @@ app.post('/api/auth/stripe/checkout', async (c) => {
     'cycle=', billingCycle,
     'region=', region,
     'priceId=', priceId,
-    'coupons=', discounts.map((d) => d.coupon).join(','),
+    'discount=', discounts.length > 0
+      ? ('coupon' in discounts[0] ? `coupon:${discounts[0].coupon}` : `promo:${discounts[0].promotion_code}`)
+      : 'none',
+    'teacherEmail=', appliedTeacherEmail,
   );
 
   return c.json({

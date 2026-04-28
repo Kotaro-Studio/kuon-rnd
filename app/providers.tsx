@@ -105,11 +105,44 @@ function TokenRefresher() {
   return null;
 }
 
+/**
+ * Capture promotion code from URL (?coupon=XXX) and store in localStorage.
+ * Used by 教師経由学生クーポン (CLAUDE.md §44.4): teachers share kuon-rnd.com/?coupon=ASAHINA-30
+ * → student lands on the site → coupon stays sticky for 30 days
+ * → next subscribe action auto-applies STUDENT_30_12MO via Stripe Checkout.
+ *
+ * Storage:
+ *   localStorage 'kuon_pending_coupon' = JSON { code, capturedAt }
+ *   TTL 30 days (sufficient for student to think about it before purchasing)
+ */
+function CouponCapture() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const q = new URLSearchParams(window.location.search);
+      const code = q.get('coupon');
+      if (!code) return;
+
+      // Validate format: A-Z, 0-9, hyphen, 3-50 chars
+      const norm = code.trim().toUpperCase();
+      if (!/^[A-Z0-9-]{3,50}$/.test(norm)) return;
+
+      // Store with timestamp for TTL check at consumption time
+      localStorage.setItem(
+        'kuon_pending_coupon',
+        JSON.stringify({ code: norm, capturedAt: Date.now() }),
+      );
+    } catch { /* silent */ }
+  }, []);
+  return null;
+}
+
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <LangProvider>
       <PageviewTracker />
       <TokenRefresher />
+      <CouponCapture />
       {children}
     </LangProvider>
   );
