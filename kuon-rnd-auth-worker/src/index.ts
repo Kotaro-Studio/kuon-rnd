@@ -937,13 +937,24 @@ app.get('/api/auth/me', async (c) => {
   if (!raw) return c.json({ error: 'User not found' }, 404);
 
   const user: UserData = JSON.parse(raw);
+
+  // ── Owner override (2026-04-28) ──
+  // 空音開発オーナー (369@kotaroasahina.com) は自動的に最上位 Symphony 扱い。
+  // 自分のサービスを使うのに自分が課金する必要はない。canUseApp() / quota 判定すべてに反映される。
+  const isOwner = user.email === '369@kotaroasahina.com';
+  const effectivePlanTier = isOwner ? 'symphony' : (user.planTier || 'free');
+
   return c.json({
     email: user.email,
     name: user.name,
     instrument: user.instrument,
     region: user.region,
     bio: user.bio,
-    plan: user.plan,
+    plan: user.plan,                            // legacy backward compat
+    planTier: effectivePlanTier,                // 新形式 (フロントが参照)
+    isOwner,
+    subscriptionStatus: user.subscriptionStatus || 'none',
+    cancelAtPeriodEnd: user.cancelAtPeriodEnd || false,
     badges: user.badges,
     createdAt: user.createdAt,
     appUsage: user.appUsage,
@@ -1388,7 +1399,9 @@ app.post('/api/auth/usage/track', async (c) => {
   const next = current + 1;
 
   // クォータ取得 (server app のみ強制チェック)
-  const planValue = user.planTier || user.plan || 'free';
+  // Owner override: 369@kotaroasahina.com は Symphony 相当 (2026-04-28)
+  const isOwner = user.email === '369@kotaroasahina.com';
+  const planValue = isOwner ? 'symphony' : (user.planTier || user.plan || 'free');
   const limit = quotaForTier(appName, planValue);
   const isServer = isServerApp(appName);
 
@@ -1441,7 +1454,9 @@ app.get('/api/auth/usage/me', async (c) => {
   const user = ensureStripeFields(JSON.parse(raw));
 
   const month = currentMonth();
-  const planValue = user.planTier || user.plan || 'free';
+  // Owner override: 369@kotaroasahina.com は Symphony 相当 (2026-04-28)
+  const isOwner = user.email === '369@kotaroasahina.com';
+  const planValue = isOwner ? 'symphony' : (user.planTier || user.plan || 'free');
   const prefix = `usage:${payload.email}:${month}:`;
 
   // KV scan で当月使用したアプリを全部取得
@@ -1506,7 +1521,9 @@ app.post('/api/auth/usage/check', async (c) => {
   const key = usageKey(payload.email, month, appName);
   const valueStr = await c.env.SESSIONS.get(key);
   const used = valueStr ? parseInt(valueStr, 10) : 0;
-  const planValue = user.planTier || user.plan || 'free';
+  // Owner override: 369@kotaroasahina.com は Symphony 相当として扱う (2026-04-28)
+  const isOwner = user.email === '369@kotaroasahina.com';
+  const planValue = isOwner ? 'symphony' : (user.planTier || user.plan || 'free');
   const limit = quotaForTier(appName, planValue);
   const isServer = isServerApp(appName);
 
@@ -1717,6 +1734,9 @@ app.get('/api/auth/admin/users', async (c) => {
   }
 
   const search = (c.req.query('search') || '').toLowerCase();
+  // 旧 plan ('free' | 'student' | 'pro') と 新 planTier ('free' | 'prelude' | 'concerto' | 'symphony') の両対応。
+  // 新 planTier フィルタ優先。なければ legacy plan フィルタを使う。
+  const planTierFilter = c.req.query('planTier') || '';
   const planFilter = c.req.query('plan') || '';
   const page = parseInt(c.req.query('page') || '1', 10);
   const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 100);
@@ -1764,19 +1784,31 @@ app.get('/api/auth/admin/users', async (c) => {
     );
   }
 
-  if (planFilter && ['free', 'student', 'pro'].includes(planFilter)) {
+  // planTier フィルタを優先 (新形式)
+  if (planTierFilter && ['free', 'prelude', 'concerto', 'symphony', 'opus'].includes(planTierFilter)) {
+    filtered = filtered.filter(u => (u.planTier || 'free') === planTierFilter);
+  } else if (planFilter && ['free', 'student', 'pro'].includes(planFilter)) {
+    // 旧 plan フィルタ (backward compat)
     filtered = filtered.filter(u => u.plan === planFilter);
   }
 
   // Sort by createdAt descending (newest first)
   filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  // Stats
+  // Stats: 旧 plan + 新 planTier の両方を返す
+  const tierCount = (tier: string) => allUsers.filter(u => (u.planTier || 'free') === tier).length;
   const stats = {
     total: allUsers.length,
+    // legacy fields (backward compat)
     free: allUsers.filter(u => u.plan === 'free').length,
     student: allUsers.filter(u => u.plan === 'student').length,
     pro: allUsers.filter(u => u.plan === 'pro').length,
+    // new tier-based fields
+    tierFree: tierCount('free'),
+    tierPrelude: tierCount('prelude'),
+    tierConcerto: tierCount('concerto'),
+    tierSymphony: tierCount('symphony'),
+    tierOpus: tierCount('opus'), // legacy 互換のため残すが LP からは消えている
     filtered: filtered.length,
   };
 
@@ -1791,7 +1823,10 @@ app.get('/api/auth/admin/users', async (c) => {
       name: u.name,
       instrument: u.instrument,
       region: u.region,
-      plan: u.plan,
+      plan: u.plan,                            // legacy plan (backward compat)
+      planTier: u.planTier || 'free',          // 新 tier (admin UI で使う)
+      subscriptionStatus: u.subscriptionStatus || 'none',
+      cancelAtPeriodEnd: u.cancelAtPeriodEnd || false,
       badges: u.badges,
       createdAt: u.createdAt,
       lastLoginAt: u.lastLoginAt,
@@ -1827,21 +1862,50 @@ app.put('/api/auth/admin/plan', async (c) => {
     return c.json({ error: 'Forbidden' }, 403);
   }
 
-  const { email, plan } = await c.req.json<{ email: string; plan: string }>();
-  if (!email || !['free', 'student', 'pro'].includes(plan)) {
-    return c.json({ error: 'Invalid email or plan' }, 400);
-  }
+  // 新形式 (planTier) と旧形式 (plan) の両方を受け付ける。
+  // planTier 優先。両方なし → 400。
+  const body = await c.req.json<{ email: string; plan?: string; planTier?: string }>();
+  const { email } = body;
+  if (!email) return c.json({ error: 'Invalid email' }, 400);
 
   const userKey = `user:${email.toLowerCase().trim()}`;
   const raw = await c.env.USERS.get(userKey);
   if (!raw) return c.json({ error: 'User not found' }, 404);
 
   const user: UserData = JSON.parse(raw);
-  const oldPlan = user.plan;
-  user.plan = plan as 'free' | 'student' | 'pro';
+  const oldTier = user.planTier || 'free';
+  const oldPlan = user.plan || 'free';
+
+  // 新 planTier が来たら、それを正として両フィールドを更新
+  if (body.planTier && ['free', 'prelude', 'concerto', 'symphony', 'opus'].includes(body.planTier)) {
+    const newTier = body.planTier as PlanTier;
+    user.planTier = newTier;
+    user.plan = legacyPlanFromTier(newTier);
+  } else if (body.plan && ['free', 'student', 'pro'].includes(body.plan)) {
+    // 旧 plan のみが来た場合は legacy フィールドのみ更新 (backward compat)
+    user.plan = body.plan as 'free' | 'student' | 'pro';
+  } else {
+    return c.json({ error: 'Invalid plan or planTier' }, 400);
+  }
+
   await c.env.USERS.put(userKey, JSON.stringify(user));
 
-  return c.json({ ok: true, email: user.email, oldPlan, newPlan: user.plan });
+  // Showcase favorites を tier 変更に追従させる (Phase 2.5)
+  const newTier = user.planTier || 'free';
+  if (newTier !== oldTier && newTier !== 'free') {
+    await ensureShowcaseFavorites(c.env, user.email, newTier).catch((err) => {
+      console.error('[admin:plan] ensureShowcaseFavorites failed', err);
+    });
+  }
+
+  return c.json({
+    ok: true,
+    email: user.email,
+    oldPlan,
+    newPlan: user.plan,
+    oldPlanTier: oldTier,
+    newPlanTier: user.planTier,
+  });
 });
 
 // ─────────────────────────────────────────────

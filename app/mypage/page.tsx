@@ -174,7 +174,12 @@ const LANGUAGES = [
 // ─────────────────────────────────────────────
 interface UserData {
   email: string; name: string; instrument: string; region: string; bio: string;
-  plan: string; badges: string[]; createdAt: string;
+  plan: string;                                // legacy backward compat ('free' | 'student' | 'pro')
+  planTier?: PlanTier | 'free';                // 新形式 (Worker /api/auth/me が返す)
+  isOwner?: boolean;                            // owner override flag (369@kotaroasahina.com)
+  subscriptionStatus?: string;
+  cancelAtPeriodEnd?: boolean;
+  badges: string[]; createdAt: string;
   appUsage: Record<string, number>; appUsageMonth: string;
   role: string; roleCategory: string; customRoleName: string;
   birthDate: string; showBirthDate: boolean;
@@ -601,14 +606,14 @@ export default function MyPage() {
           userName={user.name || ''}
           userEmail={user.email || ''}
           userCreatedAt={user.createdAt}
-          planTier={user.plan}
+          planTier={user.planTier || user.plan}
         />
 
         {/* ─── ★IQ180 リテンション機能★ お気に入りアプリ (Phase 2・2026-04-27) ─── */}
         {/* よく使うアプリを「自分の道具箱」化。所有感を生み、解約率を下げる。
             appUsage 連携で「よく使ってるけど未登録」のアプリを自動おすすめ表示。 */}
         <FavoritesCard
-          userPlan={(user.plan as PlanTier | 'free' | undefined) ?? 'free'}
+          userPlan={(user.planTier as PlanTier | 'free' | undefined) ?? 'free'}
           appUsage={user.appUsage}
         />
 
@@ -929,7 +934,7 @@ export default function MyPage() {
         {/* ─── ★最重要★ あなたが使えるアプリ可視化 (Phase 1C・2026-04-26) ─── */}
         <div style={cardStyle}>
           <MyAppsSection
-            userPlan={(user.plan as PlanTier | 'free' | undefined) ?? 'free'}
+            userPlan={(user.planTier as PlanTier | 'free' | undefined) ?? 'free'}
             isLoggedIn={true}
           />
         </div>

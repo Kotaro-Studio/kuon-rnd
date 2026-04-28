@@ -35,14 +35,33 @@ const COUNTRY_NAMES: Record<string, string> = {
   CL: 'Chile', CO: 'Colombia', PE: 'Peru', XX: 'Unknown',
 };
 
+// 新 tier system (2026-04-28〜)：planTier が正、plan は backward compat。
+// Opus は §41/§42 で暫定廃止だが、過去ユーザー保護のため UI に残す。
+type PlanTier = 'free' | 'prelude' | 'concerto' | 'symphony' | 'opus';
+
 interface UserInfo {
   email: string; name: string; instrument: string; region: string;
-  plan: 'free' | 'student' | 'pro'; badges: string[];
+  plan: 'free' | 'student' | 'pro';        // legacy backward compat
+  planTier: PlanTier;                       // 新形式 (admin はこちらを使う)
+  subscriptionStatus?: string;
+  cancelAtPeriodEnd?: boolean;
+  badges: string[];
   createdAt: string; lastLoginAt: string;
   appUsage: Record<string, number>; appUsageMonth: string;
   country: string; city: string;
 }
-interface Stats { total: number; free: number; student: number; pro: number; filtered: number; }
+interface Stats {
+  total: number;
+  // legacy plan counts (backward compat)
+  free: number; student: number; pro: number;
+  // new tier counts
+  tierFree: number;
+  tierPrelude: number;
+  tierConcerto: number;
+  tierSymphony: number;
+  tierOpus: number;
+  filtered: number;
+}
 interface UsersResponse { users: UserInfo[]; stats: Stats; page: number; totalPages: number; limit: number; }
 interface PageviewDay { date: string; total: number; countries: Record<string, number>; pages: Record<string, number>; referrers?: Record<string, number>; utm?: Record<string, number>; }
 interface PageviewResponse { days: PageviewDay[]; summary: { totalViews: number; countries: Record<string, number>; topPages: [string, number][]; referrers?: Record<string, number>; utm?: Record<string, number>; }; }
@@ -53,7 +72,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<UsersResponse | null>(null);
   const [search, setSearch] = useState('');
-  const [planFilter, setPlanFilter] = useState('');
+  // 新 tier filter (planTier クエリパラメータで送る)
+  const [tierFilter, setTierFilter] = useState<'' | PlanTier>('');
   const [page, setPage] = useState(1);
   const [fetchError, setFetchError] = useState('');
   const [changingPlan, setChangingPlan] = useState<string | null>(null);
@@ -81,14 +101,14 @@ export default function AdminPage() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      if (planFilter) params.set('plan', planFilter);
+      if (tierFilter) params.set('planTier', tierFilter);
       params.set('page', String(page));
       params.set('limit', '50');
       const res = await fetch(`/api/auth/admin/users?${params.toString()}`);
       if (!res.ok) { const err = await res.json(); setFetchError(err.error || 'Failed to fetch'); return; }
       setData(await res.json());
     } catch { setFetchError('Network error'); } finally { setLoading(false); }
-  }, [search, planFilter, page]);
+  }, [search, tierFilter, page]);
 
   // Fetch 30 days for 1d / 7d / 30d
   const fetchPageviews = useCallback(async () => {
@@ -101,11 +121,20 @@ export default function AdminPage() {
 
   useEffect(() => { if (authed) { fetchUsers(); fetchPageviews(); } }, [authed, fetchUsers, fetchPageviews]);
 
-  const handlePlanChange = async (email: string, newPlan: string) => {
-    if (!confirm(`${email} のプランを ${newPlan} に変更しますか？`)) return;
+  // 新 tier system でプラン変更を送信。Worker 側が planTier を受け取ると
+  // legacy plan も自動的に同期される。
+  const handleTierChange = async (email: string, newTier: PlanTier) => {
+    const TIER_LABELS: Record<PlanTier, string> = {
+      free: 'Free', prelude: 'Prelude', concerto: 'Concerto', symphony: 'Symphony', opus: 'Opus',
+    };
+    if (!confirm(`${email} のプランを ${TIER_LABELS[newTier]} に変更しますか？\n（既存の Stripe サブスクには影響しません。手動オーバーライドのみ）`)) return;
     setChangingPlan(email);
     try {
-      const res = await fetch('/api/auth/admin/plan', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, plan: newPlan }) });
+      const res = await fetch('/api/auth/admin/plan', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, planTier: newTier }),
+      });
       if (res.ok) fetchUsers(); else { const err = await res.json(); alert(err.error || 'Failed'); }
     } catch { alert('Network error'); } finally { setChangingPlan(null); }
   };
@@ -185,14 +214,24 @@ export default function AdminPage() {
   const formatDate = (iso: string) => { if (!iso) return '\u2014'; const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
   const formatTime = (iso: string) => { if (!iso) return ''; const d = new Date(iso); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
-  const planBadge = (plan: string) => {
-    const colors: Record<string, { bg: string; text: string }> = {
-      free: { bg: '#f1f5f9', text: '#64748b' },
-      student: { bg: '#dbeafe', text: '#1d4ed8' },
-      pro: { bg: '#fef3c7', text: '#d97706' },
+  // 新 tier ベースのバッジ。Opus は legacy 残留ユーザー専用 (公開 LP からは削除済み)
+  const tierBadge = (tier: PlanTier) => {
+    const colors: Record<PlanTier, { bg: string; text: string }> = {
+      free:     { bg: '#1e293b', text: '#94a3b8' },
+      prelude:  { bg: '#0c4a6e', text: '#7dd3fc' },
+      concerto: { bg: '#5b21b6', text: '#c4b5fd' },
+      symphony: { bg: '#831843', text: '#f9a8d4' },
+      opus:     { bg: '#78350f', text: '#fcd34d' },
     };
-    const c = colors[plan] || colors.free;
-    return <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', background: c.bg, color: c.text, textTransform: 'uppercase' }}>{plan}</span>;
+    const c = colors[tier] || colors.free;
+    return (
+      <span style={{
+        display: 'inline-block', padding: '2px 10px', borderRadius: 20,
+        fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.06em',
+        background: c.bg, color: c.text, textTransform: 'uppercase',
+        border: `1px solid ${c.text}33`,
+      }}>{tier}</span>
+    );
   };
 
   // ─── Unknown country display helper ───
@@ -297,14 +336,18 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* ═══════ Stats Cards (1d / 7d / 30d) ═══════ */}
+        {/* ═══════ Stats Cards (新 tier system) ═══════ */}
         {data?.stats && (
           <div className="admin-card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', marginBottom: '1.5rem', animationDelay: '.05s' }}>
             {[
               { label: '全ユーザー', value: data.stats.total, color: '#f8fafc', icon: '👥' },
-              { label: 'Free', value: data.stats.free, color: '#94a3b8', icon: '' },
-              { label: 'Student', value: data.stats.student, color: '#60a5fa', icon: '' },
-              { label: 'Pro', value: data.stats.pro, color: '#fbbf24', icon: '' },
+              { label: 'Free', value: data.stats.tierFree ?? data.stats.free, color: '#94a3b8', icon: '' },
+              { label: 'Prelude', value: data.stats.tierPrelude ?? 0, color: '#7dd3fc', icon: '' },
+              { label: 'Concerto', value: data.stats.tierConcerto ?? 0, color: '#c4b5fd', icon: '' },
+              { label: 'Symphony', value: data.stats.tierSymphony ?? 0, color: '#f9a8d4', icon: '' },
+              ...((data.stats.tierOpus ?? 0) > 0
+                ? [{ label: 'Opus (legacy)', value: data.stats.tierOpus ?? 0, color: '#fcd34d', icon: '' }]
+                : []),
               { label: '今日のPV', value: todayPv, color: '#34d399', icon: '' },
               { label: '7日間PV', value: pv7d, color: '#38bdf8', icon: '' },
               { label: '30日間PV', value: pv30d, color: '#a78bfa', icon: '' },
@@ -504,14 +547,21 @@ export default function AdminPage() {
               style={{ flex: 1, padding: '0.6rem 1rem', border: '1px solid #334155', borderRadius: 8, fontSize: '0.85rem', fontFamily: sans, outline: 'none', background: '#0f172a', color: '#e2e8f0' }} />
             <button type="submit" style={{ padding: '0.6rem 1.2rem', background: '#0284c7', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.85rem', cursor: 'pointer', fontFamily: sans }}>検索</button>
           </form>
-          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>プラン:</span>
-            {['', 'free', 'student', 'pro'].map((p) => (
-              <button key={p} onClick={() => { setPlanFilter(p); setPage(1); }}
-                style={{ padding: '0.35rem 0.7rem', border: planFilter === p ? '2px solid #38bdf8' : '1px solid #334155', borderRadius: 6, background: planFilter === p ? 'rgba(56,189,248,0.1)' : '#0f172a', color: planFilter === p ? '#38bdf8' : '#64748b', fontSize: '0.75rem', cursor: 'pointer', fontFamily: sans, fontWeight: planFilter === p ? 600 : 400 }}>
+            {(['', 'free', 'prelude', 'concerto', 'symphony'] as const).map((p) => (
+              <button key={p || 'all'} onClick={() => { setTierFilter(p as '' | PlanTier); setPage(1); }}
+                style={{ padding: '0.35rem 0.7rem', border: tierFilter === p ? '2px solid #38bdf8' : '1px solid #334155', borderRadius: 6, background: tierFilter === p ? 'rgba(56,189,248,0.1)' : '#0f172a', color: tierFilter === p ? '#38bdf8' : '#64748b', fontSize: '0.75rem', cursor: 'pointer', fontFamily: sans, fontWeight: tierFilter === p ? 600 : 400, textTransform: 'capitalize' }}>
                 {p || 'All'}
               </button>
             ))}
+            {/* Opus filter は legacy ユーザーが残っている場合だけ表示 */}
+            {(data?.stats?.tierOpus ?? 0) > 0 && (
+              <button onClick={() => { setTierFilter('opus'); setPage(1); }}
+                style={{ padding: '0.35rem 0.7rem', border: tierFilter === 'opus' ? '2px solid #38bdf8' : '1px solid #334155', borderRadius: 6, background: tierFilter === 'opus' ? 'rgba(56,189,248,0.1)' : '#0f172a', color: tierFilter === 'opus' ? '#38bdf8' : '#64748b', fontSize: '0.75rem', cursor: 'pointer', fontFamily: sans, fontWeight: tierFilter === 'opus' ? 600 : 400 }}>
+                Opus (legacy)
+              </button>
+            )}
           </div>
         </div>
 
@@ -531,7 +581,7 @@ export default function AdminPage() {
         {!loading && data && (
           <>
             <div className="admin-card" style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden', animationDelay: '.25s' }}>
-              {(search || planFilter) && (
+              {(search || tierFilter) && (
                 <div style={{ padding: '0.7rem 1.2rem', borderBottom: '1px solid #334155', fontSize: '0.8rem', color: '#64748b' }}>
                   {data.stats.filtered} 件ヒット / 全 {data.stats.total} ユーザー
                 </div>
@@ -568,7 +618,19 @@ export default function AdminPage() {
                         <td style={{ padding: '0.7rem 0.6rem', whiteSpace: 'nowrap', color: '#94a3b8' }}>
                           {user.instrument || <span style={{ color: '#334155' }}>{'\u2014'}</span>}
                         </td>
-                        <td style={{ padding: '0.7rem 0.6rem' }}>{planBadge(user.plan)}</td>
+                        <td style={{ padding: '0.7rem 0.6rem' }}>
+                          {tierBadge((user.planTier || 'free') as PlanTier)}
+                          {user.subscriptionStatus && user.subscriptionStatus !== 'none' && user.subscriptionStatus !== 'active' && (
+                            <span title={user.subscriptionStatus} style={{ marginLeft: 6, padding: '1px 6px', fontSize: '0.6rem', fontWeight: 700, color: '#fca5a5', background: 'rgba(239,68,68,0.1)', borderRadius: 4, border: '1px solid rgba(239,68,68,0.25)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              {user.subscriptionStatus}
+                            </span>
+                          )}
+                          {user.cancelAtPeriodEnd && (
+                            <span title="サブスク解約予定" style={{ marginLeft: 6, padding: '1px 6px', fontSize: '0.6rem', fontWeight: 700, color: '#fcd34d', background: 'rgba(251,191,36,0.08)', borderRadius: 4, border: '1px solid rgba(251,191,36,0.25)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              cancel↓
+                            </span>
+                          )}
+                        </td>
                         <td style={{ padding: '0.7rem 0.6rem', whiteSpace: 'nowrap', color: '#64748b', fontSize: '0.75rem' }}>{formatDate(user.createdAt)}</td>
                         <td style={{ padding: '0.7rem 0.6rem', whiteSpace: 'nowrap', color: '#64748b', fontSize: '0.75rem' }}>
                           {formatDate(user.lastLoginAt)} <span style={{ color: '#475569' }}>{formatTime(user.lastLoginAt)}</span>
@@ -585,11 +647,17 @@ export default function AdminPage() {
                           ) : <span style={{ color: '#334155' }}>{'\u2014'}</span>}
                         </td>
                         <td style={{ padding: '0.7rem 0.6rem' }}>
-                          <select value={user.plan} onChange={(e) => handlePlanChange(user.email, e.target.value)} disabled={changingPlan === user.email}
+                          <select
+                            value={user.planTier || 'free'}
+                            onChange={(e) => handleTierChange(user.email, e.target.value as PlanTier)}
+                            disabled={changingPlan === user.email}
                             style={{ padding: '0.3rem 0.4rem', border: '1px solid #334155', borderRadius: 6, fontSize: '0.75rem', fontFamily: sans, cursor: changingPlan === user.email ? 'wait' : 'pointer', background: '#0f172a', color: '#94a3b8' }}>
                             <option value="free">Free</option>
-                            <option value="student">Student</option>
-                            <option value="pro">Pro</option>
+                            <option value="prelude">Prelude</option>
+                            <option value="concerto">Concerto</option>
+                            <option value="symphony">Symphony</option>
+                            {/* Opus は新規には選ばせないが、既存ユーザーが Opus なら維持できるよう表示する */}
+                            {user.planTier === 'opus' && <option value="opus">Opus (legacy)</option>}
                           </select>
                         </td>
                       </tr>

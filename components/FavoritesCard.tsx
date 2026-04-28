@@ -602,9 +602,9 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
             style={{
               background: '#fff',
               borderRadius: 14,
-              maxWidth: 640,
+              maxWidth: 760,
               width: '100%',
-              maxHeight: '85vh',
+              maxHeight: '88vh',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -693,41 +693,39 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
               </div>
             </div>
 
-            {/* ── カテゴリタブ (横スクロール) ── */}
+            {/* ── カテゴリタブ (折り返し対応・全カテゴリ常時表示) ── */}
             <div
               style={{
-                padding: '0.6rem 1rem 0.55rem',
+                padding: '0.7rem 1.25rem 0.85rem',
                 borderBottom: '1px solid #f1f5f9',
-                overflowX: 'auto',
-                whiteSpace: 'nowrap',
-                WebkitOverflowScrolling: 'touch',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.4rem',
               }}
             >
-              <div style={{ display: 'inline-flex', gap: '0.4rem', paddingInline: '0.5rem' }}>
-                {/* 「すべて」タブ */}
-                <button
-                  type="button"
-                  onClick={() => setPickerCategory('all')}
-                  style={pickerTabStyle(pickerCategory === 'all')}
-                >
-                  {t3(LABELS.allCategory, lang)} ({allPickerApps.length})
-                </button>
-                {/* 各カテゴリタブ (該当アプリがある場合のみ表示) */}
-                {CATEGORIES.filter((c) => availableCategories.has(c.id)).map((cat) => {
-                  const count = allPickerApps.filter((a: CatalogApp) => a.category === cat.id).length;
-                  const active = pickerCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setPickerCategory(cat.id)}
-                      style={pickerTabStyle(active)}
-                    >
-                      {cat.emoji} {cat.label[lang as keyof typeof cat.label] || cat.label.en} ({count})
-                    </button>
-                  );
-                })}
-              </div>
+              {/* 「すべて」タブ */}
+              <button
+                type="button"
+                onClick={() => setPickerCategory('all')}
+                style={pickerTabStyle(pickerCategory === 'all')}
+              >
+                {t3(LABELS.allCategory, lang)} ({allPickerApps.length})
+              </button>
+              {/* 各カテゴリタブ (該当アプリがある場合のみ表示) */}
+              {CATEGORIES.filter((c) => availableCategories.has(c.id)).map((cat) => {
+                const count = allPickerApps.filter((a: CatalogApp) => a.category === cat.id).length;
+                const active = pickerCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setPickerCategory(cat.id)}
+                    style={pickerTabStyle(active)}
+                  >
+                    {cat.emoji} {cat.label[lang as keyof typeof cat.label] || cat.label.en} ({count})
+                  </button>
+                );
+              })}
             </div>
 
             {/* ── アプリグリッド (検索 × カテゴリ × ロック表示) ── */}

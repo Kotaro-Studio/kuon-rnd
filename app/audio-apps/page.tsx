@@ -1446,7 +1446,8 @@ function WorkflowStack({ stack, lang, accent }: { stack: Stack; lang: Lang; acce
 
 // ─────────────────────────────────────────────
 // Subscription preview (IQ180 — 2026-04-26 改訂)
-// 5 プラン (Free + Prelude + Concerto + Symphony + Opus) ・ 多通貨対応
+// 4 プラン (Free + Prelude + Concerto + Symphony) ・ 多通貨対応
+// Opus は 2026-04-28 に暫定廃止（CLAUDE.md §41 / プラン純化のため）
 // 月払い / 年払い切替 ・ HALF50 初月割引表示
 // 実際の Checkout はホームページ /#pricing に集約
 // ─────────────────────────────────────────────
@@ -1460,15 +1461,14 @@ function SubscriptionPreview({ lang }: { lang: Lang }) {
   const concertoY = getPrice('concerto', 'annual',  currency);
   const symphonyM = getPrice('symphony', 'monthly', currency);
   const symphonyY = getPrice('symphony', 'annual',  currency);
-  const opusM     = getPrice('opus',     'monthly', currency);
-  const opusY     = getPrice('opus',     'annual',  currency);
+  // Opus 価格は backward compat 用に getPrice() に残してあるが、UI からは削除（2026-04-28）
 
   const cycleLabel: L5 = yearly
     ? { ja: '/年', en: '/year', es: '/año', ko: '/년', pt: '/ano', de: '/Jahr' }
     : { ja: '/月', en: '/month', es: '/mes', ko: '/월', pt: '/mês', de: '/Monat' };
 
   type PlanCard = {
-    id: 'free' | 'prelude' | 'concerto' | 'symphony' | 'opus';
+    id: 'free' | 'prelude' | 'concerto' | 'symphony';
     label: L5;
     monthlyAmount: number;
     yearlyAmount: number;
@@ -1527,22 +1527,13 @@ function SubscriptionPreview({ lang }: { lang: Lang }) {
         PLAN_QUOTAS.symphony.separator,
         PLAN_QUOTAS.symphony.transcriber,
         PLAN_QUOTAS.symphony.intonation,
-        { ja: 'ポートフォリオ + 優先処理キュー', en: 'Portfolio + priority queue', es: 'Portafolio + cola prioritaria', ko: '포트폴리오 + 우선 처리 큐', pt: 'Portfólio + fila prioritária', de: 'Portfolio + Prioritäts-Warteschlange' },
+        { ja: '全 33 アプリが無制限・最上位プラン', en: 'All 33 apps unlimited · top tier', es: 'Las 33 apps ilimitadas · plan superior', ko: '전체 33 앱 무제한·최상위 플랜', pt: 'Todos os 33 apps ilimitados · plano superior', de: 'Alle 33 Apps unbegrenzt · Top-Tarif' },
       ],
     },
-    {
-      id: 'opus',
-      label: { ja: 'Opus', en: 'Opus', es: 'Opus', ko: 'Opus', pt: 'Opus', de: 'Opus' },
-      monthlyAmount: opusM,
-      yearlyAmount: opusY,
-      accent: '#d97706',
-      features: [
-        PLAN_QUOTAS.opus.separator,
-        PLAN_QUOTAS.opus.transcriber,
-        PLAN_QUOTAS.opus.intonation,
-        { ja: '業務・教室・スタジオ向け', en: 'Business · Schools · Studios', es: 'Negocios · Escuelas · Estudios', ko: '업무·교실·스튜디오', pt: 'Negócios · Escolas · Estúdios', de: 'Geschäft · Schulen · Studios' },
-      ],
-    },
+    // Opus plan は暫定廃止（2026-04-28）。
+    // 業務スタジオ向けに作っても ProTools/iZotope/Cedar を持つプロは新興 AI に乗り換える動機がない。
+    // Symphony を最上位として個人音楽家プラットフォームを純化する。
+    // 復活する場合は CLAUDE.md §38.1 を要再検討。
   ];
 
   return (

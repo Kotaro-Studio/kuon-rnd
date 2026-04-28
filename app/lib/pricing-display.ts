@@ -225,13 +225,17 @@ export const PLAN_SUBTITLES: Record<PlanTier | 'free', PlanSubtitle> = {
     de: 'Pro / Profi-Einzelperson',
   },
   symphony: {
-    ja: 'Premium / 個人プレミアム',
-    en: 'Premium',
-    es: 'Premium / Premium Individual',
-    ko: 'Premium / 개인 프리미엄',
-    pt: 'Premium / Premium Individual',
-    de: 'Premium / Premium-Einzelperson',
+    // 2026-04-27: Opus 廃止に伴い Symphony が最上位プランへ
+    ja: 'Max / 個人最上位',
+    en: 'Max',
+    es: 'Max / Tope Individual',
+    ko: 'Max / 개인 최상위',
+    pt: 'Max / Top Individual',
+    de: 'Max / Höchste Stufe',
   },
+  // 2026-04-27 暫定廃止: Opus
+  // 理由: 業務スタジオ向けはレッドオーシャン (ProTools/iZotope/Cedar 等の老舗)
+  // 既存サブスクとの互換性のため型は残すが、新規表示には使わない
   opus: {
     ja: 'Max / 業務・教室',
     en: 'Max / Business · Schools',
@@ -347,21 +351,22 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
     },
   },
   symphony: {
+    // 2026-04-27 Opus 廃止に伴い Symphony を最上位プランに昇格・枠を増加
     separator: {
-      ja: 'AI音源分離: 月80回',
-      en: 'AI separation: 80/mo',
-      es: 'Separación IA: 80/mes',
-      ko: 'AI 분리: 월 80회',
-      pt: 'Separação IA: 80/mês',
-      de: 'KI-Trennung: 80/Mo',
+      ja: 'AI音源分離: 月150回',
+      en: 'AI separation: 150/mo',
+      es: 'Separación IA: 150/mes',
+      ko: 'AI 분리: 월 150회',
+      pt: 'Separação IA: 150/mês',
+      de: 'KI-Trennung: 150/Mo',
     },
     transcriber: {
-      ja: '譜起こし: 月100回',
-      en: 'Transcription: 100/mo',
-      es: 'Transcripción: 100/mes',
-      ko: '채보: 월 100회',
-      pt: 'Transcrição: 100/mês',
-      de: 'Notation: 100/Mo',
+      ja: '譜起こし: 月200回',
+      en: 'Transcription: 200/mo',
+      es: 'Transcripción: 200/mes',
+      ko: '채보: 월 200회',
+      pt: 'Transcrição: 200/mês',
+      de: 'Notation: 200/Mo',
     },
     intonation: {
       ja: 'ピッチ分析: 無制限 + 優先処理',

@@ -819,7 +819,7 @@ const HomePage: React.FC = () => {
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', textAlign: 'left', color: '#64748b', fontSize: '0.9rem' }}>
-              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全 33 アプリが無制限・サーバー枠 4 倍', en: 'All 33 apps unlimited · 4× server quota', es: 'Las 33 apps ilimitadas · cuota 4×', ko: '전체 33개 앱 무제한 · 서버 4배', pt: 'Todos 33 apps ilimitados · 4× servidor', de: 'Alle 33 Apps unbegrenzt · 4× Server' }, lang)}</li>
+              <li style={{ marginBottom: '0.75rem' }}>✓ {t5({ ja: '全 33 アプリが無制限・最上位プラン', en: 'All 33 apps unlimited · top tier', es: 'Las 33 apps ilimitadas · plan superior', ko: '전체 33개 앱 무제한 · 최상위 플랜', pt: 'Todos 33 apps ilimitados · top tier', de: 'Alle 33 Apps unbegrenzt · höchste Stufe' }, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.symphony.separator, lang)}</li>
               <li style={{ marginBottom: '0.5rem' }}>✓ {t5(PLAN_QUOTAS.symphony.transcriber, lang)}</li>
               <li style={{ marginBottom: '0.75rem' }}>✓ {t5(PLAN_QUOTAS.symphony.intonation, lang)}</li>
@@ -839,7 +839,12 @@ const HomePage: React.FC = () => {
             </button>
           </div>
 
-          {/* Opus — Business / Enterprise */}
+          {/* 2026-04-27 暫定廃止: Opus
+              理由: 業務スタジオ向け市場はレッドオーシャン (ProTools/iZotope 等老舗)
+              空音開発は音楽家プラットフォームとして Symphony 最上位の方が自然
+              Symphony クォータを底上げして最上位プランに昇格済み
+              Stripe 既存サブスクとの互換性のため型・価格は残存・新規表示しない */}
+          {false && (
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2.5rem 2rem', textAlign: 'center' }}>
             <h3 style={{ fontFamily: sans, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.15rem', color: '#0f172a' }}>Opus</h3>
             <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.85rem', textTransform: 'uppercase', fontWeight: 500 }}>{t5(PLAN_SUBTITLES.opus, lang)}</div>
@@ -908,6 +913,7 @@ const HomePage: React.FC = () => {
                 : t5({ ja: '購入する', en: 'Subscribe', es: 'Suscribirse', ko: '구독', pt: 'Assinar', de: 'Abonnieren' }, lang)}
             </button>
           </div>
+          )}
         </div>
 
         {/* HALF50 初月キャンペーン告知 (月払いの時のみ・全プラン対応) */}
