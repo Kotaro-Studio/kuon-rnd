@@ -193,6 +193,30 @@ export const APP_CATALOG: CatalogApp[] = [
     minPlan: 'prelude',
   },
   {
+    // KUON CLASSICAL ANALYSIS — 2026-04-28 リリース
+    // /harmony (SATB 4音手入力即時チェッカー) と相補的:
+    // /classical は楽曲全体（数百小節）を music21 で一括解析しローマ数字を振る
+    // 600+ 曲のキュレーションライブラリ内蔵 (Bach/Mozart/Haydn/Beethoven 等)
+    // CLAUDE.md §44.11 🟢 safe zone (music21 は MIT 開発・枯れたライブラリ)
+    id: 'classical',
+    name: { ja: 'CLASSICAL ANALYSIS', en: 'CLASSICAL ANALYSIS', es: 'CLASSICAL ANALYSIS' },
+    tagline: {
+      ja: 'バッハ・モーツァルトをローマ数字で自動分析',
+      en: 'Roman numeral analysis of Bach, Mozart, Beethoven',
+      es: 'Análisis con números romanos de Bach, Mozart',
+    },
+    href: '/classical-lp',
+    launchHref: '/classical',
+    emoji: '🎼',
+    category: 'composition',
+    noLogin: false,
+    serverApp: true,           // Cloud Run + music21
+    quotaKey: null,            // クォータは別途追加可能（現状は Concerto+ で無制限想定）
+    badges: ['NEW'],
+    minPlan: 'concerto',
+    releasedAt: '2026-04-28',
+  },
+  {
     id: 'counterpoint',
     name: { ja: 'COUNTERPOINT', en: 'COUNTERPOINT', es: 'COUNTERPOINT' },
     tagline: { ja: '対位法トレーナー', en: 'Counterpoint trainer', es: 'Entrenador de contrapunto' },

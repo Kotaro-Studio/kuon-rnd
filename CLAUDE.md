@@ -3530,4 +3530,188 @@ Worker デプロイで「**Current Version ID**」が出ることを必ず確認
 | Phase 4 | 13-18 ヶ月 | KUON LESSON RECORDER + KUON KARAOKE + KUON CLASSICAL SEPARATOR |
 | Phase 5 | 18+ ヶ月 | ブラウザ拡張群 (SPECTRUM PRO / LOUDNESS METER 等) |
 
+### 44.11 Replicate vs Cloud Run の判定原則（2026-04-28 SEPARATOR デバッグ地獄からの教訓）
+
+#### 背景：絶対に忘れてはいけない事実
+
+2026-04-27〜28 にかけて、SEPARATOR を Cloud Run で安定稼働させようとして**深刻な障害が連続発生**した。記録：
+- メモリ OOM（16GB→32GB 増設で対処）
+- Demucs の `--filename` パターン解析バグ（再現困難）
+- ファイルサイズ・チャンネル数・サンプリングレートで挙動が変わる境界条件多数
+- Cloud Run のリクエストタイムアウトと衝突
+- 結果として**公開停止 + Replicate API 乗せ替え判断**
+
+このデバッグ地獄の本質は **Cloud Run の GPU/CPU 設定の問題ではなく、Demucs 自体の挙動の予測しづらさ**にあった。CPU/GPU を切り替えても同じ問題が再発する。
+
+**この事実は今後のアプリ実装判断において常に思い出すこと。**
+
+#### 判定マトリクス：Replicate vs Cloud Run
+
+| アプリ | 推奨実装先 | 難易度 | エラー頻度予測 | 根拠 |
+|---|---|---|---|---|
+| **KUON SEPARATOR** | 🔴 Replicate 必須 | ★★★★★ | **極高** | Demucs は境界条件で挙動変化・メモリスパイク・出力ディレクトリの罠あり。Cloud Run 化は地獄の再演リスク |
+| **KUON TRANSCRIBER** | 🔴 Replicate 推奨 | ★★★★ | **高** | Whisper-large は GPU 必須・ファイル形式制約あり・長時間音声で時間切れ |
+| **KUON LESSON RECORDER** | 🔴 Replicate 推奨 | ★★★★★ | **極高** | Whisper + pyannote の話者分離は最も複雑・モデル協調必要 |
+| **KUON KARAOKE** | 🔴 Replicate 推奨 | ★★★★ | **高** | Demucs ベース・同一ファミリーの罠を継承 |
+| **KUON CLASSICAL SEPARATOR** | 🔴 Replicate 必須 | ★★★★★ | **極高** | カスタム学習モデル・本番安定化に長期 |
+| **KUON SCORE GENERATOR**（basic-pitch） | 🟡 Cloud Run 中リスク | ★★★ | 中 | MusicXML 出力に境界条件あり・短曲推奨 |
+| **KUON INTONATION ANALYZER**（CREPE/pyin） | 🟡 Cloud Run 中リスク | ★★ | 低-中 | CREPE は重め・短時間処理なら安定 |
+| **KUON SCORE FOLLOWER**（HMM + WebSocket） | 🟡 Cloud Run 中リスク | ★★★★ | 中 | リアルタイム制約・WebSocket 安定化が課題 |
+| **KUON PERFORMANCE COMPARATOR**（DTW） | 🟡 Cloud Run 中リスク | ★★★ | 中 | 特徴抽出に失敗パターンあり |
+| **KUON CHORD ANALYZER**（madmom） | 🟢 Cloud Run 安全 | ★★ | **低** | 数値出力のみ・madmom は枯れたライブラリ |
+| **KUON HARMONY**（music21） | 🟢 Cloud Run 最安全 | ★ | **極低** | MIT 開発の枯れたライブラリ・出力決定的・処理軽量 |
+| **KUON RHYTHM ANALYZER**（librosa） | 🟢 Cloud Run 最安全 | ★ | **極低** | librosa は事実上の業界標準・onset detection は数値出力のみ |
+| **KUON VIBRATO ANALYZER**（FFT/scipy） | 🟢 Cloud Run 最安全 | ★ | **極低** | 純粋な数値計算・境界条件少ない |
+| **KUON KEY DETECTION**（Krumhansl） | 🟢 Cloud Run 最安全 | ★ | **極低** | アルゴリズムが古典的・出力単純 |
+| **KUON TEMPO MAP** | 🟢 Cloud Run 最安全 | ★★ | **極低** | librosa beat tracking は十分テスト済み |
+| **KUON BREATH PRO** | 🟢 Cloud Run 最安全 | ★ | **極低** | DSP envelope tracking のみ |
+
+#### 判定原則（恒久遵守）
+
+##### 🟢 Cloud Run（CPU）に向いているアプリの条件
+
+すべて満たすこと:
+
+1. **入力が音声ファイル単体・出力が数値/JSON/テキスト**（バイナリ生成しない）
+2. **使用ライブラリが枯れている**（librosa / music21 / scipy / madmom 等・GitHub stars 5k+）
+3. **処理時間が 30 秒以内**（Cloud Run リクエストタイムアウトに余裕）
+4. **メモリ消費が予測可能**（4GB 以内で確実に収まる）
+5. **境界条件が少ない**（任意のファイルで「成功 or 失敗が明確」）
+6. **デバッグ容易**（出力が数値なので diff チェック可能）
+
+##### 🔴 Replicate に逃がすべきアプリの条件
+
+いずれか 1 つでも該当:
+
+1. **GPU 推論が必須**（Whisper-large / Demucs / 6-stem 等）
+2. **モデル自体に挙動の予測しづらさがある**（Demucs の出力ディレクトリ・filename pattern 等）
+3. **長時間音声を扱う**（1 時間音声の Whisper 等）
+4. **メモリスパイクが起きる**（複数モデルの協調動作・大ファイル全体読み込み）
+5. **複数のモデルを連携させる**（Whisper + pyannote の話者分離等）
+6. **カスタム学習モデル**（独自の 6-stem 等・本番安定化に時間が必要）
+
+##### 🟡 中間判定（Cloud Run 中リスク）
+
+- まずは Cloud Run で試す
+- 安定化に時間がかかった場合は Replicate に移行する選択肢を維持
+- 本番ローンチ前に十分な負荷テストを実施
+
+#### 開発の心理的安全性
+
+新規アプリを実装する際、私（Claude）はこの判定マトリクスを参照すること。**「動くかもしれない」という楽観論で 🔴 区分のアプリを Cloud Run に持ち込まない**。SEPARATOR の地獄は二度と繰り返さない。
+
+逆に、🟢 区分のアプリは Cloud Run で安心して実装可能。これらは Replicate billing が未解決でも実装・公開できる。
+
+#### 開発順序の修正（リスク回避優先版）
+
+| Phase | 期間 | 推奨アプリ（🟢 区分のみ） |
+|---|---|---|
+| Phase 1（即実装可能・安全） | 〜2 週間 | **KUON CLASSICAL ANALYSIS** ✅ + KUON CHORD ANALYZER + KUON RHYTHM ANALYZER |
+| Phase 2（中リスク・慎重に） | 1-2 ヶ月 | KUON INTONATION ANALYZER + KUON SCORE GENERATOR |
+| Phase 3（中-高リスク・基盤確立後） | 3-6 ヶ月 | KUON PERFORMANCE COMPARATOR + KUON SCORE FOLLOWER |
+| Phase 4（Replicate 区分・billing 解決後） | 6 ヶ月+ | KUON TRANSCRIBER + KUON LESSON RECORDER 等 |
+
+### 44.12 KUON CLASSICAL ANALYSIS（2026-04-28 リリース）
+
+Cloud Run + music21 で実装された**ローマ数字和声分析ツール**。KUON Phase 1 第 1 弾。
+
+#### 既存 /harmony との差別化（重要）
+
+| アプリ | パス | 機能 | 実装方式 |
+|---|---|---|---|
+| KUON HARMONY（既存） | `/harmony` | SATB 4 音手入力リアルタイムチェッカー | ブラウザ完結 |
+| **KUON CLASSICAL ANALYSIS（新）** | `/classical` | **楽曲全体（数百小節）一括解析 + 600+ 曲ライブラリ + ローマ数字** | **Cloud Run + music21** |
+
+両者は重複ではなく**相補的**。HARMONY は瞬間チェック、CLASSICAL は楽曲全体解析。
+
+#### 機能（6 つ）
+
+1. **ローマ数字自動分析** — I-IV-V7-I 形式・副属和音・借用和音・代理和音
+2. **転調マップ** — 楽曲のどこでどの調へ転調したかを時系列で可視化
+3. **声部進行違反検出** — 連続 5/8 度・隠伏 5/8 度・限定進行
+4. **カデンツ自動判定** — 完全/変格/偽/半終止
+5. **キュレーションライブラリ** — Bach 371 コラール・Mozart・Haydn・Beethoven 等 600+ 曲
+6. **Common Practice 全般** — Baroque/Classical/Romantic (1600-1900)
+
+#### 楽譜ライブラリの出所
+
+| Tier | ソース | 内容 | ライセンス |
+|---|---|---|---|
+| 🟢 1 | music21 内蔵 corpus | 600+ 曲（Bach コラール 371 / Mozart / Haydn / Beethoven / Palestrina 等） | BSD/MIT 互換 |
+| 🟢 2 | Mutopia Project | 追加 1,000+ 曲（Chopin / Brahms 等） | Public Domain |
+| 🟢 2 | OpenScore Lieder Corpus | 1,300+ ロマン派リート（Schubert / Schumann） | CC0 |
+| 🟡 3 | IMSLP（手動キュレーション） | 高需要曲のみピンポイント | Public Domain |
+
+実装上は Tier 1（music21 内蔵）だけで Phase 1 リリース可能。`pip install music21` で 600 曲が手元に来る。
+
+#### 関連ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `kuon-classical-service/` | Cloud Run Python サービス（FastAPI + music21） |
+| `kuon-classical-service/Dockerfile` | コンテナイメージ |
+| `kuon-classical-service/src/main.py` | FastAPI エンドポイント |
+| `kuon-classical-service/src/library.py` | music21 corpus インデックスクラス |
+| `kuon-classical-service/src/analysis.py` | ローマ数字・カデンツ・転調検出 |
+| `kuon-classical-service/src/voicing.py` | 声部進行違反検出 |
+| `kuon-classical-service/cloudbuild.yaml` | Cloud Build / Cloud Run 自動デプロイ |
+| `app/api/classical/library/route.ts` | フロント API プロキシ |
+| `app/api/classical/analyze/route.ts` | 同上 |
+| `app/api/classical/analyze-from-library/route.ts` | 同上 |
+| `app/api/classical/check-voicing/route.ts` | 同上 |
+| `app/classical/page.tsx` | メインアプリ UI |
+| `app/classical/layout.tsx` | SEO メタデータ |
+| `app/classical-lp/page.tsx` | LP（多言語完全対応） |
+| `app/classical-lp/layout.tsx` | LP SEO（100+ keywords・JSON-LD × 3） |
+
+#### 環境変数
+
+| 変数 | 登録先 | 用途 |
+|---|---|---|
+| `CLASSICAL_URL` | Cloudflare Pages | Cloud Run サービスの URL（デプロイ後に取得） |
+| `CLASSICAL_SECRET` | Cloudflare Pages + Cloud Run | Bearer 認証用シークレット |
+
+#### デプロイ手順
+
+```bash
+# 1. GCP で Cloud Build を実行（kuon-rnd プロジェクト）
+cd ~/kuon-rnd/kuon-classical-service
+gcloud builds submit --config=cloudbuild.yaml \
+  --substitutions=_CLASSICAL_SECRET="$(openssl rand -hex 32)"
+
+# 2. Cloud Run サービスの URL をコピー（gcr.io/kuon-rnd/kuon-harmony-XXX-an.a.run.app）
+
+# 3. Cloudflare Pages に環境変数を登録
+npx wrangler pages secret put CLASSICAL_URL --project-name kuon-rnd
+npx wrangler pages secret put CLASSICAL_SECRET --project-name kuon-rnd
+
+# 4. フロントを git push（自動ビルド）
+cd ~/kuon-rnd && git add -A && git commit -m "feat: KUON CLASSICAL ANALYSIS launch" && git push
+```
+
+#### 旧 API ルート（/api/harmony/*）の扱い
+
+過去のリネーム作業で生成した `app/api/harmony/*/route.ts` は**410 Gone を返すスタブ**として残存。
+新ルートは `app/api/classical/*` 配下。
+
+#### 経済性（2026-04-28 試算）
+
+| 項目 | 値 |
+|---|---|
+| 1 分析あたりサーバーコスト | ~¥0.01（Cloud Run CPU 200ms） |
+| 10,000 ユーザー × 30 回/月 | ¥3,000/月 |
+| MRR ¥18M に対する比率 | **0.017%** |
+| 粗利率影響 | ほぼゼロ |
+
+CLAUDE.md §44.10 のクォータ最適化と整合。
+
+#### SEO/GEO 最適化
+
+LP `/classical-lp` は以下を完備:
+- **100+ keywords**（6 言語対応：ja/en/es/ko/pt/de）
+- **JSON-LD × 3**（SoftwareApplication / FAQPage / HowTo）
+- **多言語 hreflang**（canonical + alternate languages）
+- **Open Graph + Twitter Card**
+- **AI クローラー（GEO）対策**：明確な FAQ 構造・具体的数字・用語の正規化
+
 詳細仕様・改良候補・既知の制約はすべて `空音開発/halo-system-spec.md` に集約。

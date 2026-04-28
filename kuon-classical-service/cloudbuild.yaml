@@ -1,0 +1,39 @@
+steps:
+  # Build container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/kuon-classical:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/kuon-classical:latest'
+      - '.'
+
+  # Push to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '--all-tags', 'gcr.io/$PROJECT_ID/kuon-classical']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'kuon-classical'
+      - '--image=gcr.io/$PROJECT_ID/kuon-classical:$BUILD_ID'
+      - '--region=asia-northeast1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=60s'
+      - '--max-instances=10'
+      - '--min-instances=0'
+      - '--port=8080'
+      - '--set-env-vars=CLASSICAL_SECRET=${_CLASSICAL_SECRET}'
+
+substitutions:
+  _CLASSICAL_SECRET: 'change-me-via-trigger-substitution'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
