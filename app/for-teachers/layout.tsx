@@ -15,8 +15,9 @@ import type { Metadata } from 'next';
  * 説明する際に、ミーティング前後に共有する LP。コードは別途 /admin/coupons から発行する。
  */
 export const metadata: Metadata = {
-  title: '教師向け案内（限定公開）— 空音開発',
-  description: '音楽教育者向けの学生クーポン制度のご案内。',
+  // メタデータは検索エンジン非掲載 (noindex) なので主要言語の英語版で十分
+  title: 'For Teachers (Private) — Kuon R&D',
+  description: 'Private invitation page for music educators. Symphony plan and student-discount codes.',
   robots: {
     index: false,
     follow: false,

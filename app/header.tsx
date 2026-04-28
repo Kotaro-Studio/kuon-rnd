@@ -152,17 +152,25 @@ export function Header() {
           position: 'sticky', top: 0, zIndex: 200,
         }}
       >
-        {/* Logo */}
+        {/* Logo — 日本語は「空音開発 Kuon R&D」、それ以外は「Kuon R&D」のみ表示。
+            日本語以外のユーザーに「空音開発」の漢字が読めない問題を回避し、
+            国際的なブランド純度を保つ。 */}
         <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', alignItems: 'baseline', gap: '0.55rem' }}>
+          {lang === 'ja' && (
+            <span style={{
+              fontFamily: serif, fontSize: 'clamp(1.05rem, 1.8vw, 1.25rem)',
+              fontWeight: 400, letterSpacing: '0.18em',
+            }}>
+              空音開発
+            </span>
+          )}
           <span style={{
-            fontFamily: serif, fontSize: 'clamp(1.05rem, 1.8vw, 1.25rem)',
-            fontWeight: 400, letterSpacing: '0.18em',
-          }}>
-            空音開発
-          </span>
-          <span style={{
-            fontFamily: sans, fontSize: '0.7rem', fontWeight: 400,
-            letterSpacing: '0.18em', color: ACCENT, textTransform: 'uppercase',
+            fontFamily: lang === 'ja' ? sans : serif,
+            fontSize: lang === 'ja' ? '0.7rem' : 'clamp(1.05rem, 1.8vw, 1.25rem)',
+            fontWeight: 400,
+            letterSpacing: '0.18em',
+            color: lang === 'ja' ? ACCENT : '#0f172a',
+            textTransform: 'uppercase',
           }}>
             Kuon R&amp;D
           </span>
