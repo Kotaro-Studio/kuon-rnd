@@ -16,7 +16,19 @@ export const metadata: Metadata = {
     'オーディオアプリ', '音源分離', '和声分析', 'レッスン書き起こし', '音大生',
     'P-86S', 'X-86S', 'ステレオマイク', '録音', 'musician platform',
   ],
-  icons: { icon: '/icon.png' },
+  icons: {
+    icon: '/icon.png',
+    // iOS Safari の "ホーム画面に追加" 用 — 角丸処理は iOS 側で自動
+    apple: '/icon.png',
+  },
+  // 2026-04-27 PWA 対応: ホーム画面追加でネイティブアプリ感を提供
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: '空音開発',
+    statusBarStyle: 'default',
+  },
+  themeColor: '#0284c7',
   metadataBase: new URL('https://kuon-rnd.com'),
   alternates: {
     canonical: '/',

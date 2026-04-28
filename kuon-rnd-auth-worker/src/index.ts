@@ -524,6 +524,12 @@ async function handleSubscriptionEvent(env: Env, event: Stripe.Event): Promise<v
     plan: legacyPlanFromTier(planTier),
   });
 
+  // 2026-04-27 IQ180 機能 B: アップグレード時に showcase アプリを自動的にお気に入りへ
+  // 失敗してもサブスク更新は完了してるのでログだけ残して握りつぶす
+  await ensureShowcaseFavorites(env, lookup.email, planTier).catch((err) => {
+    console.error('[favorites:showcase] failed for', lookup.email, err);
+  });
+
   console.log(
     '[webhook:subscription]',
     event.type,
@@ -1061,6 +1067,75 @@ interface FavoritesData {
 }
 
 const MAX_FAVORITES = 20;
+
+// 2026-04-27 IQ180 機能 B: プラン階層別の showcase デフォルトお気に入り
+// アップグレード時に自動的にお気に入りへ追加 → ユーザーは「アップグレード即体感」できる
+// Free は空のまま (ユーザー仕様)
+const SHOWCASE_FAVORITES_BY_TIER: Record<string, string[]> = {
+  // Prelude で 16 アプリ解禁。その中の象徴的な 4 つを箱に入れる。
+  prelude: ['slowdown', 'daw', 'comping', 'checklist'],
+  // Concerto で +4 アプリ解禁。その全 4 つを箱に入れる。
+  concerto: ['ddp-checker', 'piano-declipper', 'dual-mono', 'itadaki'],
+};
+
+/**
+ * 指定ユーザーのお気に入りに、プラン階層別 showcase アプリを自動追加。
+ * - 既存お気に入りは保持（上書きしない）
+ * - 階層 X の showcase アプリが既に 1 つでも入っていれば、その階層は skip
+ *   （ユーザーが手動で外した場合の意思を尊重）
+ * - Free 階層では何もしない
+ */
+async function ensureShowcaseFavorites(env: Env, email: string, planTier: PlanTier): Promise<void> {
+  if (planTier === 'free') return;
+
+  // 適用すべき階層 (Concerto+ なら prelude+concerto 両方)
+  const tiersToApply: string[] = [];
+  if (['prelude', 'concerto', 'symphony', 'opus'].includes(planTier)) {
+    tiersToApply.push('prelude');
+  }
+  if (['concerto', 'symphony', 'opus'].includes(planTier)) {
+    tiersToApply.push('concerto');
+  }
+
+  // 現在のお気に入り取得
+  const raw = await env.USERS.get(`favorites:${email}`);
+  let current: string[] = [];
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as { ids?: string[] };
+      current = Array.isArray(parsed.ids) ? parsed.ids : [];
+    } catch {
+      current = [];
+    }
+  }
+
+  const next = [...current];
+  let added = 0;
+
+  for (const tier of tiersToApply) {
+    const ids = SHOWCASE_FAVORITES_BY_TIER[tier];
+    if (!ids) continue;
+    // この階層の showcase が既に 1 つでも入っていれば user の意思を尊重して skip
+    const hasAny = ids.some((id) => next.includes(id));
+    if (hasAny) continue;
+
+    for (const id of ids) {
+      if (next.length >= MAX_FAVORITES) break;
+      if (!next.includes(id)) {
+        next.push(id);
+        added += 1;
+      }
+    }
+  }
+
+  if (added > 0) {
+    await env.USERS.put(
+      `favorites:${email}`,
+      JSON.stringify({ ids: next, updatedAt: new Date().toISOString() }),
+    );
+    console.log('[favorites:showcase] added', added, 'apps for', email, 'tier=', planTier);
+  }
+}
 
 app.get('/api/auth/favorites', async (c) => {
   const auth = c.req.header('Authorization');

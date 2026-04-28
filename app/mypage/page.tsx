@@ -605,8 +605,12 @@ export default function MyPage() {
         />
 
         {/* ─── ★IQ180 リテンション機能★ お気に入りアプリ (Phase 2・2026-04-27) ─── */}
-        {/* よく使うアプリを「自分の道具箱」化。所有感を生み、解約率を下げる。 */}
-        <FavoritesCard userPlan={(user.plan as PlanTier | 'free' | undefined) ?? 'free'} />
+        {/* よく使うアプリを「自分の道具箱」化。所有感を生み、解約率を下げる。
+            appUsage 連携で「よく使ってるけど未登録」のアプリを自動おすすめ表示。 */}
+        <FavoritesCard
+          userPlan={(user.plan as PlanTier | 'free' | undefined) ?? 'free'}
+          appUsage={user.appUsage}
+        />
 
         {/* ─── Avatar + Name Card ─── */}
         <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: '1.2rem', position: 'relative' }}>

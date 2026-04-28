@@ -81,13 +81,30 @@ const LABELS = {
     en: 'Up to 20',
     es: 'Hasta 20',
   } as L3,
+  // 2026-04-27 IQ180 機能 A: 使用回数から自動おすすめ
+  suggestedTitle: {
+    ja: 'よく使うアプリ',
+    en: 'You use these often',
+    es: 'Las usas mucho',
+  } as L3,
+  suggestedHint: {
+    ja: 'お気に入りに登録すると、いつでも一発で開けます',
+    en: 'Pin them for one-click access',
+    es: 'Fíjalas para acceso de un clic',
+  } as L3,
 };
+
+// 月内に N 回以上使ったらお気に入り候補として表示
+const SUGGESTED_USAGE_THRESHOLD = 3;
+// 最大何件のおすすめを表示するか
+const MAX_SUGGESTIONS = 4;
 
 interface Props {
   userPlan: PlanTier | 'free' | undefined;
+  appUsage?: Record<string, number>;
 }
 
-export function FavoritesCard({ userPlan }: Props) {
+export function FavoritesCard({ userPlan, appUsage }: Props) {
   const { lang } = useLang();
   const [favIds, setFavIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,6 +196,22 @@ export function FavoritesCard({ userPlan }: Props) {
   const availableApps = appsForPlan(userPlan ?? 'free', true).filter(
     (a) => !favIds.includes(a.id),
   );
+
+  // ── おすすめ算出 (使用回数ベース) ──
+  // 月内 SUGGESTED_USAGE_THRESHOLD 回以上使った + お気に入り未登録 + 使えるアプリ
+  const suggestions: Array<{ app: CatalogApp; count: number }> = [];
+  if (appUsage && !loading && favApps.length > 0) {
+    const accessibleSet = new Set(availableApps.map((a) => a.id));
+    const candidates = Object.entries(appUsage)
+      .filter(([id, count]) => count >= SUGGESTED_USAGE_THRESHOLD && accessibleSet.has(id))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, MAX_SUGGESTIONS);
+
+    for (const [id, count] of candidates) {
+      const app = availableApps.find((a) => a.id === id);
+      if (app) suggestions.push({ app, count });
+    }
+  }
 
   return (
     <div
@@ -368,6 +401,69 @@ export function FavoritesCard({ userPlan }: Props) {
             {t3(LABELS.hint, lang)} · {t3(LABELS.upTo, lang)} ({favIds.length}/20)
           </div>
         </>
+      )}
+
+      {/* ── 自動おすすめセクション (機能A・2026-04-27) ── */}
+      {/* 月内に何度も使っているアプリで未登録のものを優しく提案 */}
+      {suggestions.length > 0 && (
+        <div
+          style={{
+            marginTop: '1.25rem',
+            padding: '0.95rem 1rem',
+            background: 'linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)',
+            border: '1px solid #fde68a',
+            borderRadius: 10,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.95rem' }}>💡</span>
+            <span style={{ fontFamily: sans, fontSize: '0.84rem', fontWeight: 600, color: '#713f12' }}>
+              {t3(LABELS.suggestedTitle, lang)}
+            </span>
+            <span style={{ fontFamily: sans, fontSize: '0.74rem', color: '#a16207' }}>
+              · {t3(LABELS.suggestedHint, lang)}
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {suggestions.map(({ app, count }) => (
+              <button
+                key={app.id}
+                type="button"
+                onClick={() => handleAdd(app.id)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.4rem 0.85rem',
+                  background: '#fff',
+                  border: '1px solid #fde68a',
+                  borderRadius: 999,
+                  fontFamily: sans,
+                  fontSize: '0.82rem',
+                  fontWeight: 500,
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#fef3c7';
+                  e.currentTarget.style.borderColor = '#f59e0b';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#fff';
+                  e.currentTarget.style.borderColor = '#fde68a';
+                }}
+              >
+                <span style={{ fontSize: '1rem' }}>{app.emoji}</span>
+                <span>{app.name[lang as keyof typeof app.name] || app.name.en}</span>
+                <span style={{ fontSize: '0.7rem', color: '#a16207', fontWeight: 400 }}>
+                  ({count})
+                </span>
+                <span style={{ fontSize: '0.85rem', color: '#0284c7', fontWeight: 600 }}>+</span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ── アプリピッカーモーダル ── */}
