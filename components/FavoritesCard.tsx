@@ -25,9 +25,11 @@ import {
   APP_CATALOG,
   CATEGORIES,
   appsForPlan,
+  canUseApp,
   isAppNew,
   type CatalogApp,
   type AppCategory,
+  type MinPlan,
 } from '@/app/lib/app-catalog';
 import type { PlanTier } from '@/app/lib/pricing-display';
 
@@ -108,6 +110,37 @@ const LABELS = {
     es: 'No hay apps que coincidan',
   } as L3,
   newBadge: { ja: 'NEW', en: 'NEW', es: 'NUEVO' } as L3,
+  // ロックモーダル
+  lockedTitle: {
+    ja: '上位プランで解禁',
+    en: 'Available on a higher plan',
+    es: 'Disponible en un plan superior',
+  } as L3,
+  lockedBody: {
+    ja: 'このアプリは {plan} プラン以上でご利用いただけます。',
+    en: 'This app is available on the {plan} plan or higher.',
+    es: 'Esta app está disponible en el plan {plan} o superior.',
+  } as L3,
+  viewPlans: {
+    ja: 'プランを見る',
+    en: 'View plans',
+    es: 'Ver planes',
+  } as L3,
+  cancelLocked: {
+    ja: '閉じる',
+    en: 'Close',
+    es: 'Cerrar',
+  } as L3,
+};
+
+// MinPlan → 表示名 (ロックモーダル用)
+const PLAN_DISPLAY_NAME: Record<MinPlan, string> = {
+  'free': 'Free',
+  'free-with-login': 'Free',
+  'prelude': 'Prelude',
+  'concerto': 'Concerto',
+  'symphony': 'Symphony',
+  'opus': 'Opus',
 };
 
 // 月内に N 回以上使ったらお気に入り候補として表示
@@ -150,6 +183,8 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
   // ピッカーモーダル内の検索 + カテゴリフィルタ
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerCategory, setPickerCategory] = useState<AppCategory | 'all'>('all');
+  // ロックモーダル (上位プラン要求アプリをタップしたとき)
+  const [lockedApp, setLockedApp] = useState<CatalogApp | null>(null);
 
   // ── 初期ロード ──
   useEffect(() => {
@@ -239,13 +274,19 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
     .map((id) => APP_CATALOG.find((a) => a.id === id))
     .filter((a): a is CatalogApp => Boolean(a));
 
-  const availableApps = appsForPlan(userPlan ?? 'free', true).filter(
+  // ── ピッカーには全アプリを表示 (ロック含む) ──
+  // 既にお気に入り登録済みのものだけ除外。プラン未開放アプリはロックバッジ付きで表示。
+  // 「DAW」検索で結果がゼロだった問題を解決 + 上位プランへの discovery 効果。
+  const accessiblePlanApps = appsForPlan(userPlan ?? 'free', true);
+  const accessibleIds = new Set(accessiblePlanApps.map((a) => a.id));
+
+  const allPickerApps: CatalogApp[] = APP_CATALOG.filter(
     (a) => !favIds.includes(a.id),
   );
 
   // ピッカー用フィルタリング (検索 × カテゴリ AND)
   const pickerSearchLower = pickerSearch.trim().toLowerCase();
-  const filteredPickerApps = availableApps.filter((app) => {
+  const filteredPickerApps = allPickerApps.filter((app) => {
     // カテゴリフィルタ
     if (pickerCategory !== 'all' && app.category !== pickerCategory) return false;
     // 検索フィルタ (空なら全通過。アプリ名 or タグライン全言語に対して部分一致)
@@ -260,24 +301,32 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
     return haystack.includes(pickerSearchLower);
   });
 
-  // ピッカー内で利用可能なカテゴリのみ表示 (空のカテゴリタブは出さない)
-  const availableCategories = new Set(availableApps.map((a) => a.category));
+  // ピッカー内のカテゴリタブ — 全カテゴリ表示 (ロックされたカテゴリも discovery のため出す)
+  const availableCategories = new Set(allPickerApps.map((a) => a.category));
 
   // ── おすすめ算出 (使用回数ベース) ──
-  // 月内 SUGGESTED_USAGE_THRESHOLD 回以上使った + お気に入り未登録 + 使えるアプリ
+  // 月内 SUGGESTED_USAGE_THRESHOLD 回以上使った + お気に入り未登録 + 使えるアプリのみ
   const suggestions: Array<{ app: CatalogApp; count: number }> = [];
   if (appUsage && !loading && favApps.length > 0) {
-    const accessibleSet = new Set(availableApps.map((a) => a.id));
     const candidates = Object.entries(appUsage)
-      .filter(([id, count]) => count >= SUGGESTED_USAGE_THRESHOLD && accessibleSet.has(id))
+      .filter(([id, count]) => count >= SUGGESTED_USAGE_THRESHOLD && accessibleIds.has(id) && !favIds.includes(id))
       .sort((a, b) => b[1] - a[1])
       .slice(0, MAX_SUGGESTIONS);
 
     for (const [id, count] of candidates) {
-      const app = availableApps.find((a) => a.id === id);
+      const app = APP_CATALOG.find((a) => a.id === id);
       if (app) suggestions.push({ app, count });
     }
   }
+
+  // ── アプリカードクリック処理: アクセス可なら追加・不可ならロックモーダル ──
+  const handleAppClick = (app: CatalogApp) => {
+    if (accessibleIds.has(app.id)) {
+      handleAdd(app.id);
+    } else {
+      setLockedApp(app);
+    }
+  };
 
   return (
     <div
@@ -661,11 +710,11 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
                   onClick={() => setPickerCategory('all')}
                   style={pickerTabStyle(pickerCategory === 'all')}
                 >
-                  {t3(LABELS.allCategory, lang)} ({availableApps.length})
+                  {t3(LABELS.allCategory, lang)} ({allPickerApps.length})
                 </button>
                 {/* 各カテゴリタブ (該当アプリがある場合のみ表示) */}
                 {CATEGORIES.filter((c) => availableCategories.has(c.id)).map((cat) => {
-                  const count = availableApps.filter((a) => a.category === cat.id).length;
+                  const count = allPickerApps.filter((a: CatalogApp) => a.category === cat.id).length;
                   const active = pickerCategory === cat.id;
                   return (
                     <button
@@ -681,7 +730,7 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
               </div>
             </div>
 
-            {/* ── アプリグリッド ── */}
+            {/* ── アプリグリッド (検索 × カテゴリ × ロック表示) ── */}
             <div style={{ overflow: 'auto', padding: '1rem 1.5rem 1.25rem', flex: 1 }}>
               {filteredPickerApps.length === 0 ? (
                 <p style={{ fontFamily: sans, fontSize: '0.9rem', color: '#94a3b8', textAlign: 'center', padding: '2rem 0', margin: 0 }}>
@@ -693,14 +742,15 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.7rem' }}>
                   {filteredPickerApps.map((app) => {
                     const isNew = isAppNew(app);
+                    const isLocked = !accessibleIds.has(app.id);
                     return (
                       <button
                         key={app.id}
                         type="button"
-                        onClick={() => handleAdd(app.id)}
+                        onClick={() => handleAppClick(app)}
                         style={{
                           position: 'relative',
-                          background: '#f8fafc',
+                          background: isLocked ? '#fafafa' : '#f8fafc',
                           border: '1px solid #e2e8f0',
                           borderRadius: 10,
                           padding: '0.75rem 0.5rem',
@@ -708,18 +758,21 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
                           fontFamily: sans,
                           textAlign: 'center',
                           transition: 'all 0.15s ease',
+                          opacity: isLocked ? 0.7 : 1,
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#f0f9ff';
-                          e.currentTarget.style.borderColor = ACCENT;
+                          e.currentTarget.style.background = isLocked ? '#fef3c7' : '#f0f9ff';
+                          e.currentTarget.style.borderColor = isLocked ? '#f59e0b' : ACCENT;
+                          e.currentTarget.style.opacity = '1';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = '#f8fafc';
+                          e.currentTarget.style.background = isLocked ? '#fafafa' : '#f8fafc';
                           e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.opacity = isLocked ? '0.7' : '1';
                         }}
                       >
                         {/* NEW バッジ (releasedAt から自動・30 日経過で自動消滅) */}
-                        {isNew && (
+                        {isNew && !isLocked && (
                           <span
                             style={{
                               position: 'absolute',
@@ -737,8 +790,30 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
                             {t3(LABELS.newBadge, lang)}
                           </span>
                         )}
+                        {/* ロックバッジ (上位プラン要求アプリ) */}
+                        {isLocked && (
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: 6,
+                              right: 6,
+                              padding: '1px 6px',
+                              background: '#fef3c7',
+                              color: '#92400e',
+                              fontSize: '0.6rem',
+                              fontWeight: 700,
+                              borderRadius: 4,
+                              letterSpacing: '0.04em',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                            }}
+                          >
+                            🔒 {PLAN_DISPLAY_NAME[app.minPlan]}
+                          </span>
+                        )}
                         <div style={{ fontSize: '1.5rem', marginBottom: '0.3rem' }}>{app.emoji}</div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 500, color: isLocked ? '#475569' : '#0f172a' }}>
                           {app.name[lang as keyof typeof app.name] || app.name.en}
                         </div>
                       </button>
@@ -746,6 +821,86 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ロックモーダル: 上位プランアプリをタップしたとき (アップグレード誘導) ── */}
+      {lockedApp && (
+        <div
+          onClick={() => setLockedApp(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1100,
+            padding: '1rem',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              maxWidth: 380,
+              width: '100%',
+              padding: '2rem 1.75rem 1.5rem',
+              boxShadow: '0 24px 70px rgba(0,0,0,0.22)',
+              textAlign: 'center',
+              fontFamily: sans,
+            }}
+          >
+            <div style={{ fontSize: '2.4rem', marginBottom: '0.3rem' }}>{lockedApp.emoji}</div>
+            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.3rem' }}>
+              {lockedApp.name[lang as keyof typeof lockedApp.name] || lockedApp.name.en}
+            </div>
+            <h3 style={{ fontFamily: serif, fontSize: '1.05rem', fontWeight: 400, margin: '0.85rem 0 0.6rem', color: '#0f172a' }}>
+              🔒 {t3(LABELS.lockedTitle, lang)}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.65, margin: '0 0 1.4rem' }}>
+              {t3(LABELS.lockedBody, lang).replace('{plan}', PLAN_DISPLAY_NAME[lockedApp.minPlan])}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              <Link
+                href="/#pricing"
+                onClick={() => setLockedApp(null)}
+                style={{
+                  display: 'block',
+                  textDecoration: 'none',
+                  padding: '0.7rem 1.25rem',
+                  background: ACCENT,
+                  color: '#fff',
+                  borderRadius: 999,
+                  fontSize: '0.88rem',
+                  fontWeight: 500,
+                  letterSpacing: '0.02em',
+                  transition: 'opacity 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+              >
+                {t3(LABELS.viewPlans, lang)}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setLockedApp(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  padding: '0.45rem',
+                  fontFamily: sans,
+                }}
+              >
+                {t3(LABELS.cancelLocked, lang)}
+              </button>
             </div>
           </div>
         </div>
