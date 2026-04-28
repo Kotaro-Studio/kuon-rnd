@@ -2606,24 +2606,32 @@ app.post('/api/auth/stripe/checkout', async (c) => {
   if (!plan || !['prelude', 'concerto', 'symphony', 'opus'].includes(plan)) {
     return c.json({ error: 'Invalid plan' }, 400);
   }
+  // ── Opus は 2026-04-28 に新規販売停止 (CLAUDE.md §41 / Stripe Product archive 済み) ──
+  // フロント LP からは削除済みだが、古いキャッシュ・直接 API 叩き・Bot 等から
+  // plan='opus' の Checkout が来るのを物理的に防ぐ。
+  // 既存 Opus 加入者は影響を受けない (subscription.created 経由で planTier='opus' は維持)。
+  if (plan === 'opus') {
+    return c.json({
+      error: 'Plan no longer available',
+      message: 'Opus プランは新規販売を停止しました。Symphony プランをご検討ください。',
+      suggestedPlan: 'symphony',
+    }, 410); // 410 Gone: リソースは過去に存在したが廃止された
+  }
   if (!cycle || !['monthly', 'annual'].includes(cycle)) {
     return c.json({ error: 'Invalid cycle' }, 400);
   }
-  const planTier = plan as Exclude<PlanTier, 'free'>;
+  const planTier = plan as Exclude<PlanTier, 'free' | 'opus'>;
   const billingCycle = cycle as BillingCycle;
 
   // 地域判定: CF-IPCountry が MX/CL/CO/PE/UY なら LatAm、それ以外は Global
   const cfCountry = c.req.header('X-CF-Country') || '';
   const region: PricingRegion = isLatamCountry(cfCountry) ? 'latam' : 'global';
 
-  // Price ID を取得 (Opus は LatAm 対象外なので getPriceId 内で global に fallback)
+  // Price ID を取得 (Prelude/Concerto/Symphony はすべて LatAm 対応済み)
+  // Opus は § 2026-04-28 廃止以降、上の Gone ガードでこの行に到達しない。
   const priceMap = PRICE_IDS[planTier];
   const priceKey = `${billingCycle}_${region}` as keyof typeof priceMap;
-  let priceId: string | undefined = (priceMap as Record<string, string>)[priceKey];
-  // Opus + latam の場合は global にフォールバック
-  if (!priceId && planTier === 'opus' && region === 'latam') {
-    priceId = priceMap[`${billingCycle}_global` as 'monthly_global' | 'annual_global'];
-  }
+  const priceId: string | undefined = (priceMap as Record<string, string>)[priceKey];
   if (!priceId) {
     return c.json({ error: 'Price not found', plan, cycle, region }, 500);
   }
@@ -2764,6 +2772,221 @@ app.post('/api/auth/stripe/portal', async (c) => {
   return c.json({
     url: session.url,
   });
+});
+
+// ─────────────────────────────────────────────
+// 教師経由学生クーポン管理 (2026-04-28 追加)
+//
+// オーナー (369@kotaroasahina.com) が `/admin/coupons` から呼び出す。
+// STUDENT_30_12MO Coupon に紐づく Promotion Code を教師ごとに発行・管理する。
+//
+// Promotion Code の構造:
+//   - code: 'TANAKA-30' (教師の名前を冠した可読コード)
+//   - coupon: 'STUDENT_30_12MO' (Coupon 本体・再利用される)
+//   - metadata.teacherEmail: 紹介元教師の email (attribution に使用)
+//   - metadata.teacherName: 教師の表示名 (UI 表示用)
+//   - restrictions.first_time_transaction: true (既存課金者の二重利用防止)
+//
+// 注意: Stripe Promotion Code は作成後に code を変更できない。間違ったら削除→再作成。
+// ─────────────────────────────────────────────
+
+/**
+ * POST /api/auth/admin/promo-code
+ *
+ * Body: { teacherEmail, teacherName, code, maxRedemptions? }
+ *
+ * Stripe に Promotion Code を作成して、metadata に教師情報を埋め込む。
+ * 既に同じ code が存在する場合は 409 を返す (Stripe の API も同様だが念のため事前チェック)。
+ */
+app.post('/api/auth/admin/promo-code', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload || payload.email !== '369@kotaroasahina.com') {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const body = await c.req.json<{
+    teacherEmail: string;
+    teacherName: string;
+    code: string;
+    maxRedemptions?: number;
+  }>().catch(() => null);
+
+  if (!body || !body.teacherEmail || !body.teacherName || !body.code) {
+    return c.json({ error: 'Missing required fields: teacherEmail, teacherName, code' }, 400);
+  }
+
+  // code バリデーション: 英数字 + ハイフンのみ、3〜50 文字
+  const codeNorm = body.code.trim().toUpperCase();
+  if (!/^[A-Z0-9-]{3,50}$/.test(codeNorm)) {
+    return c.json({
+      error: 'Invalid code format',
+      message: 'コードは英数字とハイフンのみ・3〜50文字（例: TANAKA-30）',
+    }, 400);
+  }
+
+  // teacherEmail バリデーション
+  const teacherEmail = body.teacherEmail.toLowerCase().trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(teacherEmail)) {
+    return c.json({ error: 'Invalid teacherEmail' }, 400);
+  }
+
+  const stripe = getStripe(c.env);
+
+  try {
+    // 事前重複チェック: 同 code が既存 active か確認
+    const existing = await stripe.promotionCodes.list({ code: codeNorm, limit: 1 });
+    if (existing.data.length > 0 && existing.data[0].active) {
+      return c.json({
+        error: 'Code already exists',
+        message: `コード "${codeNorm}" は既に使用されています。別のコードを指定してください。`,
+        existingCode: existing.data[0].id,
+      }, 409);
+    }
+
+    const promoCode = await stripe.promotionCodes.create({
+      // Stripe SDK v22+: coupon は promotion wrapper の中に入れる
+      promotion: {
+        type: 'coupon',
+        coupon: COUPON_IDS.student_30_12mo,
+      },
+      code: codeNorm,
+      max_redemptions: body.maxRedemptions && body.maxRedemptions > 0
+        ? body.maxRedemptions
+        : undefined,
+      metadata: {
+        teacherEmail,
+        teacherName: body.teacherName.trim().slice(0, 100),
+        createdBy: 'admin',
+        createdAt: new Date().toISOString(),
+      },
+      restrictions: {
+        first_time_transaction: true, // 既存課金者の二重利用防止
+      },
+    });
+
+    console.log('[promo-code:create]', codeNorm, 'for', teacherEmail);
+
+    return c.json({
+      ok: true,
+      promoCode: {
+        id: promoCode.id,
+        code: promoCode.code,
+        active: promoCode.active,
+        timesRedeemed: promoCode.times_redeemed,
+        maxRedemptions: promoCode.max_redemptions,
+        teacherEmail,
+        teacherName: body.teacherName,
+        shareUrl: `https://kuon-rnd.com/?coupon=${codeNorm}`,
+        createdAt: new Date(promoCode.created * 1000).toISOString(),
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Stripe error';
+    console.error('[promo-code:create] error:', message);
+    return c.json({ error: 'Failed to create promo code', message }, 500);
+  }
+});
+
+/**
+ * GET /api/auth/admin/promo-codes
+ *
+ * STUDENT_30_12MO に紐づく全 Promotion Code を返す。
+ * 教師ごとの一覧表示・統計の元データ。
+ */
+app.get('/api/auth/admin/promo-codes', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload || payload.email !== '369@kotaroasahina.com') {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const stripe = getStripe(c.env);
+
+  try {
+    // STUDENT_30_12MO に紐づく全 Promotion Code を取得 (Stripe は最大 100 件/リクエスト)
+    const list = await stripe.promotionCodes.list({
+      coupon: COUPON_IDS.student_30_12mo,
+      limit: 100,
+    });
+
+    const codes = list.data.map((p) => ({
+      id: p.id,
+      code: p.code,
+      active: p.active,
+      timesRedeemed: p.times_redeemed,
+      maxRedemptions: p.max_redemptions,
+      teacherEmail: p.metadata?.teacherEmail || '',
+      teacherName: p.metadata?.teacherName || '',
+      shareUrl: `https://kuon-rnd.com/?coupon=${p.code}`,
+      createdAt: new Date(p.created * 1000).toISOString(),
+    }));
+
+    // 新しい順にソート
+    codes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return c.json({
+      ok: true,
+      codes,
+      total: codes.length,
+      activeCount: codes.filter((c) => c.active).length,
+      totalRedemptions: codes.reduce((s, c) => s + c.timesRedeemed, 0),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Stripe error';
+    console.error('[promo-codes:list] error:', message);
+    return c.json({ error: 'Failed to list promo codes', message }, 500);
+  }
+});
+
+/**
+ * PATCH /api/auth/admin/promo-code/:id
+ *
+ * Body: { active: boolean }
+ *
+ * Promotion Code を有効化・無効化する。
+ * 削除はできない (Stripe の仕様)。代わりに active=false で停止する。
+ */
+app.patch('/api/auth/admin/promo-code/:id', async (c) => {
+  const auth = c.req.header('Authorization');
+  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'No token' }, 401);
+  const payload = await verifyJWT(auth.slice(7), c.env.AUTH_SECRET);
+  if (!payload || payload.email !== '369@kotaroasahina.com') {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const id = c.req.param('id');
+  if (!id) return c.json({ error: 'Missing id' }, 400);
+
+  const body = await c.req.json<{ active?: boolean }>().catch(() => null);
+  if (!body || typeof body.active !== 'boolean') {
+    return c.json({ error: 'Missing active field' }, 400);
+  }
+
+  const stripe = getStripe(c.env);
+
+  try {
+    const updated = await stripe.promotionCodes.update(id, {
+      active: body.active,
+    });
+
+    console.log('[promo-code:patch]', id, 'active=', body.active);
+
+    return c.json({
+      ok: true,
+      promoCode: {
+        id: updated.id,
+        code: updated.code,
+        active: updated.active,
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Stripe error';
+    console.error('[promo-code:patch] error:', message);
+    return c.json({ error: 'Failed to update promo code', message }, 500);
+  }
 });
 
 export default app;

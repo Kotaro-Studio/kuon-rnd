@@ -74,6 +74,12 @@ export const COUPON_IDS = {
   tier_a_partner:       'TIER_A_PARTNER_50',
   tier_c_graduate:      'TIER_C_GRADUATE_25',
   retention_50_3months: 'RETENTION_50_3MONTHS',
+
+  // ❗ 教師経由学生割引 (2026-04-28 追加)
+  // 30% off × 12 months × Prelude+Concerto only (Symphony は格式維持のため除外)
+  // 教師ごとに Promotion Code (TANAKA-30 等) を量産する。Coupon 自体は再利用される。
+  // 詳細: §44 教師経由学生クーポンシステム
+  student_30_12mo: 'STUDENT_30_12MO',
 } as const;
 
 // ============================================================

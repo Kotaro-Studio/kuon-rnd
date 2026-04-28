@@ -266,7 +266,10 @@ export default function AdminPage() {
           </Link>
           <span style={{ fontFamily: mono, fontSize: '0.7rem', color: '#475569', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Admin Dashboard</span>
         </div>
-        <Link href="/mypage" style={{ color: '#64748b', fontSize: '0.8rem', textDecoration: 'none' }}>← マイページ</Link>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <Link href="/admin/coupons" style={{ color: '#7dd3fc', fontSize: '0.8rem', textDecoration: 'none', padding: '4px 10px', background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)', borderRadius: 6 }}>🎓 学生クーポン管理</Link>
+          <Link href="/mypage" style={{ color: '#64748b', fontSize: '0.8rem', textDecoration: 'none' }}>← マイページ</Link>
+        </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem 1rem 3rem' }}>

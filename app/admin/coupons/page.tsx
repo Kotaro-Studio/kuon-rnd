@@ -1,0 +1,454 @@
+'use client';
+
+/**
+ * /admin/coupons — 教師経由学生クーポン管理ダッシュボード
+ *
+ * オーナー (369@kotaroasahina.com) が知り合いのミュージシャン (教師) ごとに
+ * STUDENT_30_12MO Coupon に紐づく Promotion Code を発行・管理する画面。
+ *
+ * 設計参照: CLAUDE.md §44 (教師経由学生クーポンシステム)
+ *
+ * 主な機能:
+ *   - 教師情報入力 + コード自動提案 (姓+30 形式)
+ *   - 共有 URL コピー (kuon-rnd.com/?coupon=XXX)
+ *   - 既存コード一覧 + 使用回数 + 有効/無効トグル
+ */
+
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+const sans = '"Helvetica Neue", Arial, sans-serif';
+const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
+const mono = '"SF Mono", "Fira Code", Consolas, monospace';
+
+const OWNER_EMAIL = '369@kotaroasahina.com';
+
+interface PromoCode {
+  id: string;
+  code: string;
+  active: boolean;
+  timesRedeemed: number;
+  maxRedemptions: number | null;
+  teacherEmail: string;
+  teacherName: string;
+  shareUrl: string;
+  createdAt: string;
+}
+
+interface PromoCodeListResponse {
+  ok: boolean;
+  codes: PromoCode[];
+  total: number;
+  activeCount: number;
+  totalRedemptions: number;
+}
+
+export default function AdminCouponsPage() {
+  const router = useRouter();
+  const [authed, setAuthed] = useState(false);
+  const [data, setData] = useState<PromoCodeListResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+
+  // Form state
+  const [teacherEmail, setTeacherEmail] = useState('');
+  const [teacherName, setTeacherName] = useState('');
+  const [codeInput, setCodeInput] = useState('');
+  const [maxRedemptions, setMaxRedemptions] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState<PromoCode | null>(null);
+
+  // Auth check (owner only)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) { router.push('/auth/login'); return; }
+        const me = await res.json();
+        if (me.email !== OWNER_EMAIL) { router.push('/'); return; }
+        setAuthed(true);
+      } catch { router.push('/auth/login'); }
+    })();
+  }, [router]);
+
+  const fetchCodes = useCallback(async () => {
+    setLoading(true); setFetchError('');
+    try {
+      const res = await fetch('/api/auth/admin/promo-codes');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setFetchError(err.error || `Failed to fetch (${res.status})`);
+        return;
+      }
+      setData(await res.json());
+    } catch {
+      setFetchError('Network error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { if (authed) fetchCodes(); }, [authed, fetchCodes]);
+
+  // 教師名から自動コード提案 (例: "田中太郎" → "TANAKA-30")
+  const suggestCode = (name: string): string => {
+    if (!name) return '';
+    // 漢字/かな/カナの場合: 1文字目のローマ字推測は難しいので、英字の入力を促す
+    const ascii = name.replace(/[^A-Za-z]/g, '').toUpperCase();
+    if (ascii.length >= 3) return `${ascii.slice(0, 12)}-30`;
+    return '';
+  };
+
+  // teacherName 変更時にコードを自動提案 (ユーザーが手動入力済みなら上書きしない)
+  const handleTeacherNameChange = (val: string) => {
+    setTeacherName(val);
+    if (!codeInput) {
+      const suggested = suggestCode(val);
+      if (suggested) setCodeInput(suggested);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(''); setFormSuccess(null);
+
+    if (!teacherEmail || !teacherName || !codeInput) {
+      setFormError('全ての必須項目を入力してください');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/auth/admin/promo-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teacherEmail,
+          teacherName,
+          code: codeInput,
+          maxRedemptions: maxRedemptions ? parseInt(maxRedemptions, 10) : undefined,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setFormError(result.message || result.error || `Failed (${res.status})`);
+        return;
+      }
+      setFormSuccess(result.promoCode);
+      // フォームクリア
+      setTeacherEmail(''); setTeacherName(''); setCodeInput(''); setMaxRedemptions('');
+      // 一覧を再取得
+      fetchCodes();
+    } catch {
+      setFormError('Network error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleActive = async (id: string, currentActive: boolean) => {
+    const action = currentActive ? '無効化' : '有効化';
+    if (!confirm(`このコードを${action}しますか？`)) return;
+    try {
+      const res = await fetch(`/api/auth/admin/promo-code/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !currentActive }),
+      });
+      if (res.ok) fetchCodes();
+      else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || err.error || 'Failed');
+      }
+    } catch {
+      alert('Network error');
+    }
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Quick visual feedback via temporary state
+      const el = document.createElement('div');
+      el.textContent = `${label} をコピーしました`;
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#0284c7;color:#fff;padding:12px 18px;border-radius:8px;font-size:0.85rem;z-index:9999;font-family:' + sans;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1500);
+    } catch {
+      alert('クリップボードへのコピーに失敗しました');
+    }
+  };
+
+  if (!authed) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
+        <div style={{ width: 40, height: 40, border: '3px solid #334155', borderTopColor: '#38bdf8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  const formatDate = (iso: string) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#0f172a', fontFamily: sans, color: '#e2e8f0' }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        .admin-card { animation: slideIn .5s cubic-bezier(.16,1,.3,1) both; }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ background: '#020617', borderBottom: '1px solid #1e293b', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <span style={{ fontFamily: serif, fontSize: '1.1rem', fontWeight: 300, letterSpacing: '0.15em', color: '#e2e8f0' }}>空音開発</span>
+          </Link>
+          <span style={{ fontFamily: mono, fontSize: '0.7rem', color: '#475569', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Coupon Manager</span>
+        </div>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Link href="/admin" style={{ color: '#64748b', fontSize: '0.8rem', textDecoration: 'none' }}>← Admin</Link>
+          <Link href="/mypage" style={{ color: '#64748b', fontSize: '0.8rem', textDecoration: 'none' }}>マイページ</Link>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1rem 3rem' }}>
+
+        {/* Hero */}
+        <div className="admin-card" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)', borderRadius: 16, padding: 'clamp(20px,3vw,32px)', marginBottom: '1.5rem', border: '1px solid #1e293b' }}>
+          <div style={{ fontFamily: serif, fontSize: 'clamp(18px,3.5vw,26px)', fontWeight: 700, color: '#f8fafc', marginBottom: 8 }}>
+            🎓 教師経由 学生クーポン管理
+          </div>
+          <div style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 720 }}>
+            音楽家・教師ごとに <code style={{ background: '#1e293b', padding: '2px 6px', borderRadius: 4, fontFamily: mono, color: '#7dd3fc' }}>STUDENT_30_12MO</code> Coupon
+            (Prelude / Concerto に 30% off × 12 ヶ月) のプロモーションコードを発行します。
+            学生は教師から共有された URL またはコードを入力するだけで割引が自動適用されます。
+          </div>
+        </div>
+
+        {/* Stats */}
+        {data && (
+          <div className="admin-card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.8rem', marginBottom: '1.5rem' }}>
+            {[
+              { label: '発行済みコード', value: data.total, color: '#f8fafc' },
+              { label: '有効コード', value: data.activeCount, color: '#34d399' },
+              { label: '累計使用回数', value: data.totalRedemptions, color: '#a78bfa' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ background: '#1e293b', borderRadius: 12, padding: '1rem', textAlign: 'center', border: '1px solid #334155' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: 800, color, fontFamily: mono }}>{value}</div>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 4, letterSpacing: '0.06em' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* New Code Form */}
+        <div className="admin-card" style={{ background: '#1e293b', borderRadius: 12, padding: '1.5rem', border: '1px solid #334155', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontFamily: serif, fontSize: '1.1rem', fontWeight: 400, color: '#f8fafc', marginTop: 0, marginBottom: '1rem' }}>
+            ＋ 新しいプロモーションコードを発行
+          </h2>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: 6 }}>
+                  教師の名前 <span style={{ color: '#f87171' }}>*</span>
+                </label>
+                <input
+                  type="text" value={teacherName} onChange={(e) => handleTeacherNameChange(e.target.value)}
+                  placeholder="例: Asahina Kotaro / 朝比奈幸太郎" required
+                  style={{ width: '100%', padding: '0.55rem 0.8rem', background: '#0f172a', border: '1px solid #334155', borderRadius: 6, color: '#e2e8f0', fontSize: '0.85rem', fontFamily: sans, boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: 6 }}>
+                  教師の Email <span style={{ color: '#f87171' }}>*</span>
+                </label>
+                <input
+                  type="email" value={teacherEmail} onChange={(e) => setTeacherEmail(e.target.value)}
+                  placeholder="teacher@example.com" required
+                  style={{ width: '100%', padding: '0.55rem 0.8rem', background: '#0f172a', border: '1px solid #334155', borderRadius: 6, color: '#e2e8f0', fontSize: '0.85rem', fontFamily: mono, boxSizing: 'border-box' }}
+                />
+                <div style={{ fontSize: '0.65rem', color: '#475569', marginTop: 4 }}>
+                  紹介帰属 (attribution) のため記録。Kuon ユーザーの email と同じだと将来の紐付けに便利
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: 6 }}>
+                  プロモーションコード <span style={{ color: '#f87171' }}>*</span>
+                </label>
+                <input
+                  type="text" value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                  placeholder="ASAHINA-30" required
+                  pattern="^[A-Z0-9-]{3,50}$"
+                  style={{ width: '100%', padding: '0.55rem 0.8rem', background: '#0f172a', border: '1px solid #334155', borderRadius: 6, color: '#7dd3fc', fontSize: '0.95rem', fontFamily: mono, fontWeight: 700, boxSizing: 'border-box', letterSpacing: '0.04em' }}
+                />
+                <div style={{ fontSize: '0.65rem', color: '#475569', marginTop: 4 }}>
+                  英大文字・数字・ハイフンのみ。教師の名前を冠するのが推奨 (例: TANAKA-30)
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: 6 }}>
+                  使用回数上限 <span style={{ color: '#64748b' }}>(任意)</span>
+                </label>
+                <input
+                  type="number" value={maxRedemptions} onChange={(e) => setMaxRedemptions(e.target.value)}
+                  placeholder="無制限" min={1}
+                  style={{ width: '100%', padding: '0.55rem 0.8rem', background: '#0f172a', border: '1px solid #334155', borderRadius: 6, color: '#e2e8f0', fontSize: '0.85rem', fontFamily: mono, boxSizing: 'border-box' }}
+                />
+                <div style={{ fontSize: '0.65rem', color: '#475569', marginTop: 4 }}>
+                  空欄 = 無制限。乱用が懸念される場合のみ設定 (例: 30)
+                </div>
+              </div>
+            </div>
+
+            {formError && (
+              <div style={{ background: '#450a0a', border: '1px solid #7f1d1d', borderRadius: 8, padding: '0.7rem 1rem', marginBottom: '1rem', color: '#fca5a5', fontSize: '0.85rem' }}>
+                {formError}
+              </div>
+            )}
+
+            <button type="submit" disabled={submitting}
+              style={{ padding: '0.65rem 1.6rem', background: submitting ? '#1e293b' : 'linear-gradient(135deg, #0284c7, #38bdf8)', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: submitting ? 'wait' : 'pointer', fontFamily: sans }}>
+              {submitting ? '発行中…' : 'プロモーションコードを発行'}
+            </button>
+          </form>
+
+          {/* Success display */}
+          {formSuccess && (
+            <div style={{ marginTop: '1.5rem', background: 'linear-gradient(135deg, rgba(52,211,153,0.1), rgba(56,189,248,0.05))', border: '1px solid #34d399', borderRadius: 10, padding: '1.2rem' }}>
+              <div style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 8 }}>
+                ✓ 発行完了 — 教師にこのまま送ってください
+              </div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', minWidth: 70 }}>コード:</span>
+                  <code style={{ background: '#0f172a', padding: '6px 12px', borderRadius: 6, fontFamily: mono, color: '#7dd3fc', fontSize: '1rem', fontWeight: 700, letterSpacing: '0.04em' }}>
+                    {formSuccess.code}
+                  </code>
+                  <button type="button" onClick={() => copyToClipboard(formSuccess.code, 'コード')}
+                    style={{ padding: '4px 10px', background: '#0f172a', border: '1px solid #334155', borderRadius: 4, color: '#94a3b8', fontSize: '0.7rem', cursor: 'pointer', fontFamily: sans }}>
+                    コピー
+                  </button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', minWidth: 70 }}>共有 URL:</span>
+                  <code style={{ background: '#0f172a', padding: '6px 12px', borderRadius: 6, fontFamily: mono, color: '#a78bfa', fontSize: '0.8rem', wordBreak: 'break-all', flex: 1, minWidth: 240 }}>
+                    {formSuccess.shareUrl}
+                  </code>
+                  <button type="button" onClick={() => copyToClipboard(formSuccess.shareUrl, 'URL')}
+                    style={{ padding: '4px 10px', background: '#0f172a', border: '1px solid #334155', borderRadius: 4, color: '#94a3b8', fontSize: '0.7rem', cursor: 'pointer', fontFamily: sans }}>
+                    コピー
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Code List */}
+        <div className="admin-card" style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden' }}>
+          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #334155' }}>
+            <h2 style={{ fontFamily: serif, fontSize: '1.05rem', fontWeight: 400, color: '#f8fafc', margin: 0 }}>
+              発行済みコード一覧
+            </h2>
+          </div>
+
+          {loading && (
+            <div style={{ padding: '3rem', textAlign: 'center' }}>
+              <div style={{ width: 32, height: 32, border: '3px solid #334155', borderTopColor: '#38bdf8', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
+            </div>
+          )}
+
+          {fetchError && !loading && (
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#fca5a5', fontSize: '0.85rem' }}>{fetchError}</div>
+          )}
+
+          {!loading && data && data.codes.length === 0 && (
+            <div style={{ padding: '3rem', textAlign: 'center', color: '#475569', fontSize: '0.9rem' }}>
+              まだプロモーションコードが発行されていません。<br />
+              上のフォームから最初のコードを発行してください。
+            </div>
+          )}
+
+          {!loading && data && data.codes.length > 0 && (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #334155' }}>
+                    {['状態', 'コード', '教師', '使用 / 上限', '発行日', '操作'].map((h) => (
+                      <th key={h} style={{ padding: '0.7rem 0.8rem', textAlign: 'left', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap', fontSize: '0.7rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.codes.map((c) => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #1e293b', opacity: c.active ? 1 : 0.55 }}>
+                      <td style={{ padding: '0.7rem 0.8rem', whiteSpace: 'nowrap' }}>
+                        <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', background: c.active ? 'rgba(52,211,153,0.15)' : 'rgba(148,163,184,0.1)', color: c.active ? '#34d399' : '#94a3b8', textTransform: 'uppercase' }}>
+                          {c.active ? 'Active' : 'Disabled'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.7rem 0.8rem', whiteSpace: 'nowrap' }}>
+                        <code style={{ fontFamily: mono, color: '#7dd3fc', fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.03em' }}>{c.code}</code>
+                      </td>
+                      <td style={{ padding: '0.7rem 0.8rem', maxWidth: 240 }}>
+                        <div style={{ color: '#e2e8f0' }}>{c.teacherName || '—'}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: mono, overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.teacherEmail}</div>
+                      </td>
+                      <td style={{ padding: '0.7rem 0.8rem', whiteSpace: 'nowrap', fontFamily: mono }}>
+                        <span style={{ color: c.timesRedeemed > 0 ? '#34d399' : '#64748b', fontWeight: 600 }}>{c.timesRedeemed}</span>
+                        <span style={{ color: '#475569' }}> / {c.maxRedemptions ?? '∞'}</span>
+                      </td>
+                      <td style={{ padding: '0.7rem 0.8rem', whiteSpace: 'nowrap', color: '#94a3b8', fontSize: '0.78rem' }}>
+                        {formatDate(c.createdAt)}
+                      </td>
+                      <td style={{ padding: '0.7rem 0.8rem', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={() => copyToClipboard(c.shareUrl, 'URL')}
+                            style={{ padding: '4px 8px', background: '#0f172a', border: '1px solid #334155', borderRadius: 4, color: '#94a3b8', fontSize: '0.7rem', cursor: 'pointer', fontFamily: sans }}>
+                            URL
+                          </button>
+                          <button onClick={() => copyToClipboard(c.code, 'コード')}
+                            style={{ padding: '4px 8px', background: '#0f172a', border: '1px solid #334155', borderRadius: 4, color: '#94a3b8', fontSize: '0.7rem', cursor: 'pointer', fontFamily: sans }}>
+                            コード
+                          </button>
+                          <button onClick={() => handleToggleActive(c.id, c.active)}
+                            style={{ padding: '4px 8px', background: c.active ? 'rgba(248,113,113,0.1)' : 'rgba(52,211,153,0.1)', border: `1px solid ${c.active ? '#ef4444' : '#34d399'}`, borderRadius: 4, color: c.active ? '#fca5a5' : '#86efac', fontSize: '0.7rem', cursor: 'pointer', fontFamily: sans }}>
+                            {c.active ? '無効化' : '有効化'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Footer help */}
+        <div style={{ marginTop: '1.5rem', padding: '1rem 1.2rem', background: '#1e293b', borderRadius: 10, border: '1px solid #334155', fontSize: '0.78rem', color: '#94a3b8', lineHeight: 1.7 }}>
+          <strong style={{ color: '#7dd3fc' }}>運用メモ:</strong>
+          <ul style={{ margin: '0.5rem 0 0 1.2rem', padding: 0, color: '#94a3b8' }}>
+            <li>教師に共有 URL を渡せば、学生はワンクリックで Checkout に割引が自動適用される</li>
+            <li>Stripe の制約上、コードは作成後に変更できない (誤発行時は無効化 → 再発行)</li>
+            <li>「使用回数上限」を空欄にすると無制限。乱用懸念がある場合のみ設定</li>
+            <li>既存課金者の二重利用は Stripe 側で自動ブロック (first_time_transaction)</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  );
+}
