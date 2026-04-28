@@ -23,8 +23,11 @@ import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import {
   APP_CATALOG,
+  CATEGORIES,
   appsForPlan,
+  isAppNew,
   type CatalogApp,
+  type AppCategory,
 } from '@/app/lib/app-catalog';
 import type { PlanTier } from '@/app/lib/pricing-display';
 
@@ -92,12 +95,44 @@ const LABELS = {
     en: 'Pin them for one-click access',
     es: 'Fíjalas para acceso de un clic',
   } as L3,
+  // 2026-04-27 ピッカー検索/フィルタ UI
+  searchPlaceholder: {
+    ja: 'アプリ名で検索...',
+    en: 'Search by name...',
+    es: 'Buscar por nombre...',
+  } as L3,
+  allCategory: { ja: 'すべて', en: 'All', es: 'Todas' } as L3,
+  noResults: {
+    ja: '該当するアプリが見つかりません',
+    en: 'No apps match your search',
+    es: 'No hay apps que coincidan',
+  } as L3,
+  newBadge: { ja: 'NEW', en: 'NEW', es: 'NUEVO' } as L3,
 };
 
 // 月内に N 回以上使ったらお気に入り候補として表示
 const SUGGESTED_USAGE_THRESHOLD = 3;
 // 最大何件のおすすめを表示するか
 const MAX_SUGGESTIONS = 4;
+
+// ピッカーカテゴリタブのスタイル (アクティブ / 非アクティブ)
+function pickerTabStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: '0.42rem 0.85rem',
+    fontFamily: sans,
+    fontSize: '0.78rem',
+    fontWeight: active ? 600 : 500,
+    color: active ? '#fff' : '#475569',
+    background: active ? ACCENT : '#f1f5f9',
+    border: '1px solid',
+    borderColor: active ? ACCENT : '#e2e8f0',
+    borderRadius: 999,
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+  };
+}
 
 interface Props {
   userPlan: PlanTier | 'free' | undefined;
@@ -112,6 +147,9 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // ピッカーモーダル内の検索 + カテゴリフィルタ
+  const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerCategory, setPickerCategory] = useState<AppCategory | 'all'>('all');
 
   // ── 初期ロード ──
   useEffect(() => {
@@ -158,7 +196,15 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
     const next = [...favIds, appId];
     setFavIds(next);
     setPickerOpen(false);
+    setPickerSearch('');
+    setPickerCategory('all');
     persist(next);
+  };
+
+  const handleClosePicker = () => {
+    setPickerOpen(false);
+    setPickerSearch('');
+    setPickerCategory('all');
   };
 
   const handleRemove = (appId: string) => {
@@ -196,6 +242,26 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
   const availableApps = appsForPlan(userPlan ?? 'free', true).filter(
     (a) => !favIds.includes(a.id),
   );
+
+  // ピッカー用フィルタリング (検索 × カテゴリ AND)
+  const pickerSearchLower = pickerSearch.trim().toLowerCase();
+  const filteredPickerApps = availableApps.filter((app) => {
+    // カテゴリフィルタ
+    if (pickerCategory !== 'all' && app.category !== pickerCategory) return false;
+    // 検索フィルタ (空なら全通過。アプリ名 or タグライン全言語に対して部分一致)
+    if (!pickerSearchLower) return true;
+    const haystack = [
+      app.id,
+      ...Object.values(app.name),
+      ...Object.values(app.tagline),
+    ]
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(pickerSearchLower);
+  });
+
+  // ピッカー内で利用可能なカテゴリのみ表示 (空のカテゴリタブは出さない)
+  const availableCategories = new Set(availableApps.map((a) => a.category));
 
   // ── おすすめ算出 (使用回数ベース) ──
   // 月内 SUGGESTED_USAGE_THRESHOLD 回以上使った + お気に入り未登録 + 使えるアプリ
@@ -466,84 +532,218 @@ export function FavoritesCard({ userPlan, appUsage }: Props) {
         </div>
       )}
 
-      {/* ── アプリピッカーモーダル ── */}
+      {/* ── アプリピッカーモーダル (検索 + カテゴリタブ) ── */}
       {pickerOpen && (
         <div
-          onClick={() => setPickerOpen(false)}
+          onClick={handleClosePicker}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.5)',
+            background: 'rgba(15, 23, 42, 0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
             padding: '1rem',
+            backdropFilter: 'blur(4px)',
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: '#fff',
-              borderRadius: 12,
-              maxWidth: 600,
+              borderRadius: 14,
+              maxWidth: 640,
               width: '100%',
-              maxHeight: '80vh',
+              maxHeight: '85vh',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+              boxShadow: '0 24px 70px rgba(0,0,0,0.22)',
             }}
           >
-            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* ── ヘッダー ── */}
+            <div style={{ padding: '1.1rem 1.5rem 0.85rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontFamily: serif, fontSize: '1.05rem', fontWeight: 400, color: '#0f172a', margin: 0 }}>
                 {t3(LABELS.pickerTitle, lang)}
               </h3>
               <button
                 type="button"
-                onClick={() => setPickerOpen(false)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.5rem', color: '#94a3b8', lineHeight: 1 }}
+                onClick={handleClosePicker}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.5rem', color: '#94a3b8', lineHeight: 1, padding: '0.25rem 0.5rem' }}
+                aria-label={t3(LABELS.closePicker, lang)}
               >
                 ×
               </button>
             </div>
-            <div style={{ overflow: 'auto', padding: '1rem 1.5rem' }}>
-              {availableApps.length === 0 ? (
+
+            {/* ── 検索ボックス ── */}
+            <div style={{ padding: '0.85rem 1.5rem 0.5rem', borderBottom: '1px solid #f1f5f9' }}>
+              <div style={{ position: 'relative' }}>
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: '0.85rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: '0.95rem',
+                    color: '#94a3b8',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  🔍
+                </span>
+                <input
+                  type="text"
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)}
+                  placeholder={t3(LABELS.searchPlaceholder, lang)}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.85rem 0.6rem 2.4rem',
+                    fontSize: '0.9rem',
+                    fontFamily: sans,
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 8,
+                    outline: 'none',
+                    background: '#f8fafc',
+                    transition: 'border-color 0.15s, background 0.15s',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = ACCENT;
+                    e.currentTarget.style.background = '#fff';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.background = '#f8fafc';
+                  }}
+                />
+                {pickerSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setPickerSearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: '0.5rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      fontSize: '1.1rem',
+                      padding: '0.3rem 0.5rem',
+                      lineHeight: 1,
+                    }}
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ── カテゴリタブ (横スクロール) ── */}
+            <div
+              style={{
+                padding: '0.6rem 1rem 0.55rem',
+                borderBottom: '1px solid #f1f5f9',
+                overflowX: 'auto',
+                whiteSpace: 'nowrap',
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
+              <div style={{ display: 'inline-flex', gap: '0.4rem', paddingInline: '0.5rem' }}>
+                {/* 「すべて」タブ */}
+                <button
+                  type="button"
+                  onClick={() => setPickerCategory('all')}
+                  style={pickerTabStyle(pickerCategory === 'all')}
+                >
+                  {t3(LABELS.allCategory, lang)} ({availableApps.length})
+                </button>
+                {/* 各カテゴリタブ (該当アプリがある場合のみ表示) */}
+                {CATEGORIES.filter((c) => availableCategories.has(c.id)).map((cat) => {
+                  const count = availableApps.filter((a) => a.category === cat.id).length;
+                  const active = pickerCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setPickerCategory(cat.id)}
+                      style={pickerTabStyle(active)}
+                    >
+                      {cat.emoji} {cat.label[lang as keyof typeof cat.label] || cat.label.en} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── アプリグリッド ── */}
+            <div style={{ overflow: 'auto', padding: '1rem 1.5rem 1.25rem', flex: 1 }}>
+              {filteredPickerApps.length === 0 ? (
                 <p style={{ fontFamily: sans, fontSize: '0.9rem', color: '#94a3b8', textAlign: 'center', padding: '2rem 0', margin: 0 }}>
-                  {t3(LABELS.pickerEmpty, lang)}
+                  {pickerSearch || pickerCategory !== 'all'
+                    ? t3(LABELS.noResults, lang)
+                    : t3(LABELS.pickerEmpty, lang)}
                 </p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.75rem' }}>
-                  {availableApps.map((app) => (
-                    <button
-                      key={app.id}
-                      type="button"
-                      onClick={() => handleAdd(app.id)}
-                      style={{
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 10,
-                        padding: '0.75rem 0.5rem',
-                        cursor: 'pointer',
-                        fontFamily: sans,
-                        textAlign: 'center',
-                        transition: 'all 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#f0f9ff';
-                        e.currentTarget.style.borderColor = ACCENT;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#f8fafc';
-                        e.currentTarget.style.borderColor = '#e2e8f0';
-                      }}
-                    >
-                      <div style={{ fontSize: '1.5rem', marginBottom: '0.3rem' }}>{app.emoji}</div>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>
-                        {app.name[lang as keyof typeof app.name] || app.name.en}
-                      </div>
-                    </button>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.7rem' }}>
+                  {filteredPickerApps.map((app) => {
+                    const isNew = isAppNew(app);
+                    return (
+                      <button
+                        key={app.id}
+                        type="button"
+                        onClick={() => handleAdd(app.id)}
+                        style={{
+                          position: 'relative',
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 10,
+                          padding: '0.75rem 0.5rem',
+                          cursor: 'pointer',
+                          fontFamily: sans,
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#f0f9ff';
+                          e.currentTarget.style.borderColor = ACCENT;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#f8fafc';
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                        }}
+                      >
+                        {/* NEW バッジ (releasedAt から自動・30 日経過で自動消滅) */}
+                        {isNew && (
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: 6,
+                              right: 6,
+                              padding: '1px 6px',
+                              background: '#0ea5e9',
+                              color: '#fff',
+                              fontSize: '0.6rem',
+                              fontWeight: 700,
+                              borderRadius: 4,
+                              letterSpacing: '0.05em',
+                            }}
+                          >
+                            {t3(LABELS.newBadge, lang)}
+                          </span>
+                        )}
+                        <div style={{ fontSize: '1.5rem', marginBottom: '0.3rem' }}>{app.emoji}</div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>
+                          {app.name[lang as keyof typeof app.name] || app.name.en}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

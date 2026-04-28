@@ -46,6 +46,44 @@ export interface CatalogApp {
   quotaKey: 'separator' | 'transcribe' | 'intonation' | null;
   badges: Badge[];
   minPlan: MinPlan;
+  /**
+   * ISO 日付 (YYYY-MM-DD)。リリース日からこの日数以内なら NEW バッジを自動表示。
+   * 設定するだけで NEW_BADGE_DAYS (デフォルト 30 日) 後に自動的に消える。
+   * 手動で badges: ['NEW'] を管理する必要なし。
+   */
+  releasedAt?: string;
+}
+
+// 2026-04-27: NEW バッジの自動表示期間 (リリースからこの日数間 NEW として表示)
+export const NEW_BADGE_DAYS = 30;
+
+/**
+ * 「NEW バッジを表示すべきか」判定。
+ * releasedAt が未設定 → false
+ * リリースから NEW_BADGE_DAYS 以内 → true
+ * 経過後 → 自動的に false (バッジ消滅)
+ */
+export function isAppNew(app: CatalogApp): boolean {
+  if (!app.releasedAt) return false;
+  const released = new Date(app.releasedAt);
+  if (isNaN(released.getTime())) return false;
+  const now = new Date();
+  const daysSince = (now.getTime() - released.getTime()) / (1000 * 60 * 60 * 24);
+  return daysSince >= 0 && daysSince <= NEW_BADGE_DAYS;
+}
+
+/**
+ * NEW バッジが消えるまでの残り日数 (整数)。
+ * 0 以下なら既に期限切れ。NEW でないアプリは null。
+ */
+export function newBadgeDaysRemaining(app: CatalogApp): number | null {
+  if (!app.releasedAt) return null;
+  const released = new Date(app.releasedAt);
+  if (isNaN(released.getTime())) return null;
+  const now = new Date();
+  const daysSince = (now.getTime() - released.getTime()) / (1000 * 60 * 60 * 24);
+  const remaining = Math.ceil(NEW_BADGE_DAYS - daysSince);
+  return remaining;
 }
 
 export const APP_CATALOG: CatalogApp[] = [
@@ -284,6 +322,7 @@ export const APP_CATALOG: CatalogApp[] = [
     quotaKey: null,
     badges: [],
     minPlan: 'concerto',
+    releasedAt: '2026-04-27',
   },
   {
     id: 'revox',
@@ -476,8 +515,9 @@ export const APP_CATALOG: CatalogApp[] = [
     noLogin: false,
     serverApp: false,
     quotaKey: null,
-    badges: ['NEW'],
+    badges: [],
     minPlan: 'prelude',
+    releasedAt: '2026-04-26',
   },
   {
     id: 'comping',
@@ -490,8 +530,9 @@ export const APP_CATALOG: CatalogApp[] = [
     noLogin: false,
     serverApp: false,
     quotaKey: null,
-    badges: ['NEW'],
+    badges: [],
     minPlan: 'prelude',
+    releasedAt: '2026-04-26',
   },
   // 2026-04-26 開発保留: DRUM MACHINE
   //   理由: 28 パターンが専門家 transcribe 不在の近似版だったため公開前に保留。
@@ -515,8 +556,9 @@ export const APP_CATALOG: CatalogApp[] = [
     noLogin: false,
     serverApp: false,
     quotaKey: null,
-    badges: ['NEW'],
+    badges: [],
     minPlan: 'prelude',
+    releasedAt: '2026-04-26',
   },
   {
     id: 'checklist',
@@ -529,8 +571,9 @@ export const APP_CATALOG: CatalogApp[] = [
     noLogin: true,
     serverApp: false,
     quotaKey: null,
-    badges: ['NEW'],
+    badges: [],
     minPlan: 'free',
+    releasedAt: '2026-04-26',
   },
   {
     id: 'frequency',
@@ -543,8 +586,9 @@ export const APP_CATALOG: CatalogApp[] = [
     noLogin: false,
     serverApp: false,
     quotaKey: null,
-    badges: ['NEW'],
+    badges: [],
     minPlan: 'prelude',
+    releasedAt: '2026-04-26',
   },
 
   // ============================================================

@@ -11,6 +11,7 @@ import {
   appsLockedFor,
   recommendedAppOfDay,
   totalAppCount,
+  isAppNew,
   type CatalogApp,
   type AppCategory,
 } from '@/app/lib/app-catalog';
@@ -374,7 +375,7 @@ function AppCard({ app, isFavorite, onToggleFavorite, onLaunch, lang, unlocked }
         {!unlocked && (
           <BadgePill text={t({ ja: '上位プラン', en: 'Upgrade', es: 'Mejorar' }, lang)} bg="#e2e8f0" color="#475569" />
         )}
-        {app.badges.includes('NEW') && unlocked && (
+        {isAppNew(app) && unlocked && (
           <BadgePill text="NEW" bg="#0ea5e9" color="#fff" />
         )}
         {app.badges.includes('PRO') && unlocked && (
