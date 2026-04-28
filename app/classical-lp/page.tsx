@@ -188,8 +188,8 @@ const FAQ = [
     a: { ja: 'Common Practice 標準（V7/vi 等）で出力されますが、日本式（V7→vi）への変換オプションも実装予定です。基本的な和声機能は両方共通。', en: 'Output is in Common Practice notation (V7/vi). Japanese-style (V7→vi) conversion option is on the roadmap. Core harmonic functions are universal.', es: 'Salida en notación de Práctica Común. Conversión a notación japonesa en hoja de ruta.', ko: 'Common Practice 표준(V7/vi)으로 출력되며, 일본식 변환 옵션은 로드맵에 있습니다.', pt: 'Saída em notação Common Practice. Opção de conversão para notação japonesa em planejamento.', de: 'Ausgabe erfolgt in Common-Practice-Notation. Konvertierung in japanische Notation ist geplant.' } as L6,
   },
   {
-    q: { ja: '無料で使えますか？', en: 'Is it free?', es: '¿Es gratis?', ko: '무료로 사용 가능합니까?', pt: 'É grátis?', de: 'Ist es kostenlos?' } as L6,
-    a: { ja: 'Concerto プラン (¥1,480/月) 以上で無制限利用。学生は教師のクーポンで初月 50% off + 12 ヶ月 30% off。教師は Symphony プランを永久無償。', en: 'Concerto plan (¥1,480/mo) or above gives unlimited use. Students get 50% off first month + 30% off for 12 months via teacher coupon. Teachers get Symphony free forever.', es: 'Plan Concerto (¥1,480/mes) en adelante es ilimitado. Estudiantes con cupón de profesor: 50% off primer mes + 30% off 12 meses.', ko: 'Concerto 플랜(¥1,480/월) 이상에서 무제한. 학생은 교사 쿠폰으로 첫 달 50% + 12개월 30% 할인.', pt: 'Plano Concerto (¥1.480/mês) ou superior é ilimitado. Estudantes com cupom de professor: 50% off primeiro mês + 30% off 12 meses.', de: 'Concerto-Tarif (¥1.480/Monat) oder höher: unbegrenzt. Studierende mit Lehrkraft-Code: 50 % erster Monat + 30 % für 12 Monate.' } as L6,
+    q: { ja: '料金プランは？', en: 'What are the pricing plans?', es: '¿Cuáles son los planes?', ko: '요금제는 어떻게 되나요?', pt: 'Quais são os planos?', de: 'Welche Tarife gibt es?' } as L6,
+    a: { ja: 'Concerto プラン (¥1,480/月) 以上で無制限利用。月額・年額からお選びいただけます。年額プランは実質 2 ヶ月分お得です。', en: 'Unlimited use with Concerto plan (¥1,480/mo) or above. Monthly and annual billing available; annual saves the equivalent of 2 months.', es: 'Uso ilimitado con plan Concerto (¥1,480/mes) o superior. Facturación mensual o anual disponible; el plan anual ahorra el equivalente a 2 meses.', ko: 'Concerto 플랜(¥1,480/월) 이상에서 무제한 이용 가능합니다. 월간·연간 결제를 선택할 수 있으며, 연간은 약 2개월 할인.', pt: 'Uso ilimitado com plano Concerto (¥1.480/mês) ou superior. Faturamento mensal ou anual disponível; o anual economiza o equivalente a 2 meses.', de: 'Unbegrenzte Nutzung mit Concerto-Tarif (¥1.480/Monat) oder höher. Monats- oder Jahresabrechnung verfügbar; Jahrestarif spart etwa zwei Monate.' } as L6,
   },
   {
     q: { ja: '楽譜ファイル（MusicXML）を持っていません。どうすれば？', en: "I don't have MusicXML files. What do I do?", es: 'No tengo archivos MusicXML. ¿Qué hago?', ko: 'MusicXML 파일이 없습니다. 어떻게 하나요?', pt: 'Não tenho arquivos MusicXML. O que faço?', de: 'Ich habe keine MusicXML-Dateien. Was tun?' } as L6,
@@ -214,7 +214,7 @@ const JSONLD_SOFTWARE = {
     price: '1480',
     priceCurrency: 'JPY',
     availability: 'https://schema.org/InStock',
-    description: 'Concerto plan and above. Student discounts available via teacher coupons.',
+    description: 'Concerto plan and above provides unlimited use. Monthly and annual billing available.',
   },
   description:
     'Roman numeral analysis tool for Western classical music. Built-in library of 600+ pieces (Bach chorales, Mozart sonatas, Beethoven quartets). Powered by music21 (MIT). Cadence detection, modulation map, voice leading checker. Common Practice Period (1600-1900).',

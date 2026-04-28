@@ -622,7 +622,7 @@ const HomePage: React.FC = () => {
           }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#059669', letterSpacing: '0.08em', marginBottom: 4 }}>
-                🎓 {t5({ ja: '学生クーポン適用中', en: 'Student coupon applied', es: 'Cupón de estudiante aplicado', ko: '학생 쿠폰 적용 중', pt: 'Cupom de estudante aplicado', de: 'Studenten-Gutschein angewendet' }, lang)}
+                🎁 {t5({ ja: 'クーポン適用中', en: 'Coupon active', es: 'Cupón activo', ko: '쿠폰 적용 중', pt: 'Cupom ativo', de: 'Gutschein aktiv' }, lang)}
               </div>
               <div style={{ fontSize: '0.85rem', color: '#0f172a' }}>
                 <code style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: 4, fontFamily: '"SF Mono", monospace', fontSize: '0.85rem', fontWeight: 700 }}>
@@ -630,12 +630,12 @@ const HomePage: React.FC = () => {
                 </code>
                 <span style={{ marginLeft: 8, color: '#64748b' }}>
                   {t5({
-                    ja: '— Prelude / Concerto に 30% off × 12 ヶ月が自動適用されます',
-                    en: '— 30% off × 12 months on Prelude / Concerto applied automatically',
-                    es: '— 30% de descuento × 12 meses en Prelude / Concerto aplicado automáticamente',
-                    ko: '— Prelude / Concerto 에 30% 할인 × 12 개월 자동 적용',
-                    pt: '— 30% off × 12 meses em Prelude / Concerto aplicado automaticamente',
-                    de: '— 30% Rabatt × 12 Monate auf Prelude / Concerto wird automatisch angewendet',
+                    ja: '— 決済画面で適用後の価格をご確認ください',
+                    en: '— See your final price at checkout',
+                    es: '— Vea su precio final en el checkout',
+                    ko: '— 결제 화면에서 최종 가격을 확인하세요',
+                    pt: '— Veja o preço final no checkout',
+                    de: '— Endpreis im Checkout einsehen',
                   }, lang)}
                 </span>
               </div>

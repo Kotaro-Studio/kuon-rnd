@@ -22,9 +22,21 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { AuthGate } from '@/components/AuthGate';
+
+// OSMD は client-only で SSR 不可。next/dynamic で client side のみロード
+// (CLAUDE.md §44.11 安全領域：score 描画は OSMD で堅牢実装)
+const ScoreViewer = dynamic(() => import('@/components/ScoreViewer'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>
+      Loading score renderer…
+    </div>
+  ),
+});
 
 const serif = '"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", "Hiragino Kaku Gothic ProN", Arial, sans-serif';
@@ -77,6 +89,7 @@ interface AnalysisResult {
   cadences: CadenceData[];
   modulations: ModulationData[];
   chord_count: number;
+  musicxml?: string; // バックエンドが描画用に echo back する MusicXML 文字列
 }
 
 const LABELS = {
@@ -364,6 +377,33 @@ function ClassicalAnalysisInner() {
 }
 
 function ResultPanel({ result, lang }: { result: AnalysisResult; lang: Lang }) {
+  // 確信度の防御的キャップ：Cloud Run 側でも clamp しているが、古いバージョンが
+  // デプロイ中の過渡期や手動 MusicXML 入力時の保険として、フロントでも 0-100% に制限
+  const confidencePct = Math.round(Math.max(0, Math.min(1, result.key_confidence)) * 100);
+
+  // ScoreViewer に渡すローカライズラベル
+  const scoreLabels = {
+    rendering: t({ ja: '楽譜を描画中…', en: 'Rendering score…', es: 'Renderizando partitura…', ko: '악보 렌더링 중…', pt: 'Renderizando partitura…', de: 'Notenbild wird erstellt…' }, lang),
+    renderError: t({ ja: '楽譜の描画に失敗', en: 'Score rendering failed', es: 'Error al renderizar partitura', ko: '악보 렌더링 실패', pt: 'Falha na renderização', de: 'Notenbild fehlgeschlagen' }, lang),
+    cadenceLegend: t(LABELS.result.cadences, lang),
+    modulationLegend: t(LABELS.result.modulations, lang),
+    romanTrack: t({ ja: '小節別ローマ数字', en: 'Roman numerals by measure', es: 'Números romanos por compás', ko: '마디별 로마 숫자', pt: 'Algarismos romanos por compasso', de: 'Stufen pro Takt' }, lang),
+    measure: t(LABELS.result.measure, lang),
+    cadenceTypes: {
+      authentic: t(LABELS.result.cadenceTypes.authentic, lang),
+      plagal: t(LABELS.result.cadenceTypes.plagal, lang),
+      deceptive: t(LABELS.result.cadenceTypes.deceptive, lang),
+      half: t(LABELS.result.cadenceTypes.half, lang),
+    },
+    functions: {
+      tonic: t({ ja: '主和音', en: 'Tonic', es: 'Tónica', ko: '으뜸화음', pt: 'Tônica', de: 'Tonika' }, lang),
+      predominant: t({ ja: '下属', en: 'Pre-dom', es: 'Subdominante', ko: '버금딸림', pt: 'Subdominante', de: 'Subdominante' }, lang),
+      dominant: t({ ja: '属', en: 'Dominant', es: 'Dominante', ko: '딸림', pt: 'Dominante', de: 'Dominante' }, lang),
+      other: t({ ja: 'その他', en: 'Other', es: 'Otro', ko: '기타', pt: 'Outro', de: 'Sonstige' }, lang),
+      unknown: '?',
+    },
+  };
+
   return (
     <div style={{ marginTop: '2rem', background: '#fff', borderRadius: 16, padding: 'clamp(1.5rem, 3vw, 2.5rem)', boxShadow: '0 4px 24px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
       <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.2rem, 2.5vw, 1.5rem)', fontWeight: 400, color: '#0f172a', margin: '0 0 1.5rem 0' }}>
@@ -373,10 +413,23 @@ function ResultPanel({ result, lang }: { result: AnalysisResult; lang: Lang }) {
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '2rem' }}>
         <SummaryCard label={t(LABELS.result.detectedKey, lang)} value={result.key} accent={ACCENT} />
-        <SummaryCard label={t(LABELS.result.confidence, lang)} value={`${Math.round(result.key_confidence * 100)}%`} accent="#0284c7" />
+        <SummaryCard label={t(LABELS.result.confidence, lang)} value={`${confidencePct}%`} accent="#0284c7" />
         <SummaryCard label={t(LABELS.result.chordCount, lang)} value={String(result.chord_count)} accent="#10b981" />
         <SummaryCard label={t(LABELS.result.cadences, lang)} value={String(result.cadences.length)} accent={GOLD} />
       </div>
+
+      {/* OSMD で楽譜描画（IQ190 の核心）：MusicXML がレスポンスに含まれていれば描画 */}
+      {result.musicxml && (
+        <div style={{ marginBottom: '2.5rem' }}>
+          <ScoreViewer
+            musicxml={result.musicxml}
+            chords={result.chords}
+            cadences={result.cadences}
+            modulations={result.modulations}
+            labels={scoreLabels}
+          />
+        </div>
+      )}
 
       {/* Cadences */}
       {result.cadences.length > 0 && (

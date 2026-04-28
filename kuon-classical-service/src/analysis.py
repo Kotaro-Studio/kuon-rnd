@@ -50,10 +50,13 @@ def analyze_score(musicxml: str, key_hint: Optional[str] = None) -> Dict[str, An
             confidence = 1.0  # ユーザー指定なので確信度 max
         except Exception:
             main_key = score.analyze("key")
-            confidence = main_key.tonalCertainty() if hasattr(main_key, "tonalCertainty") else 0.85
+            raw_conf = main_key.tonalCertainty() if hasattr(main_key, "tonalCertainty") else 0.85
+            # music21 の tonalCertainty() は稀に 1.0 を超える値を返すため [0, 1] に clamp
+            confidence = max(0.0, min(1.0, float(raw_conf)))
     else:
         main_key = score.analyze("key")
-        confidence = main_key.tonalCertainty() if hasattr(main_key, "tonalCertainty") else 0.85
+        raw_conf = main_key.tonalCertainty() if hasattr(main_key, "tonalCertainty") else 0.85
+        confidence = max(0.0, min(1.0, float(raw_conf)))
 
     # 全コードを抽出してローマ数字化
     chords_data = []

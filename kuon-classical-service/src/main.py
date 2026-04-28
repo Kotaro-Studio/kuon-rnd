@@ -157,10 +157,12 @@ def get_piece(piece_id: str, authorization: Optional[str] = Header(None)):
 
 @app.post("/api/analyze")
 def analyze(req: AnalyzeRequest, authorization: Optional[str] = Header(None)):
-    """MusicXML をローマ数字で和声分析"""
+    """MusicXML をローマ数字で和声分析。レスポンスに入力 MusicXML を含めることで、
+    フロントが描画と分析の両方を 1 リクエストで取得できる。"""
     verify_auth(authorization)
     try:
         result = analyze_score(req.musicxml, key_hint=req.key_hint)
+        result["musicxml"] = req.musicxml  # 描画用に echo back
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Analysis failed: {str(e)}")
@@ -168,7 +170,8 @@ def analyze(req: AnalyzeRequest, authorization: Optional[str] = Header(None)):
 
 @app.post("/api/analyze-from-library")
 def analyze_from_library(req: LibraryAnalyzeRequest, authorization: Optional[str] = Header(None)):
-    """ライブラリ内の楽曲を ID で指定して分析"""
+    """ライブラリ内の楽曲を ID で指定して分析。
+    レスポンスには MusicXML 文字列も含めるので、フロントは OSMD で楽譜描画できる。"""
     verify_auth(authorization)
     musicxml = library.get_musicxml(req.piece_id)
     if musicxml is None:
@@ -176,6 +179,7 @@ def analyze_from_library(req: LibraryAnalyzeRequest, authorization: Optional[str
     try:
         result = analyze_score(musicxml)
         result["piece_id"] = req.piece_id
+        result["musicxml"] = musicxml  # フロントで OSMD 描画するために含める
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Analysis failed: {str(e)}")
