@@ -32,6 +32,7 @@ import os
 from typing import Optional, Literal
 
 from fastapi import FastAPI, HTTPException, Header, Body
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -149,6 +150,44 @@ def get_piece(piece_id: str, authorization: Optional[str] = Header(None)):
     if musicxml is None:
         raise HTTPException(status_code=404, detail=f"Piece not found: {piece_id}")
     return {"piece_id": piece_id, "musicxml": musicxml}
+
+
+@app.get("/api/composers")
+def list_composers(authorization: Optional[str] = Header(None)):
+    """利用可能な作曲家一覧（フロントのドロップダウン用）。
+    時代順 + 曲数の多い順でソート済み。"""
+    verify_auth(authorization)
+    return {"composers": library.list_composers()}
+
+
+# ────────────────────────────────────────────────────────────────────
+# MIDI 生成エンドポイント（フロントの Tone.js 再生用）
+# ────────────────────────────────────────────────────────────────────
+
+@app.get("/api/midi/{piece_id:path}")
+def get_midi(piece_id: str, authorization: Optional[str] = Header(None)):
+    """指定楽曲の MIDI バイナリを返す。music21 が score → MIDI 変換。
+    フロントが @tonejs/midi でパース → Tone.js で再生する。"""
+    verify_auth(authorization)
+    musicxml = library.get_musicxml(piece_id)
+    if musicxml is None:
+        raise HTTPException(status_code=404, detail=f"Piece not found: {piece_id}")
+    try:
+        from music21 import converter
+        score = converter.parseData(musicxml, format="musicxml")
+        midi_path = score.write("midi")
+        with open(midi_path, "rb") as f:
+            midi_bytes = f.read()
+        return Response(
+            content=midi_bytes,
+            media_type="audio/midi",
+            headers={
+                "Content-Disposition": f'attachment; filename="{piece_id.replace("/", "_")}.mid"',
+                "Cache-Control": "public, max-age=3600",
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"MIDI generation failed: {str(e)}")
 
 
 # ────────────────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tonejs/midi": "^2.0.28",
     "@types/mapbox-gl": "^3.4.1",
     "lamejs": "^1.2.1",
     "leaflet": "^1.9.4",
@@ -19,7 +20,8 @@
     "react-dom": "19.2.4",
     "react-map-gl": "^8.1.0",
     "recharts": "^3.8.0",
-    "stripe": "^22.1.0"
+    "stripe": "^22.1.0",
+    "tone": "^15.1.22"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

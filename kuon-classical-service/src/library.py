@@ -21,57 +21,62 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# 作曲家ごとの時代区分（簡易判定）
-ERA_BY_COMPOSER = {
-    "bach": "baroque",
-    "monteverdi": "baroque",
-    "palestrina": "renaissance",
-    "trecento": "medieval",
-    "haydn": "classical",
-    "mozart": "classical",
-    "beethoven": "classical",
-    "schubert": "romantic",
-    "schumann": "romantic",
-    "chopin": "romantic",
-    "brahms": "romantic",
-    "joplin": "early-jazz",
+# 作曲家ごとのメタデータ（時代 + 表示名）。music21 corpus の主要作曲家を網羅。
+# 公衆ドメインかつ music21 内蔵 corpus に存在する作曲家のみ。
+# 該当する作曲家が music21 内蔵に無い場合、_ensure_built() の try/except でスキップされる。
+COMPOSER_META: Dict[str, Dict[str, str]] = {
+    # Medieval / Renaissance
+    "trecento": {"display": "Trecento (14th c. Italy)", "era": "medieval"},
+    "ciconia": {"display": "Johannes Ciconia", "era": "medieval"},
+    "josquin": {"display": "Josquin des Prez", "era": "renaissance"},
+    "palestrina": {"display": "G.P. da Palestrina", "era": "renaissance"},
+    "luca": {"display": "Luca Marenzio", "era": "renaissance"},
+    # Baroque
+    "monteverdi": {"display": "C. Monteverdi", "era": "baroque"},
+    "corelli": {"display": "A. Corelli", "era": "baroque"},
+    "handel": {"display": "G.F. Handel", "era": "baroque"},
+    "bach": {"display": "J.S. Bach", "era": "baroque"},
+    "cpebach": {"display": "C.P.E. Bach", "era": "baroque"},
+    # Classical
+    "haydn": {"display": "F.J. Haydn", "era": "classical"},
+    "mozart": {"display": "W.A. Mozart", "era": "classical"},
+    "beethoven": {"display": "L.v. Beethoven", "era": "classical"},
+    # Romantic
+    "schubert": {"display": "F. Schubert", "era": "romantic"},
+    "schumann": {"display": "R. Schumann", "era": "romantic"},
+    "chopin": {"display": "F. Chopin", "era": "romantic"},
+    "brahms": {"display": "J. Brahms", "era": "romantic"},
+    "weber": {"display": "C.M. von Weber", "era": "romantic"},
+    "verdi": {"display": "G. Verdi", "era": "romantic"},
+    "beach": {"display": "Amy Beach", "era": "romantic"},
+    # Modern / Early Jazz
+    "schoenberg": {"display": "A. Schoenberg", "era": "modern"},
+    "joplin": {"display": "S. Joplin", "era": "early-jazz"},
+    # Folk Collections (大量・コーパス内蔵)
+    "essenFolksong": {"display": "Essen Folksong (German)", "era": "folk"},
+    "oneills1850": {"display": "O'Neill's 1850 (Irish)", "era": "folk"},
+    "ryansMammoth": {"display": "Ryan's Mammoth (Folk Dance)", "era": "folk"},
+    "airdsAirs": {"display": "Aird's Airs (Scottish)", "era": "folk"},
+    "nottingham": {"display": "Nottingham (English Folk)", "era": "folk"},
+    "miscFolk": {"display": "Miscellaneous Folk", "era": "folk"},
 }
 
 
 def _detect_era(composer_str: str) -> str:
-    composer_lower = composer_str.lower()
-    for key, era in ERA_BY_COMPOSER.items():
-        if key in composer_lower:
-            return era
-    return "unknown"
+    meta = COMPOSER_META.get(composer_str.lower())
+    return meta["era"] if meta else "unknown"
 
 
 def _humanize_composer(raw: str) -> str:
-    mapping = {
-        "bach": "J.S. Bach",
-        "mozart": "W.A. Mozart",
-        "beethoven": "L.v. Beethoven",
-        "haydn": "F.J. Haydn",
-        "schubert": "F. Schubert",
-        "schumann": "R. Schumann",
-        "chopin": "F. Chopin",
-        "brahms": "J. Brahms",
-        "palestrina": "G.P. da Palestrina",
-        "monteverdi": "C. Monteverdi",
-        "joplin": "S. Joplin",
-        "trecento": "Trecento (14C Italy)",
-    }
-    for key, name in mapping.items():
-        if key in raw.lower():
-            return name
-    return raw.replace("_", " ").title()
+    meta = COMPOSER_META.get(raw.lower())
+    return meta["display"] if meta else raw.replace("_", " ").title()
 
 
 class LibraryIndex:
     """music21 corpus への lazy アクセスインデックス"""
 
-    # 対応作曲家（music21 内蔵 corpus 名）
-    COMPOSERS = ["bach", "mozart", "haydn", "beethoven", "palestrina"]
+    # 対応作曲家（COMPOSER_META からキーを取得：拡張時は META を更新するだけ）
+    COMPOSERS = list(COMPOSER_META.keys())
 
     def __init__(self):
         # 起動時には何もしない。最初の検索時にビルドする。
@@ -141,6 +146,33 @@ class LibraryIndex:
     def count(self) -> int:
         """事前ビルドが済んでいなければ -1 を返す（health check 軽量化のため）"""
         return len(self._pieces_cache) if self._pieces_cache is not None else -1
+
+    def list_composers(self) -> List[Dict[str, Any]]:
+        """利用可能な作曲家一覧を返す（曲数・時代区分付き）。
+        フロントのドロップダウン用。music21 corpus に該当作曲家が居ない場合は count=0 で除外する。
+        """
+        pieces = self._ensure_built()
+        counts: Dict[str, int] = {}
+        for p in pieces:
+            key = p["composer_key"]
+            counts[key] = counts.get(key, 0) + 1
+
+        result: List[Dict[str, Any]] = []
+        for key, meta in COMPOSER_META.items():
+            count = counts.get(key, 0)
+            if count == 0:
+                # music21 corpus に存在しない作曲家はスキップ（今は実在 11 名前後）
+                continue
+            result.append({
+                "key": key,
+                "display": meta["display"],
+                "era": meta["era"],
+                "count": count,
+            })
+        # 時代順 → 同時代内は曲数の多い順
+        era_order = ["medieval", "renaissance", "baroque", "classical", "romantic", "modern", "early-jazz", "folk", "unknown"]
+        result.sort(key=lambda c: (era_order.index(c["era"]) if c["era"] in era_order else 99, -c["count"]))
+        return result
 
     def search(
         self,

@@ -156,14 +156,14 @@ const LABELS = {
   },
 };
 
-const COMPOSER_OPTIONS = [
-  { value: '', label: { ja: 'すべての作曲家', en: 'All composers', es: 'Todos los compositores', ko: '모든 작곡가', pt: 'Todos compositores', de: 'Alle Komponisten' } as L6 },
-  { value: 'bach', label: { ja: 'J.S. バッハ', en: 'J.S. Bach', es: 'J.S. Bach', ko: 'J.S. 바흐', pt: 'J.S. Bach', de: 'J.S. Bach' } as L6 },
-  { value: 'mozart', label: { ja: 'モーツァルト', en: 'Mozart', es: 'Mozart', ko: '모차르트', pt: 'Mozart', de: 'Mozart' } as L6 },
-  { value: 'haydn', label: { ja: 'ハイドン', en: 'Haydn', es: 'Haydn', ko: '하이든', pt: 'Haydn', de: 'Haydn' } as L6 },
-  { value: 'beethoven', label: { ja: 'ベートーベン', en: 'Beethoven', es: 'Beethoven', ko: '베토벤', pt: 'Beethoven', de: 'Beethoven' } as L6 },
-  { value: 'palestrina', label: { ja: 'パレストリーナ', en: 'Palestrina', es: 'Palestrina', ko: '팔레스트리나', pt: 'Palestrina', de: 'Palestrina' } as L6 },
-];
+// 作曲家リストは /api/classical/composers から動的取得（music21 corpus 全網羅）
+// 作曲家名は固有名詞のため翻訳しない（J.S. Bach は Bach なので英語表記を全言語共通で使用）
+interface ComposerOption {
+  key: string;
+  display: string;
+  era: string;
+  count: number;
+}
 
 export default function ClassicalAnalysisPage() {
   return (
@@ -182,7 +182,26 @@ function ClassicalAnalysisInner() {
   const [eraFilter, setEraFilter] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analyzedPieceId, setAnalyzedPieceId] = useState<string | null>(null);
   const [serviceReady, setServiceReady] = useState(true);
+  const [composers, setComposers] = useState<ComposerOption[]>([]);
+
+  // 作曲家リストを起動時に 1 回取得（music21 corpus が増減しない限りキャッシュで足りる）
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/classical/composers');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        if (Array.isArray(data.composers)) {
+          setComposers(data.composers);
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const fetchLibrary = useCallback(async () => {
     setLoading(true);
@@ -222,6 +241,7 @@ function ClassicalAnalysisInner() {
   const handleAnalyze = async (piece: LibraryPiece) => {
     setAnalyzing(true);
     setAnalysisResult(null);
+    setAnalyzedPieceId(null);
     try {
       const res = await fetch('/api/classical/analyze-from-library', {
         method: 'POST',
@@ -234,6 +254,7 @@ function ClassicalAnalysisInner() {
       }
       const data = await res.json();
       setAnalysisResult(data);
+      setAnalyzedPieceId(piece.id);
     } catch {
       alert('Network error');
     } finally {
@@ -283,8 +304,11 @@ function ClassicalAnalysisInner() {
                 onChange={(e) => setComposerFilter(e.target.value)}
                 style={{ padding: '0.6rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '0.9rem', background: '#fff', fontFamily: sans }}
               >
-                {COMPOSER_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{t(opt.label, lang)}</option>
+                <option value="">{t({ ja: 'すべての作曲家', en: 'All composers', es: 'Todos los compositores', ko: '모든 작곡가', pt: 'Todos compositores', de: 'Alle Komponisten' }, lang)}</option>
+                {composers.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.display} ({c.count})
+                  </option>
                 ))}
               </select>
               <select
@@ -293,9 +317,14 @@ function ClassicalAnalysisInner() {
                 style={{ padding: '0.6rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '0.9rem', background: '#fff', fontFamily: sans }}
               >
                 <option value="">{t(LABELS.search.all, lang)} ({t(LABELS.search.era, lang)})</option>
+                <option value="medieval">{t({ ja: '中世', en: 'Medieval', es: 'Medieval', ko: '중세', pt: 'Medieval', de: 'Mittelalter' }, lang)}</option>
+                <option value="renaissance">{t({ ja: 'ルネサンス', en: 'Renaissance', es: 'Renacimiento', ko: '르네상스', pt: 'Renascimento', de: 'Renaissance' }, lang)}</option>
                 <option value="baroque">{t(LABELS.search.baroque, lang)}</option>
                 <option value="classical">{t(LABELS.search.classical, lang)}</option>
                 <option value="romantic">{t(LABELS.search.romantic, lang)}</option>
+                <option value="modern">{t({ ja: '近現代', en: 'Modern', es: 'Moderno', ko: '근현대', pt: 'Moderno', de: 'Moderne' }, lang)}</option>
+                <option value="early-jazz">{t({ ja: 'ラグタイム', en: 'Ragtime', es: 'Ragtime', ko: '래그타임', pt: 'Ragtime', de: 'Ragtime' }, lang)}</option>
+                <option value="folk">{t({ ja: '民俗音楽', en: 'Folk', es: 'Folk', ko: '민속음악', pt: 'Folk', de: 'Volksmusik' }, lang)}</option>
               </select>
             </div>
           </div>
@@ -369,14 +398,14 @@ function ClassicalAnalysisInner() {
         )}
 
         {analysisResult && (
-          <ResultPanel result={analysisResult} lang={lang} />
+          <ResultPanel result={analysisResult} lang={lang} pieceId={analyzedPieceId} />
         )}
       </section>
     </div>
   );
 }
 
-function ResultPanel({ result, lang }: { result: AnalysisResult; lang: Lang }) {
+function ResultPanel({ result, lang, pieceId }: { result: AnalysisResult; lang: Lang; pieceId: string | null }) {
   // 確信度の防御的キャップ：Cloud Run 側でも clamp しているが、古いバージョンが
   // デプロイ中の過渡期や手動 MusicXML 入力時の保険として、フロントでも 0-100% に制限
   const confidencePct = Math.round(Math.max(0, Math.min(1, result.key_confidence)) * 100);
@@ -402,6 +431,18 @@ function ResultPanel({ result, lang }: { result: AnalysisResult; lang: Lang }) {
       other: t({ ja: 'その他', en: 'Other', es: 'Otro', ko: '기타', pt: 'Outro', de: 'Sonstige' }, lang),
       unknown: '?',
     },
+    playback: {
+      title: t({ ja: '再生', en: 'Playback', es: 'Reproducción', ko: '재생', pt: 'Reprodução', de: 'Wiedergabe' }, lang),
+      play: t({ ja: '再生', en: 'Play', es: 'Reproducir', ko: '재생', pt: 'Reproduzir', de: 'Abspielen' }, lang),
+      pause: t({ ja: '一時停止', en: 'Pause', es: 'Pausar', ko: '일시정지', pt: 'Pausar', de: 'Pause' }, lang),
+      restart: t({ ja: '最初から', en: 'Restart', es: 'Reiniciar', ko: '다시', pt: 'Reiniciar', de: 'Neu starten' }, lang),
+      tempo: t({ ja: 'テンポ', en: 'Tempo', es: 'Tempo', ko: '템포', pt: 'Tempo', de: 'Tempo' }, lang),
+      voices: t({ ja: '声部', en: 'Voices', es: 'Voces', ko: '성부', pt: 'Vozes', de: 'Stimmen' }, lang),
+      loadingMidi: t({ ja: 'MIDI を読み込み中…', en: 'Loading MIDI…', es: 'Cargando MIDI…', ko: 'MIDI 로딩 중…', pt: 'Carregando MIDI…', de: 'MIDI wird geladen…' }, lang),
+      midiError: t({ ja: 'MIDI 再生不可', en: 'MIDI playback unavailable', es: 'Reproducción MIDI no disponible', ko: 'MIDI 재생 불가', pt: 'Reprodução MIDI indisponível', de: 'MIDI-Wiedergabe nicht verfügbar' }, lang),
+      mute: t({ ja: 'ミュート', en: 'Mute', es: 'Silenciar', ko: '음소거', pt: 'Silenciar', de: 'Stumm' }, lang),
+      solo: t({ ja: 'ソロ', en: 'Solo', es: 'Solo', ko: '솔로', pt: 'Solo', de: 'Solo' }, lang),
+    },
   };
 
   return (
@@ -418,10 +459,11 @@ function ResultPanel({ result, lang }: { result: AnalysisResult; lang: Lang }) {
         <SummaryCard label={t(LABELS.result.cadences, lang)} value={String(result.cadences.length)} accent={GOLD} />
       </div>
 
-      {/* OSMD で楽譜描画（IQ190 の核心）：MusicXML がレスポンスに含まれていれば描画 */}
+      {/* OSMD で楽譜描画 + Tone.js 再生（IQ190 の核心）：MusicXML がレスポンスに含まれていれば描画 */}
       {result.musicxml && (
         <div style={{ marginBottom: '2.5rem' }}>
           <ScoreViewer
+            pieceId={pieceId ?? undefined}
             musicxml={result.musicxml}
             chords={result.chords}
             cadences={result.cadences}
