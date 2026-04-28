@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { LangSwitcher } from './lang-switcher';
+import { HeaderFavoriteToggle } from '@/components/HeaderFavoriteToggle';
 
 // ─────────────────────────────────────────────
 // Typography / Colors
@@ -243,6 +244,9 @@ export function Header() {
               {isLoggedIn ? (MYPAGE[lang] ?? MYPAGE.en) : (LOGIN[lang] ?? LOGIN.en)}
             </Link>
 
+            {/* グローバル ☆ ボタン: アプリページのみ表示・URL自動判定 */}
+            <HeaderFavoriteToggle />
+
             <LangSwitcher />
           </nav>
         )}
@@ -250,6 +254,7 @@ export function Header() {
         {/* Mobile: lang switcher + hamburger */}
         {isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <HeaderFavoriteToggle />
             <LangSwitcher />
             <button
               onClick={() => setMobileOpen((v) => !v)}
