@@ -259,6 +259,7 @@ function LabInner() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pyodideRef = useRef<any>(null);
+  const startedRef = useRef(false);  // 二重起動防止（Strict Mode + 依存変化 両対策）
   const [pyodideStatus, setPyodideStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [loadProgress, setLoadProgress] = useState({ message: '', pct: 0 });
 
@@ -274,42 +275,40 @@ function LabInner() {
   const [errorOut, setErrorOut] = useState('');
 
   // Pyodide ロード（マウント時に 1 回だけ）
+  // 重要: 依存配列を空 [] にして、useEffect の再実行を防ぐ
+  // (state 更新で依存変化 → cleanup → cancelled=true → 直後の await チェックポイントで脱出
+  //  という useEffect の罠を避ける)
   useEffect(() => {
-    if (pyodideStatus !== 'idle') return;
+    if (startedRef.current) return;
+    startedRef.current = true;
+
     setPyodideStatus('loading');
 
-    let cancelled = false;
     (async () => {
       try {
         setLoadProgress({ message: t(LABELS.loading.pyodideScript, lang), pct: 5 });
         await loadPyodideScript();
-        if (cancelled) return;
 
         setLoadProgress({ message: t(LABELS.loading.pyodideRuntime, lang), pct: 25 });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const py = await (window as any).loadPyodide({
           indexURL: PYODIDE_BASE_URL,
         });
-        if (cancelled) return;
 
         setLoadProgress({ message: t(LABELS.loading.music21, lang), pct: 55 });
         await py.loadPackage('music21');
-        if (cancelled) return;
 
         pyodideRef.current = py;
         setLoadProgress({ message: t(LABELS.loading.ready, lang), pct: 100 });
         setPyodideStatus('ready');
       } catch (e) {
-        if (!cancelled) {
-          console.error('Pyodide load failed', e);
-          setPyodideStatus('error');
-          setLoadProgress({ message: e instanceof Error ? e.message : String(e), pct: 0 });
-        }
+        console.error('Pyodide load failed', e);
+        setPyodideStatus('error');
+        setLoadProgress({ message: e instanceof Error ? e.message : String(e), pct: 0 });
       }
     })();
-
-    return () => { cancelled = true; };
-  }, [pyodideStatus, lang]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // テンプレート切替
   const handleTemplateChange = useCallback((key: keyof typeof CODE_TEMPLATES) => {
