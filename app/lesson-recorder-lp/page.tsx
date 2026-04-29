@@ -259,15 +259,16 @@ export default function LessonRecorderLP() {
             }, lang)}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginTop: '2rem' }}>
-            <PricingTier name="Free" price="¥0" quota="1 / 月" desc={t({ ja: 'お試し用', en: 'Try it' }, lang)} />
-            <PricingTier name="Prelude" price="¥780" quota="20 / 月" desc={t({ ja: '個人練習向け', en: 'Personal practice' }, lang)} highlight />
-            <PricingTier name="Concerto" price="¥1,480" quota="80 / 月" desc={t({ ja: '本気の音大生・プロ', en: 'Serious musicians' }, lang)} />
-            <PricingTier name="Symphony" price="¥2,480" quota="200 / 月" desc={t({ ja: '教師・スタジオ', en: 'Teachers, studios' }, lang)} />
+            <PricingTier name="Free" price="¥0" quota="1 回 / 月" minutes="最大 60 分" desc={t({ ja: 'お試し用', en: 'Try it' }, lang)} />
+            <PricingTier name="Prelude" price="¥780" quota="20 回 / 月" minutes="最大 1,200 分 (20 時間)" desc={t({ ja: '個人練習向け', en: 'Personal practice' }, lang)} highlight />
+            <PricingTier name="Concerto" price="¥1,480" quota="80 回 / 月" minutes="最大 4,800 分 (80 時間)" desc={t({ ja: '本気の音大生・プロ', en: 'Serious musicians' }, lang)} />
+            <PricingTier name="Symphony" price="¥2,480" quota="200 回 / 月" minutes="最大 12,000 分 (200 時間)" desc={t({ ja: '教師・スタジオ', en: 'Teachers, studios' }, lang)} />
           </div>
           <p style={{ fontFamily: sans, fontSize: '0.78rem', color: INK_FAINT, lineHeight: 1.85, marginTop: '1.4rem', textAlign: 'center' }}>
             {t({
-              ja: '回数 = 書き起こし回数。1 回 = 1 つのレッスン録音 (最大 60 分)。年払いで 2 ヶ月無料。',
-              en: 'Count = transcriptions. 1 = one lesson recording (max 60min). Annual saves 2 months.',
+              ja: '1 回 = 1 つのレッスン録音 (最大 60 分・25MB)。短いレッスンも長いレッスンも 1 回としてカウント。年払いで 2 ヶ月無料。',
+              en: '1 count = one lesson recording (max 60min / 25MB). Short or long, each is 1 count. Annual saves 2 months.',
+              es: '1 = una grabación (máx. 60 min / 25MB). Anual = 2 meses gratis.',
             }, lang)}
           </p>
         </div>
@@ -413,7 +414,7 @@ function PrivacyCard({ title, body }: { title: string; body: string }) {
   );
 }
 
-function PricingTier({ name, price, quota, desc, highlight }: any) {
+function PricingTier({ name, price, quota, minutes, desc, highlight }: any) {
   return (
     <div style={{
       background: highlight ? INK : '#fff',
@@ -423,8 +424,11 @@ function PricingTier({ name, price, quota, desc, highlight }: any) {
     }}>
       <div style={{ fontFamily: mono, fontSize: '0.7rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: highlight ? '#cbcab9' : INK_FAINT, marginBottom: '0.6rem' }}>{name}</div>
       <div style={{ fontFamily: serif, fontSize: '2rem', fontWeight: 400, marginBottom: '0.3rem' }}>{price}<span style={{ fontSize: '0.55em', opacity: 0.6 }}> /月</span></div>
-      <div style={{ fontFamily: serif, fontSize: '1rem', color: highlight ? ACCENT : ACCENT, marginBottom: '0.4rem' }}>{quota}</div>
-      <div style={{ fontFamily: sans, fontSize: '0.78rem', opacity: 0.7, lineHeight: 1.7 }}>{desc}</div>
+      <div style={{ fontFamily: serif, fontSize: '1rem', color: ACCENT, marginBottom: '0.2rem' }}>{quota}</div>
+      {minutes && (
+        <div style={{ fontFamily: mono, fontSize: '0.65rem', color: highlight ? '#cbcab9' : INK_FAINT, marginBottom: '0.6rem', letterSpacing: '0.04em' }}>{minutes}</div>
+      )}
+      <div style={{ fontFamily: sans, fontSize: '0.78rem', opacity: 0.7, lineHeight: 1.7, marginTop: minutes ? '0.4rem' : 0 }}>{desc}</div>
     </div>
   );
 }

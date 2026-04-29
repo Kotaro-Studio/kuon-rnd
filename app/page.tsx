@@ -13,7 +13,7 @@ import {
   PLAN_QUOTAS,
   PLAN_SUBTITLES,
 } from '@/app/lib/pricing-display';
-import { CATEGORIES, APP_CATALOG, totalAppCount } from '@/app/lib/app-catalog';
+import { CATEGORIES, APP_CATALOG, totalAppCount, isAppNew } from '@/app/lib/app-catalog';
 
 const serif = '"Shippori Mincho", "Noto Serif JP", "Yu Mincho", "YuMincho", serif';
 const sans = '"Helvetica Neue", Arial, sans-serif';
@@ -495,26 +495,29 @@ const HomePage: React.FC = () => {
             {t5({ ja: '今、空音開発が最もおすすめする 4 つ', en: 'Our 4 most recommended apps right now', es: 'Nuestras 4 apps más recomendadas' }, lang)}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            {[
-              { id: 'daw', emoji: '🎚', name: 'KUON DAW', tag: { ja: 'マルチトラック録音 + マスタリング', en: 'Multi-track recording + mastering', es: 'Multipista + masterización' }, href: '/daw-lp' },
-              { id: 'comping', emoji: '🎙', name: 'KUON COMPING', tag: { ja: 'マルチテイク・ベスト合成', en: 'Multi-take + best comping', es: 'Multitoma + mejor comping' }, href: '/comping-lp' },
-              { id: 'breath', emoji: '🌬', name: 'KUON BREATH', tag: { ja: '本番前の呼吸法ガイド', en: 'Pre-stage breathing guide', es: 'Respiración pre-show' }, href: '/breath-lp' },
-              { id: 'frequency', emoji: '🔊', name: 'KUON FREQUENCY', tag: { ja: 'ソルフェジオ周波数プレーヤー', en: 'Solfeggio frequency player', es: 'Reproductor solfeggio' }, href: '/frequency-lp' },
-            ].map((a, i) => (
-              <Link key={i} href={a.href} style={{
-                display: 'block', background: 'linear-gradient(135deg, #fff 0%, #f0f9ff 100%)',
-                border: `1px solid ${ACCENT}33`, borderRadius: '12px', padding: '1.25rem',
-                textDecoration: 'none', color: 'inherit', transition: 'all 0.25s ease', position: 'relative',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(2,132,199,0.15)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${ACCENT}33`; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-              >
-                <span style={{ position: 'absolute', top: '0.6rem', right: '0.6rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', fontSize: '0.6rem', fontWeight: 600, padding: '2px 7px', borderRadius: '999px' }}>NEW</span>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{a.emoji}</div>
-                <h4 style={{ fontFamily: sans, fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.3rem', color: '#0f172a' }}>{a.name}</h4>
-                <p style={{ color: '#64748b', fontSize: '0.75rem', lineHeight: 1.5 }}>{t5(a.tag, lang)}</p>
-              </Link>
-            ))}
+            {APP_CATALOG
+              .filter((a) => isAppNew(a)) // releasedAt 必須・30 日以内のみ
+              .sort((a, b) => (b.releasedAt || '').localeCompare(a.releasedAt || ''))
+              .slice(0, 4)
+              .map((a) => {
+                const tag = (a.tagline as Record<string, string>)[lang] ?? a.tagline.en;
+                const name = (a.name as Record<string, string>)[lang] ?? a.name.en;
+                return (
+                  <Link key={a.id} href={a.href} style={{
+                    display: 'block', background: 'linear-gradient(135deg, #fff 0%, #f0f9ff 100%)',
+                    border: `1px solid ${ACCENT}33`, borderRadius: '12px', padding: '1.25rem',
+                    textDecoration: 'none', color: 'inherit', transition: 'all 0.25s ease', position: 'relative',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(2,132,199,0.15)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${ACCENT}33`; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span style={{ position: 'absolute', top: '0.6rem', right: '0.6rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', fontSize: '0.6rem', fontWeight: 600, padding: '2px 7px', borderRadius: '999px' }}>NEW</span>
+                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{a.emoji}</div>
+                    <h4 style={{ fontFamily: sans, fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.3rem', color: '#0f172a' }}>{name}</h4>
+                    <p style={{ color: '#64748b', fontSize: '0.75rem', lineHeight: 1.5 }}>{tag}</p>
+                  </Link>
+                );
+              })}
           </div>
         </div>
 

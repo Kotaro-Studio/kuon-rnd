@@ -1104,6 +1104,56 @@ app.put('/api/auth/profile', async (c) => {
 });
 
 // ─────────────────────────────────────────────
+// GET /api/auth/public/:slug — 公開プロフィール取得 (認証不要)
+// slug は URL-safe 化された email (例: "369-at-kotaroasahina-com")
+// 2026-04-30 追加: マイページのポートフォリオを /u/[slug] で公開可能に
+// ─────────────────────────────────────────────
+app.get('/api/auth/public/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  if (!slug) return c.json({ error: 'No slug' }, 400);
+
+  // slug を email に復元: "369-at-kotaroasahina-com" → "369@kotaroasahina.com"
+  const email = slug.replace(/-at-/, '@').replace(/-/g, '.');
+
+  const raw = await c.env.USERS.get(`user:${email}`);
+  if (!raw) return c.json({ error: 'Not found' }, 404);
+  const user: UserData = JSON.parse(raw);
+
+  // 公開条件: availableForWork=true もしくは bio が設定されている (= 公開意思あり)
+  // ユーザーが何も設定していなければ公開しない
+  const hasPublicContent = user.availableForWork === true || (user.bio && user.bio.length > 0);
+  if (!hasPublicContent) {
+    return c.json({ error: 'Profile not public' }, 404);
+  }
+
+  // 公開セーフなフィールドのみ返す (email・課金情報は除外)
+  return c.json({
+    ok: true,
+    profile: {
+      slug,
+      name: user.name || '',
+      role: user.role || '',
+      roleCategory: user.roleCategory || '',
+      customRoleName: user.customRoleName || '',
+      basedIn: user.basedIn || user.region || '',
+      mobility: user.mobility || '',
+      bio: user.bio || '',
+      experienceLevel: user.experienceLevel || '',
+      spokenLanguages: user.spokenLanguages || '',
+      availableForWork: user.availableForWork === true,
+      avatarKey: user.avatarKey || '',
+      snsYoutube: user.snsYoutube || '',
+      snsInstagram: user.snsInstagram || '',
+      snsX: user.snsX || '',
+      snsSoundcloud: user.snsSoundcloud || '',
+      snsWebsite: user.snsWebsite || '',
+      // 月課金プランは公開せず、Pro レベルかどうかだけ
+      isPro: user.planTier === 'concerto' || user.planTier === 'symphony' || user.planTier === 'opus',
+    },
+  });
+});
+
+// ─────────────────────────────────────────────
 // POST /api/auth/track — Track app usage (for free tier limits)
 // ─────────────────────────────────────────────
 app.post('/api/auth/track', async (c) => {

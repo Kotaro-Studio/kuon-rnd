@@ -138,6 +138,17 @@ function LessonRecorderApp() {
     void fetchArchive();
   }, []);
 
+  // ── ?id=xxx URL パラメータ対応 (マイページ・LessonRecordsCard からの遷移) ──
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (id) {
+      void loadLesson(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const fetchArchive = useCallback(async () => {
     try {
       const res = await fetch('/api/lesson-recorder/lessons');

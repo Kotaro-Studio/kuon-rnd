@@ -54,6 +54,7 @@ interface UserShape {
   badges: string[];
   appUsage: Record<string, number>;
   customRoleName: string;
+  availableForWork?: boolean;
 }
 
 export interface MyMusicSectionProps {
@@ -344,38 +345,64 @@ export function MyMusicSection({ user, lang, avatarUrl }: MyMusicSectionProps) {
           }, lang)}
         </Link>
 
-        {/* 公開プロフィール — 将来実装。現状は coming soon の disabled 表示 */}
-        <span
-          style={{
-            fontFamily: sans,
-            fontSize: '0.8rem',
-            color: INK_FAINT,
-            background: 'transparent',
-            border: `1px dashed ${STAFF_LINE}`,
-            borderRadius: 999,
-            padding: '0.55rem 1.2rem',
-            letterSpacing: '0.06em',
-            display: 'inline-block',
-            cursor: 'default',
-          }}
-          title={t({
-            ja: '公開プロフィールは近日対応予定です',
-            en: 'Public profile coming soon',
-            es: 'Perfil público próximamente',
-            ko: '공개 프로필 곧 지원 예정',
-            pt: 'Perfil público em breve',
-            de: 'Öffentliches Profil bald verfügbar',
-          }, lang)}
-        >
-          {t({
-            ja: '公開プロフィール（準備中）',
-            en: 'Public profile (coming soon)',
-            es: 'Perfil público (próximamente)',
-            ko: '공개 프로필 (준비 중)',
-            pt: 'Perfil público (em breve)',
-            de: 'Öffentliches Profil (bald)',
-          }, lang)}
-        </span>
+        {/* 公開プロフィール (2026-04-30 公開対応) */}
+        {/* slug: email の "@" → "-at-", "." → "-" 変換 */}
+        {(() => {
+          const slug = user.email ? user.email.replace(/@/g, '-at-').replace(/\./g, '-') : '';
+          const canPublish = !!(user.bio || user.availableForWork);
+          return canPublish && slug ? (
+            <Link
+              href={`/u/${slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: sans,
+                fontSize: '0.8rem',
+                color: INK,
+                background: 'transparent',
+                border: `1px solid ${INK}`,
+                borderRadius: 999,
+                padding: '0.55rem 1.2rem',
+                letterSpacing: '0.06em',
+                display: 'inline-block',
+                textDecoration: 'none',
+              }}
+            >
+              {t({
+                ja: '公開プロフィールを見る',
+                en: 'View public profile',
+                es: 'Ver perfil público',
+                ko: '공개 프로필 보기',
+                pt: 'Ver perfil público',
+                de: 'Öffentliches Profil ansehen',
+              }, lang)} ↗
+            </Link>
+          ) : (
+            <span
+              style={{
+                fontFamily: sans,
+                fontSize: '0.8rem',
+                color: INK_FAINT,
+                background: 'transparent',
+                border: `1px dashed ${STAFF_LINE}`,
+                borderRadius: 999,
+                padding: '0.55rem 1.2rem',
+                letterSpacing: '0.06em',
+                display: 'inline-block',
+                cursor: 'default',
+              }}
+              title={t({
+                ja: '自己紹介を入力するか「募集中」を有効化すると公開できます',
+                en: 'Add bio or enable "Available for work" to publish',
+              }, lang)}
+            >
+              {t({
+                ja: '公開プロフィール（自己紹介を入力で発行可）',
+                en: 'Public profile (set bio to enable)',
+              }, lang)}
+            </span>
+          );
+        })()}
       </div>
     </section>
   );

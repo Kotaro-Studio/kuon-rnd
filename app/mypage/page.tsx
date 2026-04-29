@@ -10,6 +10,7 @@ import { MyAppsSection } from '@/components/MyAppsSection';
 import { FavoritesCard } from '@/components/FavoritesCard';
 import { MypageHero } from '@/components/mypage/MypageHero';
 import { MyMusicSection } from '@/components/mypage/MyMusicSection';
+import { LessonRecordsCard } from '@/components/mypage/LessonRecordsCard';
 import type { PlanTier } from '@/app/lib/pricing-display';
 
 // CLAUDE.md §48「余白の知性」基準のタイポグラフィ
@@ -628,6 +629,10 @@ export default function MyPage() {
           userPlan={(user.planTier as PlanTier | 'free' | undefined) ?? 'free'}
           appUsage={user.appUsage}
         />
+
+        {/* ─── レッスン記録 (KUON LESSON RECORDER 連携・2026-04-30) ─── */}
+        {/* lesson-recorder の最新 5 件をマイページから直接アクセス可能に */}
+        <LessonRecordsCard />
 
         {/* ─── Avatar + Name Card ─── */}
         <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: '1.2rem', position: 'relative' }}>

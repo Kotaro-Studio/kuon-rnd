@@ -386,17 +386,20 @@ export function MypageHero({ userName, userPlan, theoryProgress, labStats }: Myp
           gap: 'clamp(1rem, 2vw, 1.5rem)',
           marginBottom: 'clamp(2.5rem, 5vw, 4rem)',
         }}>
-          {/* Theory Card — 楽典学習（フェーズ 1 で実装、現状はプレースホルダー） */}
+          {/* Theory Card — 楽典学習 (2026-04-30 開講: 5 レッスン公開・残りは順次追加中) */}
           <SummaryCard
             label={t({ ja: '楽典学習', en: 'Music Theory', es: 'Teoría musical', ko: '음악 이론', pt: 'Teoria musical', de: 'Musiklehre' }, lang)}
-            title={lessonsRatio ?? t({ ja: 'まもなく開講', en: 'Coming soon', es: 'Próximamente', ko: '곧 시작', pt: 'Em breve', de: 'Demnächst' }, lang)}
+            title={
+              theoryProgress
+                ? lessonsRatio!
+                : t({ ja: '受講開始', en: 'Begin Lessons', es: 'Comenzar', ko: '학습 시작', pt: 'Começar', de: 'Beginnen' }, lang)
+            }
             sub={
               theoryProgress
                 ? t({ ja: 'スキルツリーを進める', en: 'Continue your journey', es: 'Continúe su camino', ko: '여정 계속하기', pt: 'Continue sua jornada', de: 'Weiter auf Ihrem Weg' }, lang)
-                : t({ ja: '基礎から音大卒業まで', en: 'From basics to graduate level', es: 'Desde lo básico hasta nivel avanzado', ko: '기초부터 대학원까지', pt: 'Do básico ao avançado', de: 'Vom Anfang bis zum Master' }, lang)
+                : t({ ja: '基礎から音大卒業まで・全 583 レッスン', en: 'Foundations to graduate · 583 lessons', es: 'Desde lo básico · 583 lecciones', ko: '기초부터 · 583 레슨', pt: 'Do básico · 583 lições', de: 'Vom Anfang · 583 Lektionen' }, lang)
             }
             href="/theory"
-            disabled={!theoryProgress}
             mode={displayMode}
           />
 
