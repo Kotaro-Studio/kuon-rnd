@@ -49,11 +49,58 @@ const SCRIPT_LOAD_TIMEOUT_MS = 30000;
 type L6 = { ja: string; en: string; es: string; ko: string; pt: string; de: string };
 const t = (m: L6, lang: Lang): string => (m as Record<Lang, string>)[lang] ?? m.en;
 
-interface LabPiece {
+// 楽曲インターフェース：/api/classical/library から取得する形式と一致させる
+interface LibraryPiece {
   id: string;
-  title: string;
   composer: string;
+  composer_key: string;
+  title: string;
+  key: string;
+  measures: number;
+  era: string;
+  source: string;
 }
+
+interface ComposerOption {
+  key: string;
+  display: string;
+  era: string;
+  count: number;
+}
+
+// 作曲家リスト：/classical/page.tsx と同じ静的定数
+// （CLAUDE.md §44.11 永続性原則：静的データはフロントにインライン化）
+const STATIC_COMPOSERS: ComposerOption[] = [
+  // Renaissance
+  { key: 'palestrina', display: 'G.P. da Palestrina', era: 'renaissance', count: 1018 },
+  { key: 'josquin', display: 'Josquin des Prez', era: 'renaissance', count: 8 },
+  { key: 'luca', display: 'Luca Marenzio', era: 'renaissance', count: 1 },
+  // Baroque
+  { key: 'bach', display: 'J.S. Bach', era: 'baroque', count: 433 },
+  { key: 'cpebach', display: 'C.P.E. Bach', era: 'baroque', count: 1 },
+  { key: 'monteverdi', display: 'C. Monteverdi', era: 'baroque', count: 97 },
+  { key: 'corelli', display: 'A. Corelli', era: 'baroque', count: 1 },
+  { key: 'handel', display: 'G.F. Handel', era: 'baroque', count: 1 },
+  // Classical
+  { key: 'haydn', display: 'F.J. Haydn', era: 'classical', count: 9 },
+  { key: 'mozart', display: 'W.A. Mozart', era: 'classical', count: 16 },
+  { key: 'beethoven', display: 'L.v. Beethoven', era: 'classical', count: 26 },
+  // Romantic
+  { key: 'schubert', display: 'F. Schubert', era: 'romantic', count: 1 },
+  { key: 'chopin', display: 'F. Chopin', era: 'romantic', count: 1 },
+  { key: 'weber', display: 'C.M. von Weber', era: 'romantic', count: 1 },
+  { key: 'verdi', display: 'G. Verdi', era: 'romantic', count: 1 },
+  { key: 'beach', display: 'Amy Beach', era: 'romantic', count: 1 },
+  // Modern / Early Jazz
+  { key: 'schoenberg', display: 'A. Schoenberg', era: 'modern', count: 2 },
+  { key: 'joplin', display: 'S. Joplin', era: 'early-jazz', count: 1 },
+  // Folk
+  { key: 'ryansMammoth', display: "Ryan's Mammoth (Folk Dance)", era: 'folk', count: 1059 },
+  { key: 'oneills1850', display: "O'Neill's 1850 (Irish)", era: 'folk', count: 39 },
+  { key: 'essenFolksong', display: 'Essen Folksong (German)', era: 'folk', count: 31 },
+  { key: 'airdsAirs', display: "Aird's Airs (Scottish)", era: 'folk', count: 6 },
+  { key: 'miscFolk', display: 'Miscellaneous Folk', era: 'folk', count: 2 },
+];
 
 interface ChordData { measure: number; beat: number; chord: string; roman: string; function: string; }
 interface CadenceData { measure: number; beat: number; type: string; progression: string[]; }
@@ -68,21 +115,6 @@ interface AnalysisResult {
   chord_count: number;
   midi_b64: string | null;
 }
-
-const QUICK_PICKS: LabPiece[] = [
-  { id: 'bach/bwv1.6', title: 'BWV 1.6', composer: 'J.S. Bach' },
-  { id: 'bach/bwv66.6', title: 'BWV 66.6', composer: 'J.S. Bach' },
-  { id: 'bach/bwv112.5', title: 'BWV 112.5', composer: 'J.S. Bach' },
-  { id: 'bach/bwv227.7', title: 'BWV 227.7', composer: 'J.S. Bach' },
-  { id: 'beethoven/opus18no1/movement1', title: 'Op.18 No.1 Mvt.1', composer: 'L.v. Beethoven' },
-  { id: 'beethoven/opus18no3/movement1', title: 'Op.18 No.3 Mvt.1', composer: 'L.v. Beethoven' },
-  { id: 'mozart/k155/movement1', title: 'K.155 Mvt.1', composer: 'W.A. Mozart' },
-  { id: 'mozart/k156/movement1', title: 'K.156 Mvt.1', composer: 'W.A. Mozart' },
-  { id: 'haydn/opus20no1/movement1', title: 'Op.20 No.1 Mvt.1', composer: 'F.J. Haydn' },
-  { id: 'palestrina/Agnus_01', title: 'Agnus Dei I', composer: 'G.P. da Palestrina' },
-  { id: 'monteverdi/madrigal.3.1', title: 'Madrigal Book 3 No.1', composer: 'C. Monteverdi' },
-  { id: 'schoenberg/opus19/movement2', title: 'Op.19 Mvt.2', composer: 'A. Schoenberg' },
-];
 
 const ANALYSIS_PYTHON_SCRIPT = `
 import json, base64, tempfile, os
@@ -230,6 +262,13 @@ const LABELS = {
   },
   ui: {
     pickPiece: { ja: '楽曲を選んで、分析を始めましょう', en: 'Pick a piece to start analyzing', es: 'Elija una pieza para empezar', ko: '곡을 선택하여 분석을 시작하세요', pt: 'Escolha uma peça', de: 'Wählen Sie ein Werk' } as L6,
+    searchPlaceholder: { ja: '作曲家・曲名・管理番号で検索（例：BWV 66, K. 155, Op.18）', en: 'Search by composer, title, or catalog number (BWV 66, K. 155, Op.18)', es: 'Buscar por compositor, título o número', ko: '작곡가·곡명·관리번호로 검색', pt: 'Buscar por compositor, título ou número', de: 'Nach Komponist, Titel oder Werknummer suchen' } as L6,
+    composerFilter: { ja: 'すべての作曲家', en: 'All composers', es: 'Todos los compositores', ko: '모든 작곡가', pt: 'Todos compositores', de: 'Alle Komponisten' } as L6,
+    eraFilter: { ja: 'すべての時代', en: 'All eras', es: 'Todas las épocas', ko: '모든 시대', pt: 'Todas as épocas', de: 'Alle Epochen' } as L6,
+    libraryLoading: { ja: 'ライブラリを読み込み中…', en: 'Loading library…', es: 'Cargando biblioteca…', ko: '라이브러리 로딩 중…', pt: 'Carregando biblioteca…', de: 'Bibliothek wird geladen…' } as L6,
+    noResults: { ja: '一致する楽曲が見つかりません', en: 'No matching pieces found', es: 'No se encontraron piezas', ko: '일치하는 곡이 없습니다', pt: 'Nenhuma peça encontrada', de: 'Keine Werke gefunden' } as L6,
+    pieceCount: { ja: '曲', en: 'pieces', es: 'piezas', ko: '곡', pt: 'peças', de: 'Werke' } as L6,
+    measureWord: { ja: '小節', en: 'measures', es: 'compases', ko: '마디', pt: 'compassos', de: 'Takte' } as L6,
     fetchingPiece: { ja: '楽譜を取得しています…', en: 'Fetching the score…', es: 'Obteniendo partitura…', ko: '악보를 가져오는 중…', pt: 'Obtendo partitura…', de: 'Werk wird geladen…' } as L6,
     analyzing: { ja: '和声分析中… (Python が裏で動いています)', en: 'Analyzing harmony… (Python running silently)', es: 'Analizando armonía…', ko: '화성 분석 중…', pt: 'Analisando harmonia…', de: 'Harmonik-Analyse läuft…' } as L6,
     backToClassical: { ja: '← Classical に戻る', en: '← Back to Classical', es: '← Volver', ko: '← 돌아가기', pt: '← Voltar', de: '← Zurück' } as L6,
@@ -238,6 +277,16 @@ const LABELS = {
     devModeHide: { ja: '🔬 コードを隠す', en: '🔬 Hide code', es: '🔬 Ocultar código', ko: '🔬 코드 숨기기', pt: '🔬 Ocultar código', de: '🔬 Code verbergen' } as L6,
     devModeIntro: { ja: 'これはあなたが選んだ楽曲を分析している、実際の Python コードです。バックグラウンドで自動実行されています。興味があればコピーして、ご自分のローカル環境でも実行できます。', en: 'This is the actual Python code analyzing your selected piece. It runs automatically in the background. Copy it to use in your own Python environment.', es: 'Este es el código Python real que analiza su pieza.', ko: '이것은 선택한 곡을 분석하는 실제 Python 코드입니다.', pt: 'Este é o código Python real que analisa sua peça.', de: 'Dies ist der echte Python-Code, der Ihr Werk analysiert.' } as L6,
     analysisFailed: { ja: '分析に失敗しました', en: 'Analysis failed', es: 'Análisis falló', ko: '분석 실패', pt: 'Análise falhou', de: 'Analyse fehlgeschlagen' } as L6,
+  },
+  era: {
+    medieval: { ja: '中世', en: 'Medieval', es: 'Medieval', ko: '중세', pt: 'Medieval', de: 'Mittelalter' } as L6,
+    renaissance: { ja: 'ルネサンス', en: 'Renaissance', es: 'Renacimiento', ko: '르네상스', pt: 'Renascimento', de: 'Renaissance' } as L6,
+    baroque: { ja: 'バロック', en: 'Baroque', es: 'Barroco', ko: '바로크', pt: 'Barroco', de: 'Barock' } as L6,
+    classical: { ja: '古典派', en: 'Classical', es: 'Clásico', ko: '고전파', pt: 'Clássico', de: 'Klassik' } as L6,
+    romantic: { ja: 'ロマン派', en: 'Romantic', es: 'Romántico', ko: '낭만파', pt: 'Romântico', de: 'Romantik' } as L6,
+    modern: { ja: '近現代', en: 'Modern', es: 'Moderno', ko: '근현대', pt: 'Moderno', de: 'Moderne' } as L6,
+    earlyJazz: { ja: 'ラグタイム', en: 'Ragtime', es: 'Ragtime', ko: '래그타임', pt: 'Ragtime', de: 'Ragtime' } as L6,
+    folk: { ja: '民俗音楽', en: 'Folk', es: 'Folk', ko: '민속음악', pt: 'Folk', de: 'Volksmusik' } as L6,
   },
 };
 
@@ -258,13 +307,55 @@ function LabInner() {
   const [pyodideStatus, setPyodideStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [loadProgress, setLoadProgress] = useState({ message: '', pct: 0 });
 
-  const [selectedPiece, setSelectedPiece] = useState<LabPiece | null>(null);
+  const [selectedPiece, setSelectedPiece] = useState<LibraryPiece | null>(null);
   const [musicxml, setMusicxml] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [analyzePhase, setAnalyzePhase] = useState<'idle' | 'fetching' | 'analyzing' | 'done' | 'error'>('idle');
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
+  // 楽曲ライブラリ（music21 corpus 全体・3500+ 曲）
+  const [pieces, setPieces] = useState<LibraryPiece[]>([]);
+  const [pieceLoading, setPieceLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [composerFilter, setComposerFilter] = useState('');
+  const [eraFilter, setEraFilter] = useState('');
+
   const [showDevMode, setShowDevMode] = useState(false);
+
+  // ライブラリ取得（検索 / 作曲家 / 時代フィルタが変わったら再取得）
+  const fetchLibrary = useCallback(async () => {
+    setPieceLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (composerFilter) params.set('composer', composerFilter);
+      if (eraFilter) params.set('era', eraFilter);
+      if (search) params.set('search', search);
+      params.set('limit', '200');
+
+      const res = await fetch(`/api/classical/library?${params.toString()}`);
+      if (!res.ok) {
+        setPieces([]);
+        return;
+      }
+      const data = await res.json();
+      if (data._stub) {
+        setPieces([]);
+      } else {
+        setPieces(data.pieces || []);
+      }
+    } catch {
+      setPieces([]);
+    } finally {
+      setPieceLoading(false);
+    }
+  }, [composerFilter, eraFilter, search]);
+
+  // Pyodide が ready になってから（または検索条件変化時に）ライブラリを取得
+  useEffect(() => {
+    if (pyodideStatus === 'ready') {
+      fetchLibrary();
+    }
+  }, [pyodideStatus, fetchLibrary]);
 
   // Pyodide ロード（マウント時に 1 回だけ）
   useEffect(() => {
@@ -304,7 +395,7 @@ await micropip.install('music21')
   }, []);
 
   // 楽曲選択 → 自動で分析実行
-  const handlePieceSelect = useCallback(async (piece: LabPiece) => {
+  const handlePieceSelect = useCallback(async (piece: LibraryPiece) => {
     setSelectedPiece(piece);
     setAnalysisResult(null);
     setAnalyzeError(null);
@@ -432,46 +523,129 @@ await micropip.install('music21')
       {pyodideStatus === 'ready' && (
         <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem 4rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-          {/* 楽曲ピッカー */}
+          {/* 楽曲ピッカー (music21 corpus 全 3500+ 曲アクセス) */}
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 'clamp(1.5rem, 3vw, 2rem)', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
             <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.1rem, 2.2vw, 1.4rem)', fontWeight: 400, color: '#0f172a', margin: '0 0 1.2rem 0', letterSpacing: '0.02em' }}>
               📚 {t(LABELS.ui.pickPiece, lang)}
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.6rem' }}>
-              {QUICK_PICKS.map((p) => {
-                const isSelected = selectedPiece?.id === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => handlePieceSelect(p)}
-                    disabled={analyzePhase === 'fetching' || analyzePhase === 'analyzing'}
-                    style={{
-                      background: isSelected ? '#ede9fe' : '#f8fafc',
-                      border: isSelected ? `2px solid ${ACCENT}` : '1px solid #e2e8f0',
-                      borderRadius: 10, padding: '0.85rem 1rem', textAlign: 'left',
-                      cursor: (analyzePhase === 'fetching' || analyzePhase === 'analyzing') ? 'wait' : 'pointer',
-                      fontFamily: sans, transition: 'all 0.2s ease',
-                      opacity: (analyzePhase === 'fetching' || analyzePhase === 'analyzing') && !isSelected ? 0.5 : 1,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected && analyzePhase !== 'fetching' && analyzePhase !== 'analyzing') {
-                        e.currentTarget.style.borderColor = ACCENT;
-                        e.currentTarget.style.background = '#fff';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.borderColor = '#e2e8f0';
-                        e.currentTarget.style.background = '#f8fafc';
-                      }
-                    }}
-                  >
-                    <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>{p.composer}</div>
-                    <div style={{ fontFamily: serif, fontSize: '1rem', fontWeight: 500, color: '#0f172a', marginTop: 4 }}>{p.title}</div>
-                  </button>
-                );
-              })}
+
+            {/* 検索 + 作曲家 + 時代フィルタ */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem', marginBottom: '1.2rem' }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t(LABELS.ui.searchPlaceholder, lang)}
+                disabled={analyzePhase === 'fetching' || analyzePhase === 'analyzing'}
+                style={{
+                  width: '100%', padding: '0.7rem 1rem', fontSize: '0.95rem',
+                  border: '1px solid #cbd5e1', borderRadius: 8, outline: 'none',
+                  fontFamily: sans, background: '#fff', boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.6rem' }}>
+                <select
+                  value={composerFilter}
+                  onChange={(e) => setComposerFilter(e.target.value)}
+                  disabled={analyzePhase === 'fetching' || analyzePhase === 'analyzing'}
+                  style={{ padding: '0.6rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '0.9rem', background: '#fff', fontFamily: sans }}
+                >
+                  <option value="">{t(LABELS.ui.composerFilter, lang)}</option>
+                  {STATIC_COMPOSERS.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.display} ({c.count})
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={eraFilter}
+                  onChange={(e) => setEraFilter(e.target.value)}
+                  disabled={analyzePhase === 'fetching' || analyzePhase === 'analyzing'}
+                  style={{ padding: '0.6rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '0.9rem', background: '#fff', fontFamily: sans }}
+                >
+                  <option value="">{t(LABELS.ui.eraFilter, lang)}</option>
+                  <option value="medieval">{t(LABELS.era.medieval, lang)}</option>
+                  <option value="renaissance">{t(LABELS.era.renaissance, lang)}</option>
+                  <option value="baroque">{t(LABELS.era.baroque, lang)}</option>
+                  <option value="classical">{t(LABELS.era.classical, lang)}</option>
+                  <option value="romantic">{t(LABELS.era.romantic, lang)}</option>
+                  <option value="modern">{t(LABELS.era.modern, lang)}</option>
+                  <option value="early-jazz">{t(LABELS.era.earlyJazz, lang)}</option>
+                  <option value="folk">{t(LABELS.era.folk, lang)}</option>
+                </select>
+              </div>
             </div>
+
+            {/* ライブラリの状態表示 */}
+            {pieceLoading && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', fontSize: '0.85rem', fontFamily: serif }}>
+                {t(LABELS.ui.libraryLoading, lang)}
+              </div>
+            )}
+            {!pieceLoading && pieces.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.85rem' }}>
+                {t(LABELS.ui.noResults, lang)}
+              </div>
+            )}
+
+            {/* 楽曲グリッド (スクロール可能) */}
+            {!pieceLoading && pieces.length > 0 && (
+              <>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '0.6rem', fontFamily: mono }}>
+                  {pieces.length} {t(LABELS.ui.pieceCount, lang)}
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                  gap: '0.6rem',
+                  maxHeight: '500px',
+                  overflowY: 'auto',
+                  padding: '0.4rem',
+                  border: '1px solid #f1f5f9',
+                  borderRadius: 10,
+                }}>
+                  {pieces.map((p) => {
+                    const isSelected = selectedPiece?.id === p.id;
+                    const disabled = analyzePhase === 'fetching' || analyzePhase === 'analyzing';
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => handlePieceSelect(p)}
+                        disabled={disabled}
+                        style={{
+                          background: isSelected ? '#ede9fe' : '#f8fafc',
+                          border: isSelected ? `2px solid ${ACCENT}` : '1px solid #e2e8f0',
+                          borderRadius: 10, padding: '0.85rem 1rem', textAlign: 'left',
+                          cursor: disabled ? 'wait' : 'pointer',
+                          fontFamily: sans, transition: 'all 0.15s ease',
+                          opacity: disabled && !isSelected ? 0.5 : 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected && !disabled) {
+                            e.currentTarget.style.borderColor = ACCENT;
+                            e.currentTarget.style.background = '#fff';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.borderColor = '#e2e8f0';
+                            e.currentTarget.style.background = '#f8fafc';
+                          }
+                        }}
+                      >
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.03em' }}>{p.composer}</div>
+                        <div style={{ fontFamily: serif, fontSize: '0.95rem', fontWeight: 500, color: '#0f172a', marginTop: 4, lineHeight: 1.3 }}>{p.title}</div>
+                        {p.measures > 0 && (
+                          <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: mono, marginTop: 4 }}>
+                            {p.key !== '—' ? `${p.key} · ` : ''}{p.measures} {t(LABELS.ui.measureWord, lang)}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {/* 分析中の状態表示 */}
