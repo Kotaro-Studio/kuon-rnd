@@ -6,9 +6,10 @@ import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { MyAppsSection } from '@/components/MyAppsSection';
-import { MemberJourneyCard } from '@/components/MemberJourneyCard';
+// MemberJourneyCard は §48 統合により撤去（私の音楽セクションに集約・2026-04-29）
 import { FavoritesCard } from '@/components/FavoritesCard';
 import { MypageHero } from '@/components/mypage/MypageHero';
+import { MyMusicSection } from '@/components/mypage/MyMusicSection';
 import type { PlanTier } from '@/app/lib/pricing-display';
 
 // CLAUDE.md §48「余白の知性」基準のタイポグラフィ
@@ -610,13 +611,14 @@ export default function MyPage() {
           </button>
         </div>
 
-        {/* ─── 既存 MemberJourneyCard（メンバー番号・在籍期間・名言） ─── */}
-        {/* MypageHero と内容重複は意図的：MemberJourney は「Kuon メンバーとしての定着」、Hero は「今日の状況」 */}
-        <MemberJourneyCard
-          userName={user.name || ''}
-          userEmail={user.email || ''}
-          userCreatedAt={user.createdAt}
-          planTier={user.planTier || user.plan}
+        {/* ─── 私の音楽 セクション (CLAUDE.md §48・2026-04-29) ─── */}
+        {/* MypageHero の「私の音楽」カードクリックでここにスクロール。
+            足跡（在籍・統計）+ 達成 + ポートフォリオプレビュー + 公開プロフィール導線。
+            MemberJourneyCard はこのセクションに統合された。 */}
+        <MyMusicSection
+          user={user}
+          lang={lang}
+          avatarUrl={avatarUrl}
         />
 
         {/* ─── ★IQ180 リテンション機能★ お気に入りアプリ (Phase 2・2026-04-27) ─── */}

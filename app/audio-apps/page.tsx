@@ -1869,6 +1869,8 @@ export default function AudioAppsPage() {
   const { lang } = useLang();
   const [activePersona, setActivePersona] = useState<Persona>('engineer');
   const [activeTier, setActiveTier] = useState<TierFilter>('all');
+  // 検索クエリ：入力すると persona/tier フィルタを横断して全アプリから探す
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Apps filtered by active persona
   const personaApps = useMemo(
@@ -1891,12 +1893,47 @@ export default function AudioAppsPage() {
     pro:   personaApps.filter(a => a.tier === 'pro').length,
   }), [personaApps]);
 
-  // Apply tier filter
-  const filteredApps = useMemo(() => (
-    activeTier === 'all'
+  // 検索クエリが入力されている場合は persona/tier フィルタを上書きして全アプリから検索
+  const isSearching = searchQuery.trim().length > 0;
+  const filteredApps = useMemo(() => {
+    if (isSearching) {
+      const q = searchQuery.toLowerCase().trim();
+      return apps.filter(app => {
+        // app.id, name, tagline (L5), desc (L5) を全言語で検索
+        if (app.id.toLowerCase().includes(q)) return true;
+        if (app.name.toLowerCase().includes(q)) return true;
+        if (app.badge.toLowerCase().includes(q)) return true;
+        const taglineVals = Object.values(app.tagline).join(' ').toLowerCase();
+        if (taglineVals.includes(q)) return true;
+        const descVals = Object.values(app.desc).join(' ').toLowerCase();
+        if (descVals.includes(q)) return true;
+        return false;
+      });
+    }
+    return activeTier === 'all'
       ? personaApps
-      : personaApps.filter(a => a.tier === activeTier)
-  ), [personaApps, activeTier]);
+      : personaApps.filter(a => a.tier === activeTier);
+  }, [personaApps, activeTier, searchQuery, isSearching]);
+
+  // Today's Pick: 日付シードで決定的に 3 アプリを選ぶ。日付が変われば変わる。
+  // ready なアプリ（coming soon でない）から選択。
+  const todaysPicks = useMemo(() => {
+    const readyApps = apps.filter(a => !a.isComingSoon);
+    if (readyApps.length === 0) return [];
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    let seed = dayOfYear * 73 + 1;
+    const picked: AppEntry[] = [];
+    const usedIndexes = new Set<number>();
+    while (picked.length < 3 && usedIndexes.size < readyApps.length) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      const idx = seed % readyApps.length;
+      if (!usedIndexes.has(idx)) {
+        usedIndexes.add(idx);
+        picked.push(readyApps[idx]);
+      }
+    }
+    return picked;
+  }, []);
 
   // Sort: ready apps before coming soon, within each by tier (open/login/pro)
   const sortedApps = useMemo(() => {
@@ -2001,8 +2038,158 @@ export default function AudioAppsPage() {
         </p>
       </section>
 
-      {/* ═══════ CATEGORY BROWSE (2026-04-26 追加) ═══════ */}
+      {/* ═══════ SEARCH BAR (2026-04-29 追加) ═══════ */}
+      {/* 全アプリ横断検索。入力するとペルソナ/カテゴリ/ワークフローを一時的に隠す。 */}
+      <section style={{
+        maxWidth: 720,
+        margin: '0 auto clamp(28px, 5vw, 44px)',
+        padding: '0 clamp(16px, 4vw, 24px)',
+      }}>
+        <div style={{
+          position: 'relative',
+          background: 'rgba(255,255,255,0.72)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          border: '1px solid rgba(255,255,255,0.85)',
+          borderRadius: 14,
+          boxShadow: '0 2px 14px rgba(0,0,0,0.05)',
+          padding: '4px 4px 4px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          transition: 'box-shadow 0.25s ease, border-color 0.25s ease',
+        }}>
+          <span style={{ fontSize: 18, color: '#94a3b8', lineHeight: 1 }}>🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={t5({
+              ja: 'アプリ名や用途で検索（例：ノーマライズ、ピッチ、和声）',
+              en: 'Search by name or purpose (e.g. normalize, pitch, harmony)',
+              ko: '이름이나 용도로 검색 (예: 노멀라이즈, 피치, 화성)',
+              pt: 'Buscar por nome ou propósito (ex: normalizar, afinação, harmonia)',
+              es: 'Buscar por nombre o propósito (ej: normalizar, tono, armonía)',
+              de: 'Nach Name oder Zweck suchen (z. B. normalisieren, Tonhöhe, Harmonie)',
+            }, lang)}
+            style={{
+              flex: 1,
+              border: 'none',
+              background: 'transparent',
+              fontSize: 'clamp(13px, 1.8vw, 15px)',
+              fontFamily: sans,
+              color: '#0f172a',
+              outline: 'none',
+              padding: '12px 0',
+              minWidth: 0,
+            }}
+          />
+          {isSearching && (
+            <button
+              onClick={() => setSearchQuery('')}
+              aria-label={t5({
+                ja: 'クリア', en: 'Clear', ko: '지우기', pt: 'Limpar', es: 'Borrar', de: 'Löschen',
+              }, lang)}
+              style={{
+                background: 'rgba(15,23,42,0.06)',
+                border: 'none',
+                borderRadius: 50,
+                width: 34, height: 34,
+                fontSize: 13,
+                color: '#475569',
+                cursor: 'pointer',
+                fontFamily: sans,
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'background 0.2s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(15,23,42,0.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(15,23,42,0.06)'; }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {isSearching && (
+          <div style={{
+            marginTop: 14,
+            textAlign: 'center' as const,
+            fontSize: 12.5,
+            fontFamily: sans,
+            color: '#64748b',
+            letterSpacing: '0.02em',
+          }}>
+            {filteredApps.length > 0
+              ? t5({
+                  ja: `${filteredApps.length} 件のアプリが見つかりました`,
+                  en: `${filteredApps.length} app${filteredApps.length === 1 ? '' : 's'} found`,
+                  ko: `${filteredApps.length} 개 앱을 찾았습니다`,
+                  pt: `${filteredApps.length} app${filteredApps.length === 1 ? '' : 's'} encontrado(s)`,
+                  es: `${filteredApps.length} app${filteredApps.length === 1 ? '' : 's'} encontrada(s)`,
+                  de: `${filteredApps.length} App${filteredApps.length === 1 ? '' : 's'} gefunden`,
+                }, lang)
+              : t5({
+                  ja: '一致するアプリが見つかりませんでした',
+                  en: 'No matching apps found',
+                  ko: '일치하는 앱을 찾지 못했습니다',
+                  pt: 'Nenhum app correspondente encontrado',
+                  es: 'No se encontraron apps coincidentes',
+                  de: 'Keine passenden Apps gefunden',
+                }, lang)}
+          </div>
+        )}
+      </section>
+
+      {/* ═══════ TODAY'S PICK (2026-04-29 追加・検索中は非表示) ═══════ */}
+      {/* 日付シードで決定的に 3 アプリを毎日選出。発見性向上のため。 */}
+      {!isSearching && todaysPicks.length > 0 && (
+        <section style={{
+          maxWidth: 1100,
+          margin: '0 auto clamp(36px, 6vw, 56px)',
+          padding: '0 clamp(16px, 4vw, 24px)',
+        }}>
+          <div style={{ textAlign: 'center' as const, marginBottom: 'clamp(18px, 3vw, 26px)' }}>
+            <p style={{
+              fontFamily: mono, fontSize: 10, fontWeight: 700,
+              letterSpacing: '0.22em', color: '#7C3AED',
+              margin: '0 0 8px 0',
+            }}>
+              TODAY&apos;S PICK
+            </p>
+            <h2 style={{
+              fontFamily: serif,
+              fontSize: 'clamp(17px, 2.4vw, 22px)',
+              fontWeight: 600, letterSpacing: '0.04em',
+              color: '#0f172a', margin: 0,
+            }}>
+              {t5({
+                ja: '今日のおすすめ',
+                en: "Today's Pick",
+                ko: '오늘의 추천',
+                pt: 'Destaque de hoje',
+                es: 'Selección de hoy',
+                de: 'Heutige Auswahl',
+              }, lang)}
+            </h2>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: 'clamp(12px, 2vw, 18px)',
+          }}>
+            {todaysPicks.map((app, i) => (
+              <AppCard key={`pick-${app.id}`} app={app} index={i} lang={lang} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ═══════ CATEGORY BROWSE (2026-04-26 追加・検索中は非表示) ═══════ */}
       {/* APP_CATALOG ベース・6 カテゴリで一覧クイックジャンプ */}
+      {!isSearching && (
       <section style={{
         maxWidth: 1200,
         margin: '0 auto clamp(40px, 7vw, 64px)',
@@ -2105,25 +2292,29 @@ export default function AudioAppsPage() {
           })}
         </div>
       </section>
+      )}
 
-      {/* ═══════ PERSONA SELECTOR (primary nav) ═══════ */}
-      <PersonaSelector
-        active={activePersona}
-        setActive={(p) => { setActivePersona(p); setActiveTier('all'); }}
-        counts={personaCounts}
-        lang={lang}
-      />
-
-      {/* ═══════ TIER FILTER ═══════ */}
-      <div id="apps" style={{ scrollMarginTop: 80 }}>
-        <TierFilterChips
-          active={activeTier}
-          setActive={setActiveTier}
-          counts={tierCounts}
+      {/* ═══════ PERSONA SELECTOR + TIER FILTER (検索中は非表示) ═══════ */}
+      {!isSearching && (
+      <>
+        <PersonaSelector
+          active={activePersona}
+          setActive={(p) => { setActivePersona(p); setActiveTier('all'); }}
+          counts={personaCounts}
           lang={lang}
-          accent={personaMeta.accent}
         />
-      </div>
+
+        <div id="apps" style={{ scrollMarginTop: 80 }}>
+          <TierFilterChips
+            active={activeTier}
+            setActive={setActiveTier}
+            counts={tierCounts}
+            lang={lang}
+            accent={personaMeta.accent}
+          />
+        </div>
+      </>
+      )}
 
       {/* ═══════ APP GRID ═══════ */}
       <section style={{
@@ -2155,8 +2346,8 @@ export default function AudioAppsPage() {
         )}
       </section>
 
-      {/* ═══════ WORKFLOW STACKS ═══════ */}
-      {personaStacks.length > 0 && (
+      {/* ═══════ WORKFLOW STACKS (検索中は非表示) ═══════ */}
+      {!isSearching && personaStacks.length > 0 && (
         <section style={{ marginTop: 'clamp(40px, 8vw, 72px)' }}>
           <div style={{ textAlign: 'center' as const, marginBottom: 'clamp(20px, 4vw, 32px)' }}>
             <p style={{

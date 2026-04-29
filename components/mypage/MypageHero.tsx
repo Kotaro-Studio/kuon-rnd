@@ -416,13 +416,13 @@ export function MypageHero({ userName, userPlan, theoryProgress, labStats }: Myp
             mode={displayMode}
           />
 
-          {/* Achievements Card — 達成バッジ */}
+          {/* My Music Card — 私の音楽（実績 + ポートフォリオ + 公開プロフィールへの入口） */}
+          {/* 在籍記録、達成、ポートフォリオを集約する「自己表現の場」。in-page anchor #my-music へ */}
           <SummaryCard
-            label={t({ ja: '実績', en: 'Achievements', es: 'Logros', ko: '실적', pt: 'Conquistas', de: 'Errungenschaften' }, lang)}
-            title={t({ ja: 'まもなく公開', en: 'Coming soon', es: 'Próximamente', ko: '곧 공개', pt: 'Em breve', de: 'Demnächst' }, lang)}
-            sub={t({ ja: '日々の積み重ねが、形になります', en: 'Your dedication, made visible', es: 'Su dedicación, visible', ko: '일상의 노력이 형태로', pt: 'Sua dedicação, visível', de: 'Ihre Hingabe, sichtbar' }, lang)}
-            href="/mypage/achievements"
-            disabled={true}
+            label={t({ ja: '私の音楽', en: 'My Music', es: 'Mi música', ko: '나의 음악', pt: 'Minha música', de: 'Meine Musik' }, lang)}
+            title={t({ ja: '足跡と表現', en: 'Journey & Voice', es: 'Trayecto y voz', ko: '여정과 목소리', pt: 'Jornada e voz', de: 'Werdegang & Stimme' }, lang)}
+            sub={t({ ja: '記録、達成、ポートフォリオが集う場所', en: 'Records, achievements, and portfolio', es: 'Registros, logros y portfolio', ko: '기록, 성취, 포트폴리오', pt: 'Registros, conquistas e portfólio', de: 'Notizen, Errungenschaften, Portfolio' }, lang)}
+            href="#my-music"
             mode={displayMode}
           />
         </div>
