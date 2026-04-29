@@ -82,6 +82,7 @@ const MODULES: ModuleDef[] = [
     title: { ja: '機能和声', en: 'Diatonic Harmony', es: 'Armonía diatónica', ko: '기능 화성', pt: 'Harmonia diatônica', de: 'Diatonische Harmonik' },
     desc: { ja: 'カデンツ・V7・属前和音・装飾音・トニカイゼーション・転調', en: 'Cadences, V7, predominants, embellishing tones, tonicization, modulation.', es: 'Cadencias, V7, predominantes, ornamentos, tonicización, modulación.', ko: '카덴츠·V7·속전화음·장식음·전조.', pt: 'Cadências, V7, predominantes, ornamentos, tonicização.', de: 'Kadenzen, V7, Subdominanten, Verzierungen, Modulation.' },
     lessonCount: 55, level: 'intermediate',
+    availableLessons: ['l04'],
   },
   {
     id: 'm5', num: 'M5',
@@ -445,7 +446,7 @@ function ModuleGroup({ label, color, children }: { label: string; color: string;
 
 function ModuleCard({ module: m, lang }: { module: ModuleDef; lang: Lang }) {
   const isAvailable = (m.availableLessons?.length ?? 0) > 0;
-  const targetHref = isAvailable ? `/theory/m0/${m.availableLessons![0]}` : undefined;
+  const targetHref = isAvailable ? `/theory/${m.id}/${m.availableLessons![0]}` : undefined;
 
   const content = (
     <article style={{

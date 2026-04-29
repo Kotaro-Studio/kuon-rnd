@@ -31,6 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 🎓 Music Theory Suite (2026-04-29 ハブ + MVP レッスン公開)
     'theory', // KUON Music Theory Suite ハブ (Norton Critical Edition 型目次・16 モジュール)
     'theory/m0/l01', // M0-01 五線と音名 (MVP 第 1 弾・Layer 1+2+3 + Pyodide 戦略実証)
+    'theory/m4/l04', // M4-04 カデンツの種類 (Living Score 本領発揮・PAC/IAC/HC/Deceptive 4 声体)
     // 2026-04-26 開発保留: 'drum' (専門家監修パターン再構築待ち・URL は残存)
   ];
 

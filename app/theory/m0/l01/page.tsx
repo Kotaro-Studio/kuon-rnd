@@ -349,6 +349,91 @@ export default function LessonM0L01() {
         </div>
       </section>
 
+      {/* ═══════ RELATED KUON TOOLS ═══════ */}
+      <section style={{
+        maxWidth: 880,
+        margin: '0 auto',
+        padding: 'clamp(2rem, 4vw, 3rem) clamp(1.5rem, 4vw, 3rem) 0',
+      }}>
+        <div style={{
+          fontFamily: mono,
+          fontSize: '0.7rem',
+          color: INK_FAINT,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          marginBottom: '1.2rem',
+        }}>
+          {t({
+            ja: '関連するツール',
+            en: 'Related tools',
+            es: 'Herramientas relacionadas',
+            ko: '관련 도구',
+            pt: 'Ferramentas relacionadas',
+            de: 'Verwandte Werkzeuge',
+          }, lang)}
+        </div>
+        <p style={{
+          fontFamily: serif,
+          fontStyle: 'italic',
+          fontSize: '0.9rem',
+          color: INK_SOFT,
+          lineHeight: 1.85,
+          margin: '0 0 1.4rem 0',
+          letterSpacing: '0.02em',
+        }}>
+          {t({
+            ja: 'このレッスンと相補的に使える Kuon の無料アプリ。譜読みの実践、聴音の継続、楽器の調律 — 学んだことを身体に染み込ませてください。',
+            en: 'Free Kuon apps that complement this lesson. Sight-reading practice, ongoing ear training, instrument tuning — embody what you have just learned.',
+            es: 'Apps gratuitas de Kuon que complementan esta lección. Lectura, audición continua, afinación.',
+            ko: '이 레슨을 보완하는 Kuon 무료 앱. 시창·청음·튜닝.',
+            pt: 'Apps gratuitos do Kuon que complementam esta lição. Leitura, percepção, afinação.',
+            de: 'Kostenlose Kuon-Apps, die diese Lektion ergänzen. Blattlesen, Gehörbildung, Stimmen.',
+          }, lang)}
+        </p>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
+          gap: '0.9rem',
+        }}>
+          <RelatedTool
+            href="/sight-reading-lp"
+            title={t({ ja: 'KUON SIGHT READING', en: 'KUON SIGHT READING', es: 'KUON SIGHT READING', ko: 'KUON SIGHT READING', pt: 'KUON SIGHT READING', de: 'KUON SIGHT READING' }, lang)}
+            desc={t({
+              ja: '譜読み訓練。譜表上のランダムな音をすぐに識別する反射神経を鍛える。',
+              en: 'Sight-reading drills. Build the reflex to name any pitch on the staff instantly.',
+              es: 'Lectura a primera vista. Reflejos para identificar cualquier nota.',
+              ko: '시창 훈련. 오선상 음을 즉시 식별.',
+              pt: 'Leitura à primeira vista. Identificar notas instantaneamente.',
+              de: 'Blattlesen. Tonhöhen sofort benennen.',
+            }, lang)}
+          />
+          <RelatedTool
+            href="/ear-training-lp"
+            title={t({ ja: 'KUON EAR TRAINING', en: 'KUON EAR TRAINING', es: 'KUON EAR TRAINING', ko: 'KUON EAR TRAINING', pt: 'KUON EAR TRAINING', de: 'KUON EAR TRAINING' }, lang)}
+            desc={t({
+              ja: '聴音訓練。音程・和音・カデンツを耳で識別する基礎力を継続的に磨く。',
+              en: 'Ear training. Build lasting skills in interval, chord, and cadence recognition.',
+              es: 'Entrenamiento auditivo. Intervalos, acordes, cadencias.',
+              ko: '청음 훈련. 음정·화음·카덴츠 식별.',
+              pt: 'Treino auditivo. Intervalos, acordes, cadências.',
+              de: 'Gehörbildung. Intervalle, Akkorde, Kadenzen.',
+            }, lang)}
+          />
+          <RelatedTool
+            href="/tuner-lp"
+            title={t({ ja: 'KUON TUNER PRO', en: 'KUON TUNER PRO', es: 'KUON TUNER PRO', ko: 'KUON TUNER PRO', pt: 'KUON TUNER PRO', de: 'KUON TUNER PRO' }, lang)}
+            desc={t({
+              ja: 'YIN アルゴリズムによる高精度チューナー。実楽器で「今学んだ音」を実際に出してみる。',
+              en: 'High-precision YIN-algorithm tuner. Sing or play the pitch you just learned.',
+              es: 'Afinador de alta precisión (YIN). Toca o canta la nota aprendida.',
+              ko: 'YIN 알고리즘 고정밀 튜너. 방금 배운 음을 직접 내보세요.',
+              pt: 'Afinador de alta precisão (YIN). Toque ou cante a nota aprendida.',
+              de: 'Präzisions-Stimmgerät (YIN). Spielen Sie den gelernten Ton.',
+            }, lang)}
+          />
+        </div>
+      </section>
+
       {/* ═══════ FOOTER NAV ═══════ */}
       <footer style={{
         maxWidth: 880,
@@ -968,6 +1053,61 @@ function NameCell({ label, value }: { label: string; value: string }) {
 // ─────────────────────────────────────────────────────────────
 // FlashcardItem (Layer 3)
 // ─────────────────────────────────────────────────────────────
+function RelatedTool({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <Link href={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <div style={{
+        background: '#fff',
+        border: `1px solid ${STAFF_LINE_COLOR}`,
+        borderRadius: 4,
+        padding: 'clamp(1.1rem, 2vw, 1.4rem)',
+        height: '100%',
+        transition: 'all 0.25s ease',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = INK;
+        e.currentTarget.style.transform = 'translateY(-1px)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = STAFF_LINE_COLOR;
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
+      >
+        <div style={{
+          fontFamily: sans,
+          fontSize: '0.78rem',
+          fontWeight: 600,
+          color: INK,
+          letterSpacing: '0.06em',
+          marginBottom: '0.55rem',
+        }}>
+          {title}
+        </div>
+        <p style={{
+          fontFamily: sans,
+          fontSize: '0.78rem',
+          color: INK_SOFT,
+          lineHeight: 1.7,
+          margin: 0,
+          letterSpacing: '0.01em',
+        }}>
+          {desc}
+        </p>
+        <div style={{
+          fontFamily: sans,
+          fontSize: '0.7rem',
+          color: ACCENT_INDIGO,
+          marginTop: '0.85rem',
+          letterSpacing: '0.04em',
+        }}>
+          {'→'}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function FlashcardItem({ card, lang }: { card: Flashcard; lang: Lang }) {
   const [flipped, setFlipped] = useState(false);
   return (
