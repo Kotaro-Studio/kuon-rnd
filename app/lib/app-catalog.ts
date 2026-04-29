@@ -217,6 +217,29 @@ export const APP_CATALOG: CatalogApp[] = [
     releasedAt: '2026-04-28',
   },
   {
+    // KUON CLASSICAL LAB — 2026-04-28 リリース
+    // /classical の Pyodide ベース版：ブラウザ内で Python music21 が動く世界初の音楽教育環境
+    // サーバーコスト完全ゼロのためサブスク最低ランク (Prelude) から開放
+    // CLAUDE.md §44.11 🟢 safe zone (Pyodide は Mozilla/MIT・WebAssembly で枯れた技術)
+    id: 'classical-lab',
+    name: { ja: 'CLASSICAL LAB', en: 'CLASSICAL LAB', es: 'CLASSICAL LAB' },
+    tagline: {
+      ja: 'ブラウザの中で music21 を動かす',
+      en: 'music21 running inside your browser',
+      es: 'music21 dentro de su navegador',
+    },
+    href: '/classical/lab-lp',
+    launchHref: '/classical/lab',
+    emoji: '🧪',
+    category: 'composition',
+    noLogin: false,
+    serverApp: false,          // 完全ブラウザ実行（Pyodide + WebAssembly）
+    quotaKey: null,            // ローカル実行のためクォータ不要
+    badges: ['NEW', 'BETA'],
+    minPlan: 'prelude',        // サーバーコスト ¥0 のため Prelude から開放
+    releasedAt: '2026-04-28',
+  },
+  {
     id: 'counterpoint',
     name: { ja: 'COUNTERPOINT', en: 'COUNTERPOINT', es: 'COUNTERPOINT' },
     tagline: { ja: '対位法トレーナー', en: 'Counterpoint trainer', es: 'Entrenador de contrapunto' },

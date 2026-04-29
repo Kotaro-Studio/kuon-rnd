@@ -292,7 +292,7 @@ const LABELS = {
 
 export default function ClassicalLabPage() {
   return (
-    <AuthGate appName="classical">
+    <AuthGate appName="classical-lab">
       <LabInner />
     </AuthGate>
   );

@@ -352,6 +352,7 @@ function PlaybackPanel({
   const [ready, setReady] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [tempoMultiplier, setTempoMultiplier] = useState(1.0);
+  const [masterVolume, setMasterVolume] = useState(60); // 0-100, デフォルト 60% (約 -4dB)
   const [tracks, setTracks] = useState<MidiTrackInfo[]>([]);
   const [mutedTracks, setMutedTracks] = useState<Set<number>>(new Set());
   const [soloTrack, setSoloTrack] = useState<number | null>(null);
@@ -514,8 +515,11 @@ function PlaybackPanel({
     Tone.Transport.bpm.value = baseBpmRef.current * tempoMultiplier;
   }, [tempoMultiplier, ready]);
 
-  // ミュート/ソロ → synth volume 制御
+  // ミュート/ソロ + マスター音量 → synth volume 制御
+  // 0-100% を対数曲線で dB 変換（人間の聴覚は対数的）
+  // 100% = 0 dB, 50% = -6 dB, 25% = -12 dB, 10% = -20 dB, 0% = -∞
   useEffect(() => {
+    const masterDb = masterVolume <= 0 ? -Infinity : 20 * Math.log10(masterVolume / 100);
     Object.entries(synthsRef.current).forEach(([idxStr, synth]) => {
       const idx = parseInt(idxStr, 10);
       const isMuted = mutedTracks.has(idx);
@@ -523,10 +527,10 @@ function PlaybackPanel({
       const shouldSilence = isMuted || isSoloed;
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (synth as any).volume.value = shouldSilence ? -Infinity : -10;
+        (synth as any).volume.value = shouldSilence ? -Infinity : masterDb;
       } catch {}
     });
-  }, [mutedTracks, soloTrack]);
+  }, [mutedTracks, soloTrack, masterVolume]);
 
   const handlePlayPause = useCallback(async () => {
     const Tone = toneRef.current;
@@ -635,6 +639,24 @@ function PlaybackPanel({
               />
               <span style={{ fontFamily: mono, color: '#0f172a', fontWeight: 600, minWidth: 50 }}>
                 {Math.round(tempoMultiplier * 100)}%
+              </span>
+            </div>
+
+            {/* Volume — 対数曲線 (0% 無音, 100% 0dB) */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>
+              <span style={{ color: '#64748b' }} aria-label="Volume">
+                {masterVolume === 0 ? '🔇' : masterVolume < 33 ? '🔈' : masterVolume < 66 ? '🔉' : '🔊'}
+              </span>
+              <input
+                type="range"
+                min="0" max="100" step="1"
+                value={masterVolume}
+                onChange={(e) => setMasterVolume(parseInt(e.target.value, 10))}
+                style={{ width: 110 }}
+                aria-label="Master volume"
+              />
+              <span style={{ fontFamily: mono, color: '#0f172a', fontWeight: 600, minWidth: 40 }}>
+                {masterVolume}%
               </span>
             </div>
           </>

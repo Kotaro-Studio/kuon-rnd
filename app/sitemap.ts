@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'comping', 'daw',
     // 🎼 作曲・分析 (2026-04-28 追加)
     'classical', // KUON CLASSICAL ANALYSIS - Roman numeral analysis with built-in library
+    'classical/lab', // KUON CLASSICAL LAB - Pyodide + music21 in browser (world's first)
     // 2026-04-26 開発保留: 'drum' (専門家監修パターン再構築待ち・URL は残存)
   ];
 
@@ -50,6 +51,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'comping-lp', 'daw-lp',
     // 🎼 作曲・分析 (2026-04-28 追加)
     'classical-lp', // KUON CLASSICAL ANALYSIS Landing Page
+    'classical/lab-lp', // KUON CLASSICAL LAB Landing Page (Pyodide world's first)
     // 2026-04-26 開発保留: 'drum-lp' (URL は残存・サイトマップには非掲載)
     // 2026-04-27 公開停止: 'separator-lp' (Cloud Run 単体運用が安定しないため
     //   将来 Replicate API 等への乗せ替えと共に再公開予定。アプリ本体コードは温存)
