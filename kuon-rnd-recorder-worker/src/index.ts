@@ -189,10 +189,13 @@ app.post('/api/recorder/transcribe', requireAuth, async (c) => {
     }
 
     const audioBuffer = await audioFile.arrayBuffer();
-    const audioArray = new Uint8Array(audioBuffer);
+    const audioBytes = Array.from(new Uint8Array(audioBuffer));
 
-    // Workers AI Whisper-large-v3-turbo を呼び出し
-    // Initial prompt に音楽専門語彙を注入することで認識精度を向上
+    // Workers AI Whisper を呼び出し
+    // 注意: 2026-04-30 時点では @cf/openai/whisper-large-v3-turbo の input schema が
+    //       Workers AI 側で不安定 ('string not in array,binary' エラー)。
+    //       一時的に旧 @cf/openai/whisper を本命にする (95% 精度・日英対応)。
+    //       turbo の schema が安定したら attempts の先頭を turbo に戻す。
     const vocabPrompt =
       musicVocab && lang !== 'auto'
         ? `音楽レッスンの録音です。以下の専門用語が出てくる可能性があります: ${(MUSIC_VOCAB[lang as keyof typeof MUSIC_VOCAB] || MUSIC_VOCAB.ja).slice(0, 30).join('、')}`
@@ -200,31 +203,30 @@ app.post('/api/recorder/transcribe', requireAuth, async (c) => {
         ? `Music lesson recording. Common terms: ${MUSIC_VOCAB.en.slice(0, 25).join(', ')}`
         : undefined;
 
-    const whisperInput: any = {
-      audio: [...audioArray],
-    };
-    if (lang !== 'auto') whisperInput.language = lang;
-    if (vocabPrompt) whisperInput.initial_prompt = vocabPrompt;
+    type Attempt = { model: string; input: any; label: string };
+    const attempts: Attempt[] = [
+      // 1. 旧 whisper (本命): 安定動作確認済み
+      { model: '@cf/openai/whisper', input: { audio: audioBytes }, label: 'whisper-stable' },
+      // 2. turbo (将来用フォールバック): schema が安定したら本命に昇格
+      { model: '@cf/openai/whisper-large-v3-turbo', input: { audio: audioBytes, ...(lang !== 'auto' ? { language: lang } : {}), ...(vocabPrompt ? { initial_prompt: vocabPrompt } : {}) }, label: 'turbo-fallback' },
+    ];
 
-    let whisperResult: any;
-    try {
-      whisperResult = await c.env.AI.run(
-        '@cf/openai/whisper-large-v3-turbo' as any,
-        whisperInput
-      );
-    } catch (whisperErr) {
-      console.error('Whisper run error:', whisperErr);
-      return c.json({
-        error: 'Whisper invocation failed',
-        message: whisperErr instanceof Error ? whisperErr.message : 'unknown',
-        stack: whisperErr instanceof Error ? whisperErr.stack : undefined,
-      }, 502);
+    let whisperResult: any = null;
+    let lastError: any = null;
+    for (const attempt of attempts) {
+      try {
+        whisperResult = await c.env.AI.run(attempt.model as any, attempt.input);
+        if (whisperResult && whisperResult.text) break;
+      } catch (e) {
+        lastError = e;
+        console.error(`Whisper ${attempt.label} failed:`, e instanceof Error ? e.message : e);
+      }
     }
 
     if (!whisperResult || !whisperResult.text) {
       return c.json({
-        error: 'Transcription returned empty',
-        detail: JSON.stringify(whisperResult).slice(0, 500),
+        error: 'Whisper invocation failed',
+        message: lastError instanceof Error ? lastError.message : 'unknown',
       }, 502);
     }
 
