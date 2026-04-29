@@ -49,8 +49,10 @@ interface ModuleDef {
   desc: L6;
   lessonCount: number;
   level: 'foundation' | 'intermediate' | 'advanced' | 'graduate';
-  // MVP 段階で実際に入れるレッスン (例: 'm0/l01')
-  availableLessons?: string[];
+  // MVP 段階で実際に入れるレッスン。
+  // 2026-04-29 改修: 単純な string[] から { id, title } の配列にして、
+  //                  ハブに各レッスンのタイトルを直接表示できるようにした。
+  availableLessons?: { id: string; title: L6 }[];
 }
 
 const MODULES: ModuleDef[] = [
@@ -59,14 +61,20 @@ const MODULES: ModuleDef[] = [
     title: { ja: '音楽との最初の出会い', en: 'First Encounter with Music', es: 'Primer encuentro con la música', ko: '음악과의 첫 만남', pt: 'Primeiro encontro com a música', de: 'Erste Begegnung mit Musik' },
     desc: { ja: '完全初心者向け導入。譜表・音名・拍子記号・基本リズムまで。', en: 'For absolute beginners. Staff, pitch names, time signatures, basic rhythm.', es: 'Para principiantes absolutos. Pentagrama, notas, compases, ritmo básico.', ko: '완전 초급자용. 오선·음이름·박자기호·기본 리듬.', pt: 'Para iniciantes absolutos. Pauta, notas, compassos, ritmo básico.', de: 'Für absolute Anfänger. Notensystem, Tonnamen, Taktarten, Grundrhythmen.' },
     lessonCount: 15, level: 'foundation',
-    availableLessons: ['l01'],
+    availableLessons: [
+      { id: 'l01', title: { ja: '五線と音名', en: 'Staff and Pitch Names', es: 'Pentagrama y notas', ko: '오선과 음이름', pt: 'Pauta e notas', de: 'Notensystem & Tonnamen' } },
+    ],
   },
   {
     id: 'm1', num: 'M1',
     title: { ja: '楽典基礎', en: 'Fundamentals', es: 'Fundamentos', ko: '악전 기초', pt: 'Fundamentos', de: 'Grundlagen' },
     desc: { ja: '記譜法・音程・音階・三和音・七の和音・ローマ数字・SATB・テクスチャ', en: 'Notation, intervals, scales, triads, seventh chords, Roman numerals, SATB, texture.', es: 'Notación, intervalos, escalas, tríadas, séptimas, cifrado romano, SATB.', ko: '기보법·음정·음계·삼화음·칠화음·로마숫자·SATB.', pt: 'Notação, intervalos, escalas, tríades, sétimas, cifras romanas, SATB.', de: 'Notation, Intervalle, Skalen, Dreiklänge, Septakkorde, Stufenanalyse, Vierstimmigkeit.' },
     lessonCount: 60, level: 'foundation',
-    availableLessons: ['l01', 'l02', 'l40'], // OMT v2 Part I 第 1 章 + 第 2 章前半 + 第 17+19 章
+    availableLessons: [
+      { id: 'l01', title: { ja: '西洋音楽記譜法の導入', en: 'Introduction to Western Notation', es: 'Introducción a la notación', ko: '서양 기보법의 도입', pt: 'Introdução à notação', de: 'Einführung in die Notation' } },
+      { id: 'l02', title: { ja: '音符の記譜と五線', en: 'Notation of Notes and the Staff', es: 'Notación de las notas y el pentagrama', ko: '음표의 기보와 오선', pt: 'Notação das notas e a pauta', de: 'Notenschrift und das System' } },
+      { id: 'l40', title: { ja: '三和音の基本形と転回形', en: 'Triads in Root Position and Inversions', es: 'La tríada y sus inversiones', ko: '삼화음의 기본형과 전회', pt: 'A tríade e suas inversões', de: 'Dreiklänge in Grundstellung und Umkehrungen' } },
+    ],
   },
   {
     id: 'm2', num: 'M2',
@@ -85,7 +93,9 @@ const MODULES: ModuleDef[] = [
     title: { ja: '機能和声', en: 'Diatonic Harmony', es: 'Armonía diatónica', ko: '기능 화성', pt: 'Harmonia diatônica', de: 'Diatonische Harmonik' },
     desc: { ja: 'カデンツ・V7・属前和音・装飾音・トニカイゼーション・転調', en: 'Cadences, V7, predominants, embellishing tones, tonicization, modulation.', es: 'Cadencias, V7, predominantes, ornamentos, tonicización, modulación.', ko: '카덴츠·V7·속전화음·장식음·전조.', pt: 'Cadências, V7, predominantes, ornamentos, tonicização.', de: 'Kadenzen, V7, Subdominanten, Verzierungen, Modulation.' },
     lessonCount: 55, level: 'intermediate',
-    availableLessons: ['l01'], // OMT v2 Part IV 第 1 章 (Cadences intro)
+    availableLessons: [
+      { id: 'l01', title: { ja: 'カデンツの種類', en: 'Types of Cadence', es: 'Tipos de cadencia', ko: '카덴츠의 종류', pt: 'Tipos de cadência', de: 'Arten der Kadenz' } },
+    ], // OMT v2 Part IV 第 1 章 (Cadences intro)
   },
   {
     id: 'm5', num: 'M5',
@@ -448,33 +458,24 @@ function ModuleGroup({ label, color, children }: { label: string; color: string;
 }
 
 function ModuleCard({ module: m, lang }: { module: ModuleDef; lang: Lang }) {
-  const isAvailable = (m.availableLessons?.length ?? 0) > 0;
-  const targetHref = isAvailable ? `/theory/${m.id}/${m.availableLessons![0]}` : undefined;
+  // 2026-04-29 改修: ハブで個別レッスンへ直接アクセスできるようリスト表示。
+  // ネストしたリンクは無効なので、外側の article は <article> に保ち、
+  // 内側の各レッスンを <Link> にする。
+  const lessons = m.availableLessons ?? [];
+  const isAvailable = lessons.length > 0;
 
-  const content = (
+  return (
     <article style={{
       background: '#fff',
       border: `1px solid ${STAFF_LINE}`,
       borderRadius: 4,
       padding: 'clamp(1.4rem, 2.5vw, 1.8rem)',
-      transition: 'all 0.3s ease',
-      cursor: isAvailable ? 'pointer' : 'default',
-      opacity: isAvailable ? 1 : 0.85,
+      transition: 'border-color 0.3s ease',
+      opacity: isAvailable ? 1 : 0.78,
       height: '100%',
       display: 'flex',
-      flexDirection: 'column',
-    }}
-    onMouseEnter={e => {
-      if (isAvailable) {
-        e.currentTarget.style.borderColor = INK;
-        e.currentTarget.style.transform = 'translateY(-1px)';
-      }
-    }}
-    onMouseLeave={e => {
-      e.currentTarget.style.borderColor = STAFF_LINE;
-      e.currentTarget.style.transform = 'translateY(0)';
-    }}
-    >
+      flexDirection: 'column' as const,
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.9rem' }}>
         <span style={{
           fontFamily: serif,
@@ -519,28 +520,94 @@ function ModuleCard({ module: m, lang }: { module: ModuleDef; lang: Lang }) {
         {t(m.desc, lang)}
       </p>
 
-      {/* 状態表示 */}
+      {/* 公開済みレッスンリスト (各々独立した Link) */}
       <div style={{
         marginTop: 'clamp(1rem, 2vw, 1.4rem)',
         paddingTop: '0.85rem',
         borderTop: `1px solid ${STAFF_LINE}`,
-        fontFamily: sans,
-        fontSize: '0.72rem',
-        letterSpacing: '0.05em',
       }}>
         {isAvailable ? (
-          <span style={{ color: ACCENT_INDIGO, fontWeight: 500 }}>
-            {t({
-              ja: '受講可能 →',
-              en: 'Available →',
-              es: 'Disponible →',
-              ko: '수강 가능 →',
-              pt: 'Disponível →',
-              de: 'Verfügbar →',
-            }, lang)}
-          </span>
+          <>
+            <div style={{
+              fontFamily: sans,
+              fontSize: '0.65rem',
+              color: INK_FAINT,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase' as const,
+              marginBottom: '0.6rem',
+            }}>
+              {t({
+                ja: `公開済み (${lessons.length})`,
+                en: `Available (${lessons.length})`,
+                es: `Disponibles (${lessons.length})`,
+                ko: `공개 (${lessons.length})`,
+                pt: `Disponíveis (${lessons.length})`,
+                de: `Verfügbar (${lessons.length})`,
+              }, lang)}
+            </div>
+            <ul style={{
+              listStyle: 'none' as const,
+              padding: 0,
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column' as const,
+              gap: '0.35rem',
+            }}>
+              {lessons.map(lesson => (
+                <li key={lesson.id}>
+                  <Link
+                    href={`/theory/${m.id}/${lesson.id}`}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center' as const,
+                      textDecoration: 'none',
+                      color: INK,
+                      padding: '0.45rem 0.6rem',
+                      borderRadius: 3,
+                      fontFamily: serif,
+                      fontSize: 'clamp(0.85rem, 1.4vw, 0.95rem)',
+                      letterSpacing: '0.02em',
+                      lineHeight: 1.45,
+                      transition: 'background 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = STAFF_LINE; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <span style={{
+                      display: 'flex',
+                      alignItems: 'baseline' as const,
+                      gap: '0.6rem',
+                      flex: 1,
+                      minWidth: 0,
+                      wordBreak: 'keep-all' as const,
+                    }}>
+                      <span style={{
+                        fontFamily: mono,
+                        fontSize: '0.7rem',
+                        color: ACCENT_GOLD,
+                        letterSpacing: '0.06em',
+                        flexShrink: 0,
+                        textTransform: 'uppercase' as const,
+                      }}>
+                        {lesson.id}
+                      </span>
+                      <span>{t(lesson.title, lang)}</span>
+                    </span>
+                    <span style={{ color: INK_FAINT, fontSize: '0.85em', marginLeft: '0.5rem', flexShrink: 0 }}>→</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
         ) : (
-          <span style={{ color: INK_FAINT, fontStyle: 'italic' }}>
+          <span style={{
+            fontFamily: sans,
+            fontSize: '0.72rem',
+            color: INK_FAINT,
+            fontStyle: 'italic' as const,
+            letterSpacing: '0.05em',
+          }}>
             {t({
               ja: '準備中',
               en: 'In preparation',
@@ -554,13 +621,4 @@ function ModuleCard({ module: m, lang }: { module: ModuleDef; lang: Lang }) {
       </div>
     </article>
   );
-
-  if (targetHref) {
-    return (
-      <Link href={targetHref} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-        {content}
-      </Link>
-    );
-  }
-  return content;
 }

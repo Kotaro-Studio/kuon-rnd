@@ -12,7 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/profile`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/gallery`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     // /certification 削除 (2026-04-25: 認定制度を採用しない決定 / CLAUDE.md §37.5)
-    { url: `${base}/for-schools`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    // 2026-04-29 削除: /for-schools — 機能していないため廃止 (リダイレクト)
   ];
 
   // ── Apps (tool pages) — high SEO value ──

@@ -102,7 +102,7 @@ const NOTATION_SYSTEMS: NotationSystem[] = [
     id: 'staff',
     name: { ja: '西洋五線譜', en: 'Western Staff Notation', es: 'Pentagrama occidental', ko: '서양 오선보', pt: 'Pauta ocidental', de: 'Westliche Notenschrift' },
     origin: { ja: '11 世紀イタリア (グイド・ダレッツォ起源)', en: '11th-century Italy (Guido of Arezzo)', es: 'Italia s. XI', ko: '11세기 이탈리아', pt: 'Itália do séc. XI', de: '11. Jh. Italien' },
-    representation: '𝄞 ♩ ♩ ♩',
+    representation: '__STAFF_SVG__', // 特殊値: 下記の StaffMiniSvg をレンダリング (五線譜正確性遵守)
     description: { ja: '5 本の線と 4 つのスペース上に音符を配置。Bach・Mozart・Beethoven の世界。', en: 'Notes placed on 5 lines and 4 spaces. The world of Bach, Mozart, Beethoven.', es: 'Notas en 5 líneas y 4 espacios. El mundo de Bach, Mozart, Beethoven.', ko: '5 선 4 칸 위에 음표 배치. 바흐·모차르트·베토벤의 세계.', pt: 'Notas em 5 linhas e 4 espaços. O mundo de Bach, Mozart, Beethoven.', de: 'Noten auf 5 Linien und 4 Zwischenräumen. Die Welt von Bach, Mozart, Beethoven.' },
   },
   {
@@ -489,19 +489,33 @@ Die Symbole sind verschieden, der Klang gleich — Beweis der „Übersetzung".`
                 }}>
                   {t(s.name, lang)}
                 </h3>
-                <div style={{
-                  fontFamily: s.id === 'staff' ? 'Bravura, serif' : (s.id === 'frequency' || s.id === 'numbers' ? mono : serif),
-                  fontSize: 'clamp(1.4rem, 3vw, 2rem)',
-                  color: ACCENT_INDIGO,
-                  letterSpacing: '0.08em',
-                  lineHeight: 1.2,
-                  padding: '0.4rem 0',
-                  borderTop: `1px solid ${STAFF_LINE_COLOR}`,
-                  borderBottom: `1px solid ${STAFF_LINE_COLOR}`,
-                  textAlign: 'center' as const,
-                }}>
-                  {s.representation}
-                </div>
+                {s.id === 'staff' ? (
+                  // CLAUDE.md §51 五線譜正確性ルール準拠 — 本物の SVG 楽譜で C-E-G を描画
+                  <div style={{
+                    padding: '0.6rem 0',
+                    borderTop: `1px solid ${STAFF_LINE_COLOR}`,
+                    borderBottom: `1px solid ${STAFF_LINE_COLOR}`,
+                    display: 'flex',
+                    justifyContent: 'center' as const,
+                    alignItems: 'center' as const,
+                  }}>
+                    <StaffMiniSvg />
+                  </div>
+                ) : (
+                  <div style={{
+                    fontFamily: s.id === 'frequency' || s.id === 'numbers' ? mono : serif,
+                    fontSize: 'clamp(1.4rem, 3vw, 2rem)',
+                    color: ACCENT_INDIGO,
+                    letterSpacing: '0.08em',
+                    lineHeight: 1.2,
+                    padding: '0.4rem 0',
+                    borderTop: `1px solid ${STAFF_LINE_COLOR}`,
+                    borderBottom: `1px solid ${STAFF_LINE_COLOR}`,
+                    textAlign: 'center' as const,
+                  }}>
+                    {s.representation}
+                  </div>
+                )}
                 <div style={{
                   fontFamily: sans,
                   fontSize: '0.7rem',
@@ -754,6 +768,87 @@ function FlashcardItem({ card, lang }: { card: { q: L6; a: L6 }; lang: Lang }) {
         {flipped ? t(card.a, lang) : t(card.q, lang)}
       </div>
     </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// StaffMiniSvg — 西洋五線譜カード用ミニ譜表
+// CLAUDE.md §51 五線譜正確性ルール準拠
+// C4 (中央ハ・加線 1 本) → E4 (第 1 線) → G4 (第 2 線) を treble clef で描画
+// ─────────────────────────────────────────────────────────────
+function StaffMiniSvg() {
+  const W = 220, H = 80;
+  const STAFF_TOP = 22;
+  const GAP = 7;
+
+  // 全音階ステップ (C0=0, D0=1, ..., B0=6, C1=7, ...)
+  const diatonicStep = (midi: number): number => {
+    const octave = Math.floor(midi / 12);
+    const pc = midi % 12;
+    const map: Record<number, number> = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };
+    return octave * 7 + (map[pc] ?? 0);
+  };
+
+  // MIDI → Y 座標: B4 (= MIDI 71) を譜表中央線 (3rd line) に対応
+  const midiToY = (midi: number): number => {
+    const middleLine = STAFF_TOP + 2 * GAP;
+    const stepFromB4 = diatonicStep(midi) - diatonicStep(71);
+    return middleLine - stepFromB4 * (GAP / 2);
+  };
+
+  // 描画する 3 音 (do-mi-sol = C4-E4-G4)
+  const NOTES = [60, 64, 67];
+  const X_POSITIONS = [110, 150, 190];
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 220 }}>
+      {/* 5 staff lines */}
+      {[0, 1, 2, 3, 4].map(i => (
+        <line
+          key={i}
+          x1={45} x2={W - 12}
+          y1={STAFF_TOP + i * GAP} y2={STAFF_TOP + i * GAP}
+          stroke={STAFF_LINE_COLOR}
+          strokeWidth={1}
+        />
+      ))}
+
+      {/* Treble clef (Bravura SMuFL U+E050) */}
+      <text
+        x={15}
+        y={STAFF_TOP + 2 * GAP + 14}
+        fontFamily="Bravura, serif"
+        fontSize={GAP * 4}
+        fill={ACCENT_INDIGO}
+      >
+        {String.fromCodePoint(0xE050)}
+      </text>
+
+      {/* 3 noteheads with proper positions */}
+      {NOTES.map((midi, i) => {
+        const cx = X_POSITIONS[i];
+        const cy = midiToY(midi);
+        const needsLedger = midi === 60; // C4 = ledger line below staff
+        return (
+          <g key={midi}>
+            {needsLedger && (
+              <line
+                x1={cx - 9} x2={cx + 9}
+                y1={cy} y2={cy}
+                stroke={ACCENT_INDIGO}
+                strokeWidth={1.2}
+              />
+            )}
+            <ellipse
+              cx={cx} cy={cy}
+              rx={GAP * 0.85} ry={GAP * 0.6}
+              fill={ACCENT_INDIGO}
+              transform={`rotate(-20 ${cx} ${cy})`}
+            />
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 

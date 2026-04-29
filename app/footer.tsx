@@ -41,7 +41,7 @@ const LEGAL: FooterLink[] = [
 
 const ABOUT: FooterLink[] = [
   { href: '/profile',     label: { ja: 'プロフィール', en: 'Developer Profile', ko: '개발자 프로필', pt: 'Perfil', es: 'Perfil del Desarrollador' } },
-  { href: '/for-schools', label: { ja: '教育機関の方へ', en: 'For Schools', ko: '교육 기관용', pt: 'Para Escolas', es: 'Para Instituciones' } },
+  // 2026-04-29 削除: /for-schools — 機能していないため、ページごと削除した
   { href: '/#contact',    label: { ja: 'お問い合わせ', en: 'Contact', ko: '문의', pt: 'Contato', es: 'Contacto' } },
   { href: '/mypage',      label: { ja: 'マイページ', en: 'My Page', ko: '마이페이지', pt: 'Minha Página', es: 'Mi Página' } },
 ];

@@ -22,6 +22,9 @@ type MenuItem = { href: string; label: L3 };
 const MENU: MenuItem[] = [
   { href: '/',                  label: { ja: 'トップ',           en: 'Top',        ko: '홈',        pt: 'Início',     es: 'Inicio',     de: 'Start'      } },
   { href: '/audio-apps',        label: { ja: 'アプリ',           en: 'Apps',       ko: '앱',        pt: 'Apps',       es: 'Apps',       de: 'Apps'       } },
+  // 2026-04-29 追加: Theory Suite 開講に伴い 3 大プロダクト構造を明示 (アプリ / 理論コース / 研究室)
+  { href: '/theory-lp',         label: { ja: '音楽理論学習コース', en: 'Theory Course', ko: '음악 이론 코스', pt: 'Curso de teoria', es: 'Curso de teoría', de: 'Musiktheorie-Kurs' } },
+  { href: '/classical/lab-lp',  label: { ja: '音楽研究室',       en: 'Music Lab',  ko: '음악 연구실', pt: 'Laboratório musical', es: 'Laboratorio musical', de: 'Musiklabor' } },
   // 2026-04-26 削除: マイクメニュー (国際公平性のため・Kotaro Studio 外部リンクのみで流入)
   { href: '/#pricing',          label: { ja: 'プラン',           en: 'Plans',      ko: '플랜',      pt: 'Planos',     es: 'Planes',     de: 'Pläne'      } },
   // 2026-04-26 削除: 地球音マップ・ライブ情報・スカウト → フッターに移動
