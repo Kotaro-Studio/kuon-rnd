@@ -731,6 +731,145 @@ const apps: AppEntry[] = [
     href: '/slowdown-lp', accent: '#c2410c', isNew: true,
   },
 
+  // ─── Production / Studio tools (2026-04-26+) ───
+  {
+    id: 'daw', personas: ['producer', 'engineer'], tier: 'login',
+    badge: 'DAW', name: 'KUON DAW',
+    tagline: {
+      ja: 'ブラウザで動く DAW。マルチトラック録音・編集・マスタリング。',
+      en: 'A DAW that runs in the browser. Multi-track record, edit, master.',
+      ko: '브라우저에서 동작하는 DAW. 멀티트랙 녹음·편집·마스터링.',
+      pt: 'Uma DAW no navegador. Multipista, edição, masterização.',
+      es: 'Una DAW en el navegador. Multipista, edición, masterización.',
+    },
+    desc: {
+      ja: 'インストール不要のマルチトラック DAW。ブラウザ内録音、波形編集、ミックス、マスタリング、書き出し。Logic / Pro Tools / Cubase の代替に。',
+      en: 'Install-free multi-track DAW. Record, edit waveforms, mix, master, export — all in the browser. Alternative to Logic / Pro Tools / Cubase.',
+      ko: '설치 불필요한 멀티트랙 DAW. 브라우저 내 녹음·파형 편집·믹스·마스터링·내보내기. Logic / Pro Tools / Cubase 대체.',
+      pt: 'DAW multipista sem instalação. Grave, edite, mixe, masterize e exporte no navegador.',
+      es: 'DAW multipista sin instalación. Graba, edita, mezcla, masteriza y exporta en el navegador.',
+    },
+    href: '/daw-lp', accent: '#0f172a', isNew: true,
+  },
+  {
+    id: 'comping', personas: ['producer', 'engineer'], tier: 'login',
+    badge: 'COMP', name: 'KUON COMPING',
+    tagline: {
+      ja: 'マルチテイク録音から、ベストの瞬間を組み立てる。',
+      en: 'Record many takes, build the best one.',
+      ko: '여러 테이크에서 베스트 순간을 조합.',
+      pt: 'Grave várias takes, monte a melhor.',
+      es: 'Graba varias tomas, arma la mejor.',
+    },
+    desc: {
+      ja: '多テイク録音 + チャンク単位コンピング + WAV 書き出し。クラシック演奏家・ボーカル収録に。Logic コンピング機能の代替。',
+      en: 'Multi-take recording + chunk-level comping + WAV export. For classical performers and vocal recording. Alternative to Logic comping.',
+      ko: '다중 테이크 녹음 + 청크 단위 컴핑 + WAV 내보내기. 클래식 연주자·보컬 녹음용. Logic 컴핑 대체.',
+      pt: 'Gravação multi-take + comping em blocos + export WAV. Para músicos clássicos e gravação vocal.',
+      es: 'Grabación multi-toma + comping por bloques + export WAV. Para clásicos y grabación vocal.',
+    },
+    href: '/comping-lp', accent: '#0e7490', isNew: true,
+  },
+
+  // ─── Composition / Analysis (2026-04-28) ───
+  {
+    id: 'classical', personas: ['student', 'producer'], tier: 'pro',
+    badge: 'ROMAN', name: 'KUON CLASSICAL ANALYSIS',
+    tagline: {
+      ja: 'バッハ・モーツァルトをローマ数字で自動分析。',
+      en: 'Roman numeral analysis of Bach, Mozart, Beethoven.',
+      ko: '바흐·모차르트를 로마 숫자로 자동 분석.',
+      pt: 'Análise de Bach e Mozart com números romanos.',
+      es: 'Análisis con números romanos de Bach, Mozart.',
+    },
+    desc: {
+      ja: 'music21 ベースの楽曲全体ローマ数字解析。Bach 371 コラールほか 600+ 曲のキュレーションライブラリ内蔵。声部進行違反検出・転調マップ・カデンツ自動判定。',
+      en: 'Whole-piece Roman numeral analysis powered by music21. 600+ curated pieces (Bach 371 chorales, Mozart, Haydn, Beethoven). Voice-leading checker, modulation map, cadence detection.',
+      ko: 'music21 기반 곡 전체 로마 숫자 분석. Bach 371 코랄 외 600+ 큐레이션 라이브러리. 성부 진행 위반 검출·전조 맵·카덴츠 자동 판정.',
+      pt: 'Análise de obra completa com números romanos via music21. 600+ peças curadas. Detecção de erros de condução de vozes, mapa de modulações.',
+      es: 'Análisis de obra completa con números romanos via music21. 600+ piezas curadas. Detección de errores de conducción de voces, mapa de modulaciones.',
+    },
+    href: '/classical-lp', accent: '#0284c7', isNew: true,
+  },
+  {
+    id: 'classical-lab', personas: ['student', 'producer'], tier: 'login',
+    badge: 'LAB', name: 'KUON CLASSICAL LAB',
+    tagline: {
+      ja: 'ブラウザの中で music21 が動く、世界初の研究環境。',
+      en: 'music21 running inside your browser — a world first.',
+      ko: '브라우저 안에서 music21 이 동작하는 세계 최초 환경.',
+      pt: 'music21 rodando no navegador — uma estreia mundial.',
+      es: 'music21 ejecutándose en el navegador — una primicia mundial.',
+    },
+    desc: {
+      ja: 'Pyodide + WebAssembly でブラウザ完結の Python music21 環境。和声分析、対位法チェック、独自スクリプト実行。サーバーコスト ¥0 のため Prelude プランから利用可能。',
+      en: 'Browser-native Python music21 via Pyodide + WebAssembly. Harmony analysis, counterpoint checks, run your own scripts. Zero server cost — available from Prelude plan.',
+      ko: 'Pyodide + WebAssembly 로 브라우저 완결 Python music21 환경. 화성 분석·대위법 체크·독자 스크립트 실행. Prelude 플랜부터 이용 가능.',
+      pt: 'Python music21 nativo no navegador via Pyodide + WebAssembly. Análise harmônica, contraponto, scripts personalizados. Zero custo de servidor.',
+      es: 'Python music21 nativo en el navegador con Pyodide + WebAssembly. Análisis armónico, contrapunto, scripts propios. Sin coste de servidor.',
+    },
+    href: '/classical/lab-lp', accent: '#7c3aed', isNew: true,
+  },
+
+  // ─── Mental / Performance prep (2026-04-26) ───
+  {
+    id: 'breath', personas: ['student', 'producer'], tier: 'login',
+    badge: 'BREATH', name: 'KUON BREATH',
+    tagline: {
+      ja: '本番前の呼吸法ガイド。緊張を、整える。',
+      en: 'Pre-performance breathing guide. Settle the nerves.',
+      ko: '공연 전 호흡법 가이드. 긴장을 정리.',
+      pt: 'Guia de respiração pré-show. Acalme os nervos.',
+      es: 'Guía de respiración antes del concierto. Calma los nervios.',
+    },
+    desc: {
+      ja: '本番直前 5 分・15 分・30 分の呼吸プログラム。4-7-8 法、ボックス呼吸、横隔膜呼吸など科学的根拠のある手法。視覚ガイド付き。',
+      en: 'Breathing programs for 5/15/30 minutes before performance. 4-7-8, box breathing, diaphragmatic — research-backed techniques with visual guides.',
+      ko: '공연 직전 5분·15분·30분 호흡 프로그램. 4-7-8 법, 박스 호흡, 횡격막 호흡 등 과학적 기법.',
+      pt: 'Programas de respiração de 5/15/30 minutos antes do show. 4-7-8, caixa, diafragmática — técnicas comprovadas.',
+      es: 'Programas de respiración 5/15/30 min antes del concierto. 4-7-8, caja, diafragmática — técnicas comprobadas.',
+    },
+    href: '/breath-lp', accent: '#0891b2', isNew: true,
+  },
+  {
+    id: 'checklist', personas: ['student', 'producer'], tier: 'open',
+    badge: 'CHECK', name: 'KUON CHECKLIST',
+    tagline: {
+      ja: '本番当日の持ち物・タイムラインを、忘れない。',
+      en: 'Performance day checklist & timeline — never forget.',
+      ko: '공연 당일 준비물·타임라인을 잊지 않게.',
+      pt: 'Checklist e timeline do dia da apresentação.',
+      es: 'Lista del día de actuación y línea de tiempo.',
+    },
+    desc: {
+      ja: '本番当日のテンプレート化されたチェックリスト。楽器・楽譜・衣装・タイミング・水分補給まで網羅。カスタマイズ可能。登録不要。',
+      en: 'Templated checklist for performance day. Instrument, score, attire, timing, hydration — all covered. Customizable. No login required.',
+      ko: '공연 당일용 템플릿 체크리스트. 악기·악보·의상·타이밍·수분까지. 커스터마이즈 가능. 로그인 불필요.',
+      pt: 'Checklist em template para o dia do show. Instrumento, partitura, traje, tempo, hidratação. Customizável.',
+      es: 'Plantilla de lista de verificación para el día. Instrumento, partitura, vestuario, tiempos, hidratación.',
+    },
+    href: '/checklist-lp', accent: '#16a34a',
+  },
+  {
+    id: 'frequency', personas: ['producer', 'engineer'], tier: 'login',
+    badge: 'HZ', name: 'KUON FREQUENCY',
+    tagline: {
+      ja: 'ソルフェジオ周波数のサイン波プレーヤー。',
+      en: 'Solfeggio frequency sine wave player.',
+      ko: '솔페지오 주파수 사인파 플레이어.',
+      pt: 'Reprodutor de ondas senoidais de frequências solfeggio.',
+      es: 'Reproductor de ondas sinusoidales solfeggio.',
+    },
+    desc: {
+      ja: '174Hz / 396Hz / 432Hz / 528Hz / 639Hz / 741Hz / 852Hz / 963Hz など、9 つのソルフェジオ周波数 + 5 つの脳波帯域。Curanz Sounds 商品の制作にも使われた純粋サイン波。',
+      en: 'Pure sine waves at 174 / 396 / 432 / 528 / 639 / 741 / 852 / 963 Hz — 9 solfeggio frequencies + 5 brainwave bands. The same engine used for Curanz Sounds products.',
+      ko: '174 / 396 / 432 / 528 / 639 / 741 / 852 / 963Hz 등 9 가지 솔페지오 + 5 가지 뇌파 대역. Curanz Sounds 상품 제작에도 사용된 순수 사인파.',
+      pt: 'Ondas senoidais puras em 174/396/432/528/639/741/852/963 Hz — 9 frequências solfeggio + 5 bandas cerebrais.',
+      es: 'Ondas sinusoidales puras en 174/396/432/528/639/741/852/963 Hz — 9 frecuencias solfeggio + 5 bandas cerebrales.',
+    },
+    href: '/frequency-lp', accent: '#9c7c3a',
+  },
+
   // ─── Community / Shared (appears across personas) ───
   {
     id: 'player', personas: ['engineer', 'student', 'producer'], tier: 'open',

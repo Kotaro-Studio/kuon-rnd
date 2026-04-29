@@ -166,19 +166,22 @@ export function MyMusicSection({ user, lang, avatarUrl }: MyMusicSectionProps) {
         />
       </div>
 
-      {/* ─── 達成バッジ（陳列・現状は空状態） ─── */}
-      <div style={{ marginBottom: 'clamp(1.6rem, 3vw, 2.2rem)' }}>
-        <div style={{
-          fontFamily: sans,
-          fontSize: '0.7rem',
-          color: INK_FAINT,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
-          marginBottom: '0.8rem',
-        }}>
-          {t({ ja: '達成', en: 'Achievements', es: 'Logros', ko: '성취', pt: 'Conquistas', de: 'Errungenschaften' }, lang)}
-        </div>
-        {badgeCount > 0 ? (
+      {/* ─── 達成バッジ（陳列） ─── */}
+      {/* CLAUDE.md §48 余白の知性に従い、空状態では完全に非表示。
+          上の数値行に既に「達成 X 件」があるため、別領域での占有は不要。
+          システムがプロを「慰める」構造を排除（§48「励ましメッセージ禁止」）。 */}
+      {badgeCount > 0 && (
+        <div style={{ marginBottom: 'clamp(1.6rem, 3vw, 2.2rem)' }}>
+          <div style={{
+            fontFamily: sans,
+            fontSize: '0.7rem',
+            color: INK_FAINT,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            marginBottom: '0.8rem',
+          }}>
+            {t({ ja: '達成', en: 'Achievements', es: 'Logros', ko: '성취', pt: 'Conquistas', de: 'Errungenschaften' }, lang)}
+          </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {user.badges.map((b, i) => (
               <span key={i} style={{
@@ -196,26 +199,8 @@ export function MyMusicSection({ user, lang, avatarUrl }: MyMusicSectionProps) {
               </span>
             ))}
           </div>
-        ) : (
-          <p style={{
-            fontFamily: serif,
-            fontSize: '0.85rem',
-            color: INK_FAINT,
-            fontStyle: 'italic',
-            margin: 0,
-            lineHeight: 1.7,
-          }}>
-            {t({
-              ja: 'これから少しずつ。慌てる必要はありません。',
-              en: 'In time. There is no need to hurry.',
-              es: 'Con el tiempo. No hay prisa.',
-              ko: '시간이 지나면 자연히. 서두를 필요는 없습니다.',
-              pt: 'Com o tempo. Sem pressa.',
-              de: 'Mit der Zeit. Es eilt nicht.',
-            }, lang)}
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ─── ポートフォリオプレビュー ─── */}
       <div style={{ marginBottom: 'clamp(1.4rem, 2.5vw, 1.8rem)' }}>
