@@ -202,19 +202,30 @@ app.post('/api/recorder/transcribe', requireAuth, async (c) => {
 
     const whisperInput: any = {
       audio: [...audioArray],
-      task: 'transcribe',
-      vad_filter: 'true',
     };
     if (lang !== 'auto') whisperInput.language = lang;
     if (vocabPrompt) whisperInput.initial_prompt = vocabPrompt;
 
-    const whisperResult = await c.env.AI.run(
-      '@cf/openai/whisper-large-v3-turbo' as any,
-      whisperInput
-    ) as any;
+    let whisperResult: any;
+    try {
+      whisperResult = await c.env.AI.run(
+        '@cf/openai/whisper-large-v3-turbo' as any,
+        whisperInput
+      );
+    } catch (whisperErr) {
+      console.error('Whisper run error:', whisperErr);
+      return c.json({
+        error: 'Whisper invocation failed',
+        message: whisperErr instanceof Error ? whisperErr.message : 'unknown',
+        stack: whisperErr instanceof Error ? whisperErr.stack : undefined,
+      }, 502);
+    }
 
     if (!whisperResult || !whisperResult.text) {
-      return c.json({ error: 'Transcription failed', detail: 'Empty response' }, 502);
+      return c.json({
+        error: 'Transcription returned empty',
+        detail: JSON.stringify(whisperResult).slice(0, 500),
+      }, 502);
     }
 
     const fullText: string = whisperResult.text || '';

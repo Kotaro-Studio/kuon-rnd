@@ -263,7 +263,9 @@ function LessonRecorderApp() {
             en: 'This app requires Prelude plan or higher.',
           }, lang));
         } else {
-          setError(errBody.error || errBody.message || 'Transcription failed');
+          // 詳細エラーを表示 (デバッグしやすく)
+          const parts = [errBody.error, errBody.message, errBody.detail].filter(Boolean);
+          setError(parts.join(' / ') || 'Transcription failed');
         }
         setView('home');
         return;
