@@ -29,6 +29,8 @@ Library:
 """
 
 import os
+import base64
+import logging
 from typing import Optional, Literal
 
 from fastapi import FastAPI, HTTPException, Header, Body
@@ -39,6 +41,23 @@ from pydantic import BaseModel, Field
 from .library import LibraryIndex
 from .analysis import analyze_score, detect_cadences, detect_modulations
 from .voicing import check_voice_leading
+
+logger = logging.getLogger(__name__)
+
+
+def _generate_midi_base64(musicxml: str) -> Optional[str]:
+    """MusicXML から MIDI を生成して base64 文字列で返す。
+    フロントが Tone.js + @tonejs/midi で再生するため、analyze レスポンスに同梱する。
+    エッジルート増加を避けるための重要な設計判断 (CLAUDE.md §44.11)。"""
+    try:
+        from music21 import converter
+        score = converter.parseData(musicxml, format="musicxml")
+        midi_path = score.write("midi")
+        with open(midi_path, "rb") as f:
+            return base64.b64encode(f.read()).decode("ascii")
+    except Exception as e:
+        logger.warning(f"MIDI generation failed (non-fatal): {e}")
+        return None
 
 app = FastAPI(
     title="KUON CLASSICAL ANALYSIS",
@@ -196,12 +215,16 @@ def get_midi(piece_id: str, authorization: Optional[str] = Header(None)):
 
 @app.post("/api/analyze")
 def analyze(req: AnalyzeRequest, authorization: Optional[str] = Header(None)):
-    """MusicXML をローマ数字で和声分析。レスポンスに入力 MusicXML を含めることで、
-    フロントが描画と分析の両方を 1 リクエストで取得できる。"""
+    """MusicXML をローマ数字で和声分析。レスポンスに以下を全て含める:
+    - 分析結果 (chords/cadences/modulations 等)
+    - MusicXML (echo back: フロントの OSMD 描画用)
+    - midi_b64 (Tone.js 再生用 - 別エッジルートを避けるための設計)
+    フロントは 1 リクエストで楽譜描画 + 分析 + 再生に必要な全データを取得する。"""
     verify_auth(authorization)
     try:
         result = analyze_score(req.musicxml, key_hint=req.key_hint)
-        result["musicxml"] = req.musicxml  # 描画用に echo back
+        result["musicxml"] = req.musicxml
+        result["midi_b64"] = _generate_midi_base64(req.musicxml)
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Analysis failed: {str(e)}")
@@ -210,7 +233,10 @@ def analyze(req: AnalyzeRequest, authorization: Optional[str] = Header(None)):
 @app.post("/api/analyze-from-library")
 def analyze_from_library(req: LibraryAnalyzeRequest, authorization: Optional[str] = Header(None)):
     """ライブラリ内の楽曲を ID で指定して分析。
-    レスポンスには MusicXML 文字列も含めるので、フロントは OSMD で楽譜描画できる。"""
+    レスポンスに以下を全て含める (1 リクエストでフロントの全機能を満たす):
+    - 分析結果
+    - MusicXML (OSMD 描画用)
+    - midi_b64 (Tone.js 再生用 - エッジルートを増やさないための設計)"""
     verify_auth(authorization)
     musicxml = library.get_musicxml(req.piece_id)
     if musicxml is None:
@@ -218,7 +244,8 @@ def analyze_from_library(req: LibraryAnalyzeRequest, authorization: Optional[str
     try:
         result = analyze_score(musicxml)
         result["piece_id"] = req.piece_id
-        result["musicxml"] = musicxml  # フロントで OSMD 描画するために含める
+        result["musicxml"] = musicxml
+        result["midi_b64"] = _generate_midi_base64(musicxml)
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Analysis failed: {str(e)}")

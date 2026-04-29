@@ -89,7 +89,9 @@ interface AnalysisResult {
   cadences: CadenceData[];
   modulations: ModulationData[];
   chord_count: number;
-  musicxml?: string; // バックエンドが描画用に echo back する MusicXML 文字列
+  musicxml?: string;    // バックエンドが描画用に echo back する MusicXML
+  midi_b64?: string;    // バックエンドが MIDI を生成して base64 で同梱（Tone.js 再生用）
+                        // エッジルート増加を避けるための設計 (CLAUDE.md §44.11)
 }
 
 const LABELS = {
@@ -156,14 +158,48 @@ const LABELS = {
   },
 };
 
-// 作曲家リストは /api/classical/composers から動的取得（music21 corpus 全網羅）
-// 作曲家名は固有名詞のため翻訳しない（J.S. Bach は Bach なので英語表記を全言語共通で使用）
+// 作曲家リスト：エッジバンドル軽量化のため API ではなく静的データとして持つ
+// (CLAUDE.md §44.11 永続性原則: 静的データはフロントにインライン化)
+// music21 corpus は固定で、バージョン更新時のみ counts を手動更新する
+// 作曲家名は固有名詞のため翻訳せず英語表記で全言語統一
 interface ComposerOption {
   key: string;
   display: string;
   era: string;
   count: number;
 }
+
+const STATIC_COMPOSERS: ComposerOption[] = [
+  // Renaissance
+  { key: 'palestrina', display: 'G.P. da Palestrina', era: 'renaissance', count: 1018 },
+  { key: 'josquin', display: 'Josquin des Prez', era: 'renaissance', count: 8 },
+  { key: 'luca', display: 'Luca Marenzio', era: 'renaissance', count: 1 },
+  // Baroque
+  { key: 'bach', display: 'J.S. Bach', era: 'baroque', count: 433 },
+  { key: 'cpebach', display: 'C.P.E. Bach', era: 'baroque', count: 1 },
+  { key: 'monteverdi', display: 'C. Monteverdi', era: 'baroque', count: 97 },
+  { key: 'corelli', display: 'A. Corelli', era: 'baroque', count: 1 },
+  { key: 'handel', display: 'G.F. Handel', era: 'baroque', count: 1 },
+  // Classical
+  { key: 'haydn', display: 'F.J. Haydn', era: 'classical', count: 9 },
+  { key: 'mozart', display: 'W.A. Mozart', era: 'classical', count: 16 },
+  { key: 'beethoven', display: 'L.v. Beethoven', era: 'classical', count: 26 },
+  // Romantic
+  { key: 'schubert', display: 'F. Schubert', era: 'romantic', count: 1 },
+  { key: 'chopin', display: 'F. Chopin', era: 'romantic', count: 1 },
+  { key: 'weber', display: 'C.M. von Weber', era: 'romantic', count: 1 },
+  { key: 'verdi', display: 'G. Verdi', era: 'romantic', count: 1 },
+  { key: 'beach', display: 'Amy Beach', era: 'romantic', count: 1 },
+  // Modern / Early Jazz
+  { key: 'schoenberg', display: 'A. Schoenberg', era: 'modern', count: 2 },
+  { key: 'joplin', display: 'S. Joplin', era: 'early-jazz', count: 1 },
+  // Folk
+  { key: 'ryansMammoth', display: "Ryan's Mammoth (Folk Dance)", era: 'folk', count: 1059 },
+  { key: 'oneills1850', display: "O'Neill's 1850 (Irish)", era: 'folk', count: 39 },
+  { key: 'essenFolksong', display: 'Essen Folksong (German)', era: 'folk', count: 31 },
+  { key: 'airdsAirs', display: "Aird's Airs (Scottish)", era: 'folk', count: 6 },
+  { key: 'miscFolk', display: 'Miscellaneous Folk', era: 'folk', count: 2 },
+];
 
 export default function ClassicalAnalysisPage() {
   return (
@@ -182,26 +218,9 @@ function ClassicalAnalysisInner() {
   const [eraFilter, setEraFilter] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [analyzedPieceId, setAnalyzedPieceId] = useState<string | null>(null);
   const [serviceReady, setServiceReady] = useState(true);
-  const [composers, setComposers] = useState<ComposerOption[]>([]);
-
-  // 作曲家リストを起動時に 1 回取得（music21 corpus が増減しない限りキャッシュで足りる）
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/classical/composers');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (cancelled) return;
-        if (Array.isArray(data.composers)) {
-          setComposers(data.composers);
-        }
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  // 作曲家リストは静的データ (STATIC_COMPOSERS) を直接使う
+  // → エッジルート /api/classical/composers を不要にしてバンドル -316 KiB
 
   const fetchLibrary = useCallback(async () => {
     setLoading(true);
@@ -241,7 +260,6 @@ function ClassicalAnalysisInner() {
   const handleAnalyze = async (piece: LibraryPiece) => {
     setAnalyzing(true);
     setAnalysisResult(null);
-    setAnalyzedPieceId(null);
     try {
       const res = await fetch('/api/classical/analyze-from-library', {
         method: 'POST',
@@ -254,7 +272,6 @@ function ClassicalAnalysisInner() {
       }
       const data = await res.json();
       setAnalysisResult(data);
-      setAnalyzedPieceId(piece.id);
     } catch {
       alert('Network error');
     } finally {
@@ -305,7 +322,7 @@ function ClassicalAnalysisInner() {
                 style={{ padding: '0.6rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '0.9rem', background: '#fff', fontFamily: sans }}
               >
                 <option value="">{t({ ja: 'すべての作曲家', en: 'All composers', es: 'Todos los compositores', ko: '모든 작곡가', pt: 'Todos compositores', de: 'Alle Komponisten' }, lang)}</option>
-                {composers.map((c) => (
+                {STATIC_COMPOSERS.map((c) => (
                   <option key={c.key} value={c.key}>
                     {c.display} ({c.count})
                   </option>
@@ -398,14 +415,14 @@ function ClassicalAnalysisInner() {
         )}
 
         {analysisResult && (
-          <ResultPanel result={analysisResult} lang={lang} pieceId={analyzedPieceId} />
+          <ResultPanel result={analysisResult} lang={lang} />
         )}
       </section>
     </div>
   );
 }
 
-function ResultPanel({ result, lang, pieceId }: { result: AnalysisResult; lang: Lang; pieceId: string | null }) {
+function ResultPanel({ result, lang }: { result: AnalysisResult; lang: Lang }) {
   // 確信度の防御的キャップ：Cloud Run 側でも clamp しているが、古いバージョンが
   // デプロイ中の過渡期や手動 MusicXML 入力時の保険として、フロントでも 0-100% に制限
   const confidencePct = Math.round(Math.max(0, Math.min(1, result.key_confidence)) * 100);
@@ -459,12 +476,13 @@ function ResultPanel({ result, lang, pieceId }: { result: AnalysisResult; lang: 
         <SummaryCard label={t(LABELS.result.cadences, lang)} value={String(result.cadences.length)} accent={GOLD} />
       </div>
 
-      {/* OSMD で楽譜描画 + Tone.js 再生（IQ190 の核心）：MusicXML がレスポンスに含まれていれば描画 */}
+      {/* OSMD で楽譜描画 + Tone.js 再生（IQ190 の核心）：
+          MIDI はサーバーから base64 で同梱されてくる（エッジルート不要） */}
       {result.musicxml && (
         <div style={{ marginBottom: '2.5rem' }}>
           <ScoreViewer
-            pieceId={pieceId ?? undefined}
             musicxml={result.musicxml}
+            midiB64={result.midi_b64}
             chords={result.chords}
             cadences={result.cadences}
             modulations={result.modulations}

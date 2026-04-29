@@ -51,7 +51,9 @@ interface ModulationData {
 }
 
 export interface ScoreViewerProps {
-  pieceId?: string;     // 再生用：MIDI を /api/classical/midi/{pieceId} から取得
+  /** MIDI base64 文字列 (analyze レスポンスに同梱されてくる)。
+   *  別エッジルートを増やさない設計 (CLAUDE.md §44.11)。 */
+  midiB64?: string;
   musicxml: string;
   chords: ChordData[];
   cadences: CadenceData[];
@@ -99,7 +101,7 @@ const FUNCTION_DOTS: Record<string, string> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type OSMDInstance = any;
 
-export default function ScoreViewer({ pieceId, musicxml, chords, cadences, modulations, labels }: ScoreViewerProps) {
+export default function ScoreViewer({ midiB64, musicxml, chords, cadences, modulations, labels }: ScoreViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const osmdRef = useRef<OSMDInstance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -269,10 +271,10 @@ export default function ScoreViewer({ pieceId, musicxml, chords, cadences, modul
         ))}
       </div>
 
-      {/* 再生コントロール (pieceId が渡されている場合のみ) */}
-      {pieceId && osmdReady && (
+      {/* 再生コントロール (midiB64 が渡されている場合のみ) */}
+      {midiB64 && osmdReady && (
         <PlaybackPanel
-          pieceId={pieceId}
+          midiB64={midiB64}
           osmd={osmdRef.current}
           labels={playbackLabels}
         />
@@ -337,11 +339,11 @@ interface MidiTrackInfo {
 }
 
 function PlaybackPanel({
-  pieceId,
+  midiB64,
   osmd,
   labels,
 }: {
-  pieceId: string;
+  midiB64: string;
   osmd: OSMDInstance | null;
   labels: NonNullable<NonNullable<ScoreViewerProps['labels']>['playback']>;
 }) {
@@ -365,9 +367,9 @@ function PlaybackPanel({
   const cursorEventIdsRef = useRef<number[]>([]);
   const baseBpmRef = useRef<number>(120);
 
-  // MIDI のロード
+  // MIDI のロード（base64 文字列 → ArrayBuffer → Midi パース）
   useEffect(() => {
-    if (!pieceId) return;
+    if (!midiB64) return;
     let cancelled = false;
 
     (async () => {
@@ -393,11 +395,11 @@ function PlaybackPanel({
         });
         synthsRef.current = {};
 
-        // MIDI を取得
-        const res = await fetch(`/api/classical/midi/${pieceId}`);
-        if (!res.ok) throw new Error(`MIDI fetch failed: ${res.status}`);
-        const buffer = await res.arrayBuffer();
-        const midi = new Midi(buffer);
+        // base64 → Uint8Array → ArrayBuffer に変換
+        const binary = atob(midiB64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const midi = new Midi(bytes.buffer);
         midiRef.current = midi;
 
         // ベース BPM を保存（テンポ調整時に乗算する基準）
@@ -503,7 +505,7 @@ function PlaybackPanel({
       synthsRef.current = {};
       try { osmd?.cursor?.reset(); } catch {}
     };
-  }, [pieceId, osmd]); // tempoMultiplier 変更は別 effect で扱う
+  }, [midiB64, osmd]); // tempoMultiplier 変更は別 effect で扱う
 
   // テンポ変更
   useEffect(() => {
