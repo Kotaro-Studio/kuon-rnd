@@ -371,36 +371,118 @@ export default function LessonM1L12() {
           color: INK, lineHeight: 2.05, letterSpacing: '0.03em',
           wordBreak: 'keep-all' as const,
         }}>
-          <p style={{ margin: '0 0 1.6rem 0' }}>
+          {/* whiteSpace: 'pre-line' により \n が改行として描画される。
+              「。」ごとに改行を入れて、テンポ良く読めるようにする。 */}
+          <p style={{ margin: '0 0 1.6rem 0', whiteSpace: 'pre-line' as const }}>
             {t({
-              ja: '三和音 (triad) は西洋和声の最小単位です。3 度ずつ重ねた 3 つの音 — 根音・第 3 音・第 5 音 — からなる響きの分子。C 長調なら C-E-G、F 長調なら F-A-C。これが「I の和音」と呼ばれます。',
-              en: 'The triad is the smallest unit of Western harmony — three notes stacked in thirds: root, third, fifth. In C major: C-E-G. In F major: F-A-C. This is what we call "the I chord."',
-              es: 'La tríada es la unidad mínima de la armonía occidental — tres notas en terceras: fundamental, 3ª, 5ª. En do mayor: C-E-G.',
-              ko: '삼화음은 서양 화성의 최소 단위. 3 도씩 쌓인 세 음 — 으뜸음·제 3 음·제 5 음. C 장조에서 C-E-G.',
-              pt: 'A tríade é a menor unidade da harmonia ocidental — três notas em terças: fundamental, 3ª, 5ª. Em dó maior: C-E-G.',
-              de: 'Der Dreiklang ist die kleinste Einheit der westlichen Harmonik — drei in Terzen geschichtete Töne. In C-Dur: C-E-G.',
+              ja: `三和音 (triad) は西洋和声の最小単位です。
+3 度ずつ重ねた 3 つの音 — 根音・第 3 音・第 5 音 — からなる響きの分子です。
+正確には、長三和音 (major triad) は「長 3 度 + 短 3 度」、短三和音 (minor triad) は「短 3 度 + 長 3 度」の積み重ねで、それぞれ異なる響きの色を持ちます。
+C 長調の I は C-E-G (長三和音)、a 短調の i は A-C-E (短三和音)。
+これが「I の和音」と呼ばれます。`,
+              en: `The triad is the smallest unit of Western harmony.
+Three notes stacked in thirds — root, third, and fifth — form a single sonic molecule.
+Precisely speaking, a major triad is "major 3rd + minor 3rd" stacked, while a minor triad is "minor 3rd + major 3rd," each with its own distinct color.
+The I chord in C major is C-E-G (major triad); the i chord in A minor is A-C-E (minor triad).
+This is what we call "the I chord."`,
+              es: `La tríada es la unidad mínima de la armonía occidental.
+Tres notas apiladas en terceras — fundamental, 3ª y 5ª — forman una sola molécula sonora.
+Precisamente, una tríada mayor es "3ª mayor + 3ª menor" apiladas, una tríada menor "3ª menor + 3ª mayor", cada una con su propio color.
+El I de do mayor es C-E-G (tríada mayor); el i de la menor es A-C-E (tríada menor).
+Esto es lo que llamamos "el acorde I."`,
+              ko: `삼화음은 서양 화성의 최소 단위입니다.
+3 도씩 쌓인 세 음 — 으뜸음·제 3 음·제 5 음 — 으로 이루어진 소리의 분자입니다.
+정확히 말하면, 장삼화음 (major triad) 은 "장 3 도 + 단 3 도", 단삼화음 (minor triad) 은 "단 3 도 + 장 3 도" 의 쌓임으로, 각기 다른 색을 가집니다.
+C 장조의 I 는 C-E-G (장삼화음), a 단조의 i 는 A-C-E (단삼화음).
+이것이 "I 화음" 이라 불립니다.`,
+              pt: `A tríade é a menor unidade da harmonia ocidental.
+Três notas em terças — fundamental, 3ª e 5ª — formam uma única molécula sonora.
+Precisamente, a tríade maior é "3ª maior + 3ª menor" empilhadas, a tríade menor é "3ª menor + 3ª maior", cada uma com sua cor.
+O I de dó maior é C-E-G (tríade maior); o i de lá menor é A-C-E (tríade menor).
+Isto é "o acorde I."`,
+              de: `Der Dreiklang ist die kleinste Einheit der westlichen Harmonik.
+Drei in Terzen geschichtete Töne — Grundton, Terz, Quinte — bilden ein klangliches Molekül.
+Präzise: Der Durdreiklang ist „große Terz + kleine Terz" geschichtet, der Molldreiklang „kleine Terz + große Terz" — jeder mit eigener Klangfarbe.
+Die I-Stufe in C-Dur ist C-E-G (Durdreiklang), die i-Stufe in a-Moll A-C-E (Molldreiklang).
+Das nennen wir „den I-Akkord".`,
             }, lang)}
           </p>
-          <p style={{ margin: '0 0 1.6rem 0' }}>
+          <p style={{ margin: '0 0 1.6rem 0', whiteSpace: 'pre-line' as const }}>
             {t({
-              ja: 'しかし同じ 3 音でも、どの音をバス (一番下) に置くかで響きが大きく変わります。基本形 (根音がバス)、第 1 転回 (第 3 音がバス)、第 2 転回 (第 5 音がバス)。3 つの異なる「色」が、同じ和音から立ち上がります。',
-              en: 'Yet the same three notes sound very different depending on which note is in the bass. Root position (bass on root), first inversion (bass on 3rd), second inversion (bass on 5th). Three different colors emerge from the same chord.',
-              es: 'Pero las mismas tres notas suenan distintas según qué nota esté en el bajo. Estado fundamental, 1ª inversión, 2ª inversión — tres colores del mismo acorde.',
-              ko: '하지만 같은 세 음도 어느 음이 베이스에 오는지에 따라 울림이 크게 달라집니다. 기본형·제 1 전회·제 2 전회 — 세 가지 색.',
-              pt: 'Mas as mesmas três notas soam diferente dependendo do baixo. Estado fundamental, 1ª inversão, 2ª inversão — três cores do mesmo acorde.',
-              de: 'Doch dieselben drei Töne klingen anders, je nachdem, welcher im Bass steht. Grundstellung, erste, zweite Umkehrung — drei Farben aus demselben Akkord.',
+              ja: `しかし同じ 3 音でも、どの音をバス (一番下) に置くかで響きが大きく変わります。
+基本形 (根音がバス)、第 1 転回 (第 3 音がバス)、第 2 転回 (第 5 音がバス)。
+3 つの異なる「色」が、同じ和音から立ち上がります。`,
+              en: `Yet the same three notes sound very different depending on which note is in the bass.
+Root position (bass on root), first inversion (bass on 3rd), second inversion (bass on 5th).
+Three different colors emerge from the same chord.`,
+              es: `Pero las mismas tres notas suenan distintas según qué nota esté en el bajo.
+Estado fundamental, 1ª inversión, 2ª inversión.
+Tres colores distintos del mismo acorde.`,
+              ko: `하지만 같은 세 음도 어느 음이 베이스에 오는지에 따라 울림이 크게 달라집니다.
+기본형 (으뜸음이 베이스), 제 1 전회 (제 3 음이 베이스), 제 2 전회 (제 5 음이 베이스).
+세 가지 다른 색이 같은 화음에서 일어납니다.`,
+              pt: `Mas as mesmas três notas soam diferente dependendo do baixo.
+Estado fundamental, 1ª inversão, 2ª inversão.
+Três cores diferentes emergem do mesmo acorde.`,
+              de: `Doch dieselben drei Töne klingen anders, je nachdem, welcher im Bass steht.
+Grundstellung (Grundton im Bass), erste Umkehrung (Terz im Bass), zweite Umkehrung (Quinte im Bass).
+Drei verschiedene Farben aus demselben Akkord.`,
             }, lang)}
           </p>
-          <p style={{ margin: 0 }}>
+          <p style={{ margin: '0 0 1.6rem 0', whiteSpace: 'pre-line' as const }}>
             {t({
-              ja: 'バッハがコラールを書くとき、彼はベースラインの美しさのために第 1 転回を頻繁に選びました。基本形ばかり並べるとバスが跳躍ばかりになる — そこで転回形を挟むことで、バスが歌うように 2 度進行で繋がっていく。「正解は一つ」ではなく、「文脈に最も生きる選択」を、彼は毎瞬選んでいたのです。',
-              en: 'When Bach wrote chorales, he chose first inversions constantly for the sake of bass-line beauty. Stacking only root positions makes the bass leap awkwardly — inversions let the bass sing through stepwise motion. There was no "single right answer." He chose, in every moment, what was most alive in context.',
-              es: 'Cuando Bach escribía corales, elegía constantemente la 1ª inversión por la belleza del bajo. Solo fundamentales hacen saltar al bajo — las inversiones lo hacen cantar.',
-              ko: '바흐가 코랄을 쓸 때 그는 베이스 라인의 아름다움을 위해 제 1 전회를 즐겨 썼습니다. 기본형만 늘어놓으면 베이스가 도약뿐 — 전회를 넣으면 노래합니다. "정답은 하나"가 아니라 "문맥에 가장 살아있는 선택"을 매 순간 선택했습니다.',
-              pt: 'Quando Bach escrevia corais, escolhia constantemente a 1ª inversão pela beleza do baixo. Só fundamentais fazem o baixo saltar — as inversões o fazem cantar.',
-              de: 'Wenn Bach Choräle schrieb, wählte er ständig erste Umkehrungen wegen der Bassschönheit. Nur Grundstellungen lassen den Bass springen — Umkehrungen lassen ihn singen.',
+              ja: `バッハがコラールを書くとき、彼はベースラインの美しさのために第 1 転回を頻繁に選びました。
+基本形ばかり並べるとバスが跳躍ばかりになる — そこで転回形を挟むことで、バスが歌うように 2 度進行で繋がっていく。
+「正解は一つ」ではなく、「文脈に最も生きる選択」を、彼は毎瞬選んでいたのです。`,
+              en: `When Bach wrote chorales, he chose first inversions constantly for the sake of bass-line beauty.
+Stacking only root positions makes the bass leap awkwardly — inversions let the bass sing through stepwise motion.
+There was no "single right answer." He chose, in every moment, what was most alive in context.`,
+              es: `Cuando Bach escribía corales, elegía constantemente la 1ª inversión por la belleza del bajo.
+Solo fundamentales hacen saltar al bajo — las inversiones lo hacen cantar.
+No había una "única respuesta correcta": elegía, en cada momento, lo más vivo.`,
+              ko: `바흐가 코랄을 쓸 때 그는 베이스 라인의 아름다움을 위해 제 1 전회를 즐겨 썼습니다.
+기본형만 늘어놓으면 베이스가 도약뿐 — 전회를 넣으면 노래합니다.
+"정답은 하나"가 아니라 "문맥에 가장 살아있는 선택"을 매 순간 선택했습니다.`,
+              pt: `Quando Bach escrevia corais, escolhia constantemente a 1ª inversão pela beleza do baixo.
+Só fundamentais fazem o baixo saltar — as inversões o fazem cantar.
+Não havia "uma única resposta certa": escolhia, a cada momento, o mais vivo.`,
+              de: `Wenn Bach Choräle schrieb, wählte er ständig erste Umkehrungen wegen der Bassschönheit.
+Nur Grundstellungen lassen den Bass springen — Umkehrungen lassen ihn singen.
+Es gab keine „einzige richtige Antwort". Er wählte in jedem Moment das, was am lebendigsten war.`,
             }, lang)}
           </p>
+
+          {/* 前方参照: 音程の精密分類は M1 内の別レッスンで扱う */}
+          <aside style={{
+            marginTop: 'clamp(1.5rem, 3vw, 2rem)',
+            padding: 'clamp(0.9rem, 2vw, 1.2rem) clamp(1.1rem, 2.5vw, 1.5rem)',
+            background: PAPER_DEEP,
+            border: `1px solid ${STAFF_LINE_COLOR}`,
+            borderLeft: `2px solid ${ACCENT_INDIGO}`,
+            borderRadius: 4,
+            fontFamily: serif,
+            fontSize: '0.88rem',
+            color: INK_SOFT,
+            lineHeight: 1.85,
+            letterSpacing: '0.02em',
+            whiteSpace: 'pre-line' as const,
+            wordBreak: 'keep-all' as const,
+          }}>
+            {t({
+              ja: `※ 長 3 度・短 3 度・完全 5 度などの音程の精密な分類は、M1 の前半「音程の種類」レッスンで詳しく扱います (近日公開)。
+本レッスンでは「3 度ずつ重ねた響き」のレベルで先に進みます — 詳細を後で学んでも、いま三和音の感覚を掴むことに支障はありません。`,
+              en: `Note: precise classification of intervals (major/minor 3rds, perfect 5ths, etc.) will be covered in detail in an earlier M1 lesson, "Types of Intervals" (coming soon).
+For now, we proceed at the level of "stacked thirds" — learning the details later won't hinder your grasp of triads here.`,
+              es: `Nota: la clasificación precisa de los intervalos (3ª mayor/menor, 5ª justa, etc.) se tratará en detalle en una lección anterior de M1, "Tipos de intervalos" (próximamente).
+Por ahora, avanzamos al nivel de "terceras apiladas" — aprender los detalles después no impide entender las tríadas.`,
+              ko: `※ 장 3 도·단 3 도·완전 5 도 등 음정의 정밀한 분류는 M1 전반부 "음정의 종류" 레슨에서 자세히 다룹니다 (곧 공개).
+이 레슨에서는 "3 도씩 쌓인 울림" 의 수준으로 진행합니다 — 세부를 나중에 배워도 지금 삼화음의 감각을 잡는 데 지장은 없습니다.`,
+              pt: `Nota: a classificação precisa dos intervalos (3ªs maior/menor, 5ª justa, etc.) será abordada em detalhe em uma lição anterior de M1, "Tipos de intervalos" (em breve).
+Por agora, avançamos no nível de "terças empilhadas" — aprender os detalhes depois não atrapalhará sua compreensão das tríades.`,
+              de: `Hinweis: Die präzise Klassifikation der Intervalle (große/kleine Terz, reine Quinte usw.) wird in einer früheren M1-Lektion „Arten der Intervalle" ausführlich behandelt (in Vorbereitung).
+Hier gehen wir auf der Ebene „in Terzen geschichtet" weiter — die Details später zu lernen, hindert das Verständnis der Dreiklänge nicht.`,
+            }, lang)}
+          </aside>
         </div>
       </section>
 
