@@ -23,6 +23,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 import { AuthGate } from '@/components/AuthGate';
@@ -292,6 +293,33 @@ function ClassicalAnalysisInner() {
         <p style={{ fontSize: 'clamp(0.9rem, 1.6vw, 1.05rem)', color: '#475569', lineHeight: 1.85, maxWidth: 720, margin: '0 auto', whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
           {t(LABELS.hero.sub, lang)}
         </p>
+        {/* Lab への導線：上級ユーザー / 音楽情報学に興味あるユーザー向け */}
+        <div style={{ marginTop: '2rem' }}>
+          <Link
+            href="/classical/lab"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '0.55rem 1.4rem',
+              background: 'linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)',
+              border: `1px solid ${ACCENT}`, borderRadius: 999,
+              color: ACCENT, fontSize: '0.85rem', fontWeight: 600,
+              textDecoration: 'none', fontFamily: sans,
+            }}
+          >
+            🧪 {t({ ja: 'Music Lab を試す', en: 'Open Music Lab', es: 'Abrir Music Lab', ko: 'Music Lab 열기', pt: 'Abrir Music Lab', de: 'Music Lab öffnen' }, lang)}
+            <span style={{ fontSize: '0.65rem', background: ACCENT, color: '#fff', padding: '2px 8px', borderRadius: 999 }}>BETA</span>
+          </Link>
+          <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 6, fontStyle: 'italic' }}>
+            {t({
+              ja: 'Pyodide + music21 をブラウザ内で実行（PC 推奨）',
+              en: 'Pyodide + music21 in your browser (PC recommended)',
+              es: 'Pyodide + music21 en su navegador (PC recomendado)',
+              ko: 'Pyodide + music21 브라우저 실행 (PC 권장)',
+              pt: 'Pyodide + music21 no seu navegador (PC recomendado)',
+              de: 'Pyodide + music21 im Browser (PC empfohlen)',
+            }, lang)}
+          </div>
+        </div>
       </section>
 
       {/* Library + Filter Section */}
