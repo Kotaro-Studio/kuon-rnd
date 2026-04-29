@@ -228,7 +228,8 @@ const LABELS = {
   loading: {
     pyodideScript: { ja: 'Pyodide スクリプトをダウンロード中…', en: 'Downloading Pyodide script…', es: 'Descargando Pyodide…', ko: 'Pyodide 스크립트 다운로드 중…', pt: 'Baixando Pyodide…', de: 'Pyodide-Skript wird heruntergeladen…' } as L6,
     pyodideRuntime: { ja: 'Python ランタイムを起動中…', en: 'Initializing Python runtime…', es: 'Inicializando Python…', ko: 'Python 런타임 초기화 중…', pt: 'Inicializando Python…', de: 'Python-Laufzeit wird initialisiert…' } as L6,
-    music21: { ja: 'music21 を読み込み中… (約 20MB) — 初回のみ時間がかかります', en: 'Loading music21… (~20MB) — first time only', es: 'Cargando music21… (~20MB)', ko: 'music21 로딩 중… (약 20MB)', pt: 'Carregando music21… (~20MB)', de: 'music21 wird geladen… (~20MB)' } as L6,
+    micropip: { ja: 'micropip + 依存パッケージを準備中…', en: 'Preparing micropip + dependencies…', es: 'Preparando micropip + dependencias…', ko: 'micropip + 의존성 준비 중…', pt: 'Preparando micropip + dependências…', de: 'micropip + Abhängigkeiten werden vorbereitet…' } as L6,
+    music21: { ja: 'music21 を PyPI からインストール中… (約 25MB)', en: 'Installing music21 from PyPI… (~25MB)', es: 'Instalando music21 desde PyPI… (~25MB)', ko: 'music21을 PyPI에서 설치 중… (약 25MB)', pt: 'Instalando music21 do PyPI… (~25MB)', de: 'music21 wird von PyPI installiert… (~25MB)' } as L6,
     ready: { ja: '準備完了', en: 'Ready', es: 'Listo', ko: '준비 완료', pt: 'Pronto', de: 'Bereit' } as L6,
   },
   ui: {
@@ -295,8 +296,18 @@ function LabInner() {
           indexURL: PYODIDE_BASE_URL,
         });
 
-        setLoadProgress({ message: t(LABELS.loading.music21, lang), pct: 55 });
-        await py.loadPackage('music21');
+        // micropip + 既知の native deps (numpy 等) を事前ロード
+        // music21 は事前ビルドされていないので、micropip 経由で PyPI からインストールする必要がある
+        setLoadProgress({ message: t(LABELS.loading.micropip, lang), pct: 45 });
+        await py.loadPackage(['micropip', 'numpy']);
+
+        // PyPI から music21 を動的インストール
+        setLoadProgress({ message: t(LABELS.loading.music21, lang), pct: 65 });
+        await py.runPythonAsync(`
+import micropip
+await micropip.install('music21')
+print('music21 installed via micropip')
+        `);
 
         pyodideRef.current = py;
         setLoadProgress({ message: t(LABELS.loading.ready, lang), pct: 100 });
