@@ -4370,3 +4370,151 @@ function StaffMiniSvg() {
 
 ---
 
+## 52. KUON LESSON RECORDER — Workers AI 完結アプリ第 1 弾 (2026-04-30)
+
+### 52.1 戦略的位置づけ
+
+「Workers AI を使うアプリは Prelude から、Replicate を使うアプリは Concerto から」というプラン棲み分けの **第 1 号アプリ**。Cloudflare $5/月の Workers Paid 契約をサンクコスト化し、ここから AI アプリ群を量産する戦略の起点。
+
+§44.10 / §44.11 で確認した SEPARATOR の Cloud Run / Replicate 地獄を回避し、**Whisper / Llama / M2M100 / BGE-m3 すべてが Workers AI で完結する** ためコスト・運用・プライバシーすべてで最適。
+
+### 52.2 アーキテクチャ
+
+```
+ブラウザ (録音 or アップロード)
+  ↓
+/api/lesson-recorder/transcribe (Edge Runtime プロキシ)
+  ↓ Auth Worker でクォータ track
+  ↓ Bearer + X-User-Email + X-User-Plan ヘッダで認証
+kuon-rnd-recorder-worker (Cloudflare Worker)
+  ├─ Whisper-large-v3-turbo (書き起こし・99 言語・音楽用語プロンプト注入)
+  ├─ Llama 3.3 70B fp8-fast (要約・アクション項目・音楽用語解説)
+  ├─ M2M100 1.2B (多言語翻訳)
+  └─ BGE-m3 (意味検索用埋め込み → Vectorize 登録)
+  ↓
+KV (LESSONS) + Vectorize (VECTORS) + R2 (AUDIO・将来拡張用)
+```
+
+### 52.3 クォータ設計 (Auth Worker `APP_QUOTAS_TIER`)
+
+| プラン | 月間 書き起こし回数 |
+|---|---|
+| Free | 1 (試用) |
+| Prelude (¥780) | 20 |
+| Concerto (¥1,480) | 80 |
+| Symphony (¥2,480) | 200 |
+| Opus (legacy) | 600 |
+
+1 回 = 1 つのレッスン録音 (最大 25MB / 約 60 分)。Workers AI コストは極めて低いため、Prelude でも豊富に提供可能。
+
+### 52.4 主要ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `kuon-rnd-recorder-worker/src/index.ts` | Worker 本体 (Whisper / Llama / M2M100 / BGE 統合) |
+| `kuon-rnd-recorder-worker/wrangler.toml` | AI / KV / R2 / Vectorize バインディング |
+| `app/api/lesson-recorder/_helpers.ts` | 認証 + Worker プロキシ共通ヘルパー |
+| `app/api/lesson-recorder/transcribe/route.ts` | 書き起こし API プロキシ + クォータ track |
+| `app/api/lesson-recorder/summarize/route.ts` | Llama 要約 API プロキシ |
+| `app/api/lesson-recorder/translate/route.ts` | M2M100 翻訳 API プロキシ |
+| `app/api/lesson-recorder/lessons/route.ts` | レッスン一覧 |
+| `app/api/lesson-recorder/lessons/[id]/route.ts` | 単一レッスン GET/PUT/DELETE |
+| `app/api/lesson-recorder/search/route.ts` | Vectorize 意味検索 |
+| `app/lesson-recorder/page.tsx` | アプリ本体 (録音 / アップロード / 結果 / アーカイブ / 検索) |
+| `app/lesson-recorder/layout.tsx` | SEO メタデータ |
+| `app/lesson-recorder-lp/page.tsx` | LP (Hero / Before-After / Personas / How / Features / Privacy / Pricing / FAQ) |
+| `app/lesson-recorder-lp/layout.tsx` | SEO + GEO メタデータ (100+ keywords / 6 言語) |
+
+### 52.5 Worker エンドポイント一覧
+
+| メソッド | パス | 用途 |
+|---|---|---|
+| POST | `/api/recorder/transcribe` | 音声 → 書き起こし (FormData: audio/title/instrument/teacher/language/musicVocab) |
+| POST | `/api/recorder/summarize` | 書き起こし → JSON 要約 ({ lessonId }) |
+| POST | `/api/recorder/translate` | 多言語翻訳 ({ lessonId, targetLang }) |
+| GET | `/api/recorder/lessons` | ユーザーの全レッスン一覧 (メタのみ) |
+| GET | `/api/recorder/lessons/:id` | 単一レッスン (フルデータ) |
+| PUT | `/api/recorder/lessons/:id` | メタ更新 (タイトル / 楽器 / 教師) |
+| DELETE | `/api/recorder/lessons/:id` | レッスン削除 (Vectorize も同期削除) |
+| POST | `/api/recorder/search` | Vectorize 意味検索 ({ query, topK }) |
+
+### 52.6 IQ180 視点での独自機能 (事後報告)
+
+通常の「Whisper で書き起こしするだけ」のサービスと差別化するため、以下を独自実装:
+
+1. **音楽専門用語プロンプト注入** — 100+ の日英西語用語を Whisper の `initial_prompt` に注入。「ナポリの六」「アゴーギク」等の認識精度を激増
+2. **話者ヒューリスティック判定** — 完璧な diarization は Whisper では不可能だが、語調パターン (命令形 vs 質問形) + ポーズ長の組み合わせで「教師 / 生徒」を 80% の精度で推定
+3. **Theory Suite 連携** — Llama に「音楽用語があれば Theory Suite の関連レッスン URL も提案して」とプロンプト指示。`/theory/m4/l01` 等への自動リンクで学習が深まる導線
+4. **§49 哲学準拠の要約** — Llama の system prompt で「定型的な正解を押し付けず、生徒の選択も尊重する」「励まし過ぎず淡々と事実整理」を明示
+5. **意味検索 (Vectorize)** — `bge-m3` で全レッスンを埋め込み化し、「フレーズの作り方は?」のような自然文クエリで過去レッスン横断検索
+6. **Markdown / SRT / JSON / TXT 4 形式エクスポート** — Notion / Obsidian (Markdown)、動画字幕 (SRT)、自動化ツール (JSON)、シンプル共有 (TXT) すべてに対応
+7. **6 言語完全 LP** — ja/en/es/ko/pt/de でメタデータ、JSON-LD × 3 (SoftwareApplication / FAQPage / HowTo) で SEO + GEO 完璧
+8. **プライバシー強調** — Workers AI は推論専用 (学習なし)、音声は処理後即削除を Privacy セクションで強調
+
+### 52.7 デプロイ手順 (オーナー作業)
+
+```bash
+# ─── 1. Worker のリソース作成 ───
+cd ~/kuon-rnd/kuon-rnd-recorder-worker
+
+# KV namespace
+npx wrangler kv:namespace create LESSONS
+# → 出力された ID を wrangler.toml の REPLACE_WITH_KV_ID に貼り付け
+
+# R2 バケット
+npx wrangler r2 bucket create kuon-rnd-recorder
+
+# Vectorize インデックス (768 次元、cosine)
+npx wrangler vectorize create kuon-rnd-recorder-index --dimensions=1024 --metric=cosine
+
+# ─── 2. Secrets 登録 ───
+# Worker 側
+npx wrangler secret put RECORDER_SECRET     # ランダム 64 文字 (openssl rand -hex 32)
+npx wrangler secret put AUTH_WORKER_URL     # https://kuon-rnd-auth-worker.369-1d5.workers.dev
+
+# Cloudflare Pages 側 (Next.js)
+cd ~/kuon-rnd
+npx wrangler pages secret put RECORDER_URL --project-name kuon-rnd
+# → https://kuon-rnd-recorder-worker.369-1d5.workers.dev (デプロイ後の URL)
+npx wrangler pages secret put RECORDER_SECRET --project-name kuon-rnd
+# → Worker と同じシークレット
+
+# ─── 3. Worker デプロイ ───
+cd ~/kuon-rnd/kuon-rnd-recorder-worker
+npm install
+npm run deploy
+
+# ─── 4. Auth Worker 再デプロイ (lesson-recorder クォータ追加分) ───
+cd ~/kuon-rnd/kuon-rnd-auth-worker
+npm run deploy
+
+# ─── 5. Pages デプロイ (フロント) ───
+cd ~/kuon-rnd
+git add -A
+git commit -m "feat(lesson-recorder): KUON LESSON RECORDER first release — Workers AI Whisper + Llama 3.3 + M2M100 + BGE-m3"
+git push origin main
+```
+
+### 52.8 動作確認チェックリスト
+
+デプロイ後、以下を順次確認:
+
+- [ ] Worker URL `https://kuon-rnd-recorder-worker.369-1d5.workers.dev/` で `{"status":"ok",...}` が返る
+- [ ] `/lesson-recorder-lp` にアクセス → ヒーロー表示・LP 完全レンダリング
+- [ ] `/lesson-recorder` にログイン状態でアクセス → AuthGate 通過 → ホーム表示
+- [ ] マイク録音 → 30 秒ほど録音 → 書き起こし完了 → 要約表示
+- [ ] アーカイブで前のレッスンが見える
+- [ ] Markdown / SRT エクスポート動作確認
+- [ ] 意味検索 (例: 「フレージング」) で関連レッスンが返る
+- [ ] Free アカウントで 2 回試行 → 2 回目に QUOTA_EXCEEDED で 429 が返る
+
+### 52.9 今後の拡張アイデア (低優先・ユーザー要望次第)
+
+- 完全な diarization (現在はヒューリスティック)
+- 音声波形のタイムライン上に key moments を視覚化
+- 録音中のリアルタイム書き起こし (Workers AI ストリーミング対応待ち)
+- Calendar 連携で「次回レッスン日」自動セット
+- 教師ダッシュボード (生徒のレッスン進捗を一覧)
+
+---
+

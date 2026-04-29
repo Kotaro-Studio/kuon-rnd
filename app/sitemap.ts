@@ -28,6 +28,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 🎼 作曲・分析 (2026-04-28 追加)
     'classical', // KUON CLASSICAL ANALYSIS - Roman numeral analysis with built-in library
     'classical/lab', // KUON CLASSICAL LAB - Pyodide + music21 in browser (world's first)
+    // 🤖 AI 処理系 (2026-04-30 追加) — Workers AI 完結アプリ群
+    'lesson-recorder', // KUON LESSON RECORDER - Whisper + Llama 3.3 + M2M100 で完結
     // 🎓 Music Theory Suite (2026-04-29 ハブ + MVP レッスン公開)
     'theory', // KUON Music Theory Suite ハブ (Norton Critical Edition 型目次・16 モジュール)
     'theory/m0/l01', // M0-01 五線と音名 (Kuon オリジナル M0・OMT v2 範囲外)
@@ -61,6 +63,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'classical/lab-lp', // KUON CLASSICAL LAB Landing Page (Pyodide world's first)
     // 🎓 Music Theory Suite (2026-04-29 LP 先行公開・MVP 開発中)
     'theory-lp', // KUON Music Theory Suite Landing Page (16 modules · 553 lessons · OMT v2 base)
+    // 🎙 AI 処理系 (2026-04-30 公開) — Workers AI 完結
+    'lesson-recorder-lp', // KUON LESSON RECORDER Landing Page (Whisper-large-v3-turbo + Llama 3.3)
     // 2026-04-26 開発保留: 'drum-lp' (URL は残存・サイトマップには非掲載)
     // 2026-04-27 公開停止: 'separator-lp' (Cloud Run 単体運用が安定しないため
     //   将来 Replicate API 等への乗せ替えと共に再公開予定。アプリ本体コードは温存)

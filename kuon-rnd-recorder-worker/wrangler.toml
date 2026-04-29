@@ -1,0 +1,22 @@
+name = "kuon-rnd-recorder-worker"
+main = "src/index.ts"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+[ai]
+binding = "AI"
+
+[[kv_namespaces]]
+binding = "LESSONS"
+id = "4cd4d9ee592d418b8df67b7bc029e78e"
+
+[[r2_buckets]]
+binding = "AUDIO"
+bucket_name = "kuon-rnd-recorder"
+
+[[vectorize]]
+binding = "VECTORS"
+index_name = "kuon-rnd-recorder-index"
+
+[vars]
+ENVIRONMENT = "production"

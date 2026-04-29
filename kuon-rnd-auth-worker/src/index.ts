@@ -238,6 +238,10 @@ const APP_QUOTAS_TIER: Record<string, Record<QuotaPlan, number>> = {
   separator:  { free: 0, prelude: 2,  concerto: 15, symphony: 35, opus: 300 },
   transcribe: { free: 0, prelude: 5,  concerto: 30, symphony: 60, opus: 300 },
   intonation: { free: 0, prelude: 30, concerto: 50, symphony: 100, opus: 200 }, // ほぼ無制限の内部 cap
+  // 2026-04-30: KUON LESSON RECORDER (Workers AI Whisper) — Prelude から使えるサブスク特典
+  // 単位: 月間「書き起こし回数」(1 回 = 1 つのレッスン録音、最大 60 分)
+  // Workers AI コストは極めて低いため Prelude でも豊富に提供可能
+  'lesson-recorder': { free: 1, prelude: 20, concerto: 80, symphony: 200, opus: 600 },
 };
 
 /**

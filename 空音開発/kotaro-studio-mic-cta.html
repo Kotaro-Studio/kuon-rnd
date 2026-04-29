@@ -1,0 +1,496 @@
+<!-- ===================================================================
+     空音開発 P-86S マイク誘導 CTA — Kotaro Studio 記事内挿入用
+     -------------------------------------------------------------------
+     使い方:
+       WordPress 投稿編集画面 → ブロック追加 → 「カスタム HTML」
+       → 以下を全文コピー&ペースト → 公開
+     -------------------------------------------------------------------
+     設計:
+       ・3 段構造 (catch → main → button) は元のシンプルな良さを継承
+       ・価格コントラスト (¥800,000 → ¥13,900) を視覚化
+       ・¥800,000 の取り消し線がスクロール到達時にスーッと描画
+       ・¥13,900 が金色で脈動
+       ・ボタンは金色塗り + シマー走査 + 持続的脈動アニメ
+       ・「聴く」をテーマに ▶ プレイアイコンで聴覚的期待を喚起
+       ・全 .ks-* スコープ + !important でテーマ干渉防止
+     =================================================================== -->
+<aside class="ks-post-cta ks-post-cta--v2" data-ks-cta>
+
+  <!-- 装飾レイヤー -->
+  <span class="ks-cta-glow ks-cta-glow--l" aria-hidden="true"></span>
+  <span class="ks-cta-glow ks-cta-glow--r" aria-hidden="true"></span>
+  <span class="ks-cta-grain" aria-hidden="true"></span>
+  <span class="ks-cta-edge" aria-hidden="true"></span>
+
+  <!-- 上部: 製作者ラベル -->
+  <p class="ks-cta-eyebrow">
+    <span class="ks-cta-eyebrow-bar" aria-hidden="true"></span>
+    HANDMADE BY 朝比奈幸太郎 — KOTARO STUDIO
+  </p>
+
+  <!-- キャッチ (問い) -->
+  <p class="ks-cta-catch">
+    まだ、その音質で満足していますか？
+  </p>
+
+  <!-- メイン (価格コントラスト) -->
+  <h3 class="ks-cta-main">
+    <span class="ks-cta-line ks-cta-line--top">
+      <span class="ks-cta-old">
+        <span class="ks-cta-old-num">¥800,000</span>
+        <span class="ks-cta-old-strike" aria-hidden="true"></span>
+      </span><span class="ks-cta-line-tail">のマイクに匹敵する</span>
+    </span>
+    <span class="ks-cta-line ks-cta-line--mid">
+      「<span class="ks-cta-quote">空気感</span>」を、
+    </span>
+    <span class="ks-cta-line ks-cta-line--big">
+      <span class="ks-cta-new">
+        <span class="ks-cta-new-mark">¥</span><span class="ks-cta-new-num">13,900</span>
+      </span><span class="ks-cta-line-tail"> で。</span>
+    </span>
+  </h3>
+
+  <!-- 信頼メモ -->
+  <p class="ks-cta-trust">
+    無指向性 AB ステレオ ／ プラグインパワー対応 ／ 全国送料無料 ／ 1〜3 営業日発送
+  </p>
+
+  <!-- ボタン -->
+  <a class="ks-cta-btn"
+     href="https://kuon-rnd.com/microphone?utm_source=kotaro-studio&amp;utm_medium=article-cta&amp;utm_campaign=mic-p86s"
+     rel="noopener">
+    <span class="ks-cta-btn-spark" aria-hidden="true"></span>
+    <span class="ks-cta-btn-icon" aria-hidden="true">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 2 L13 8 L3 14 Z" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="ks-cta-btn-label">その衝撃の音を、聴いてみる</span>
+    <span class="ks-cta-btn-arrow" aria-hidden="true">
+      <svg viewBox="0 0 24 14" width="26" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 7h22M16 1l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+  </a>
+
+  <!-- フッター -->
+  <p class="ks-cta-foot">
+    <span class="ks-cta-foot-url">kuon-rnd.com／空音開発</span>
+  </p>
+
+</aside>
+
+<style>
+/* =================================================================
+   空音開発 P-86S マイク CTA — 完全スコープ化スタイル
+   ================================================================= */
+.ks-post-cta--v2 {
+  position: relative;
+  display: block;
+  max-width: 720px;
+  margin: 44px auto;
+  padding: clamp(28px, 4vw, 48px) clamp(22px, 3.5vw, 44px);
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(201,161,106,0.10) 0%, transparent 55%),
+    radial-gradient(120% 80% at 100% 100%, rgba(201,161,106,0.06) 0%, transparent 55%),
+    linear-gradient(160deg, #0c0d11 0%, #15161d 50%, #0a0b0e 100%);
+  color: #f0ede5 !important;
+  border-radius: 6px;
+  border: 1px solid rgba(201,161,106,0.2);
+  overflow: hidden;
+  font-family: "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", Arial, sans-serif !important;
+  font-size: 17px !important;
+  line-height: 1.75 !important;
+  text-align: center;
+  -webkit-font-smoothing: antialiased;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.04) inset,
+    0 22px 56px rgba(0,0,0,0.32),
+    0 6px 16px rgba(0,0,0,0.22);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.9s cubic-bezier(.2,.7,.2,1), transform 0.9s cubic-bezier(.2,.7,.2,1);
+}
+.ks-post-cta--v2.is-visible {
+  opacity: 1; transform: none;
+}
+.ks-post-cta--v2 *,
+.ks-post-cta--v2 *::before,
+.ks-post-cta--v2 *::after {
+  box-sizing: border-box;
+}
+.ks-post-cta--v2 p,
+.ks-post-cta--v2 span,
+.ks-post-cta--v2 h3,
+.ks-post-cta--v2 a {
+  font-family: inherit;
+  line-height: inherit;
+}
+
+/* 上端の細金線 */
+.ks-cta-edge {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(201,161,106,0.55) 25%, #d4a875 50%, rgba(201,161,106,0.55) 75%, transparent 100%);
+  pointer-events: none;
+}
+
+/* 光彩 */
+.ks-cta-glow {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  width: 280px; height: 280px;
+}
+.ks-cta-glow--l {
+  top: -120px; left: -100px;
+  background: radial-gradient(circle, rgba(201,161,106,0.28), transparent 70%);
+}
+.ks-cta-glow--r {
+  bottom: -130px; right: -110px;
+  background: radial-gradient(circle, rgba(120,140,200,0.16), transparent 70%);
+}
+
+/* 微細ノイズ */
+.ks-cta-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ── eyebrow (製作者ラベル) ── */
+.ks-cta-eyebrow {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 11px !important;
+  letter-spacing: 0.22em;
+  color: #c9a16a !important;
+  text-transform: uppercase;
+  font-weight: 600 !important;
+  margin: 0 auto 22px !important;
+  padding: 0 !important;
+}
+.ks-cta-eyebrow-bar {
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: rgba(201,161,106,0.6);
+}
+
+/* ── catch (問い) ── */
+.ks-cta-catch {
+  position: relative;
+  z-index: 2;
+  display: block;
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif !important;
+  font-size: clamp(15px, 2vw, 17px) !important;
+  font-weight: 400 !important;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  color: rgba(240,237,229,0.7) !important;
+  margin: 0 0 18px 0 !important;
+  padding: 0 !important;
+  line-height: 1.7 !important;
+}
+
+/* ── メイン (価格コントラスト) ── */
+.ks-cta-main {
+  position: relative;
+  z-index: 2;
+  display: block;
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif !important;
+  font-size: clamp(20px, 3.2vw, 28px) !important;
+  font-weight: 400 !important;
+  line-height: 1.7 !important;
+  letter-spacing: 0.04em !important;
+  color: #f5f2ea !important;
+  margin: 0 0 22px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  text-align: center !important;
+}
+.ks-cta-line {
+  display: block;
+}
+.ks-cta-line--big {
+  font-size: clamp(24px, 4.5vw, 38px) !important;
+  letter-spacing: 0.05em;
+  line-height: 1.5 !important;
+  margin-top: 4px;
+}
+.ks-cta-line-tail {
+  font-size: 0.75em !important;
+  color: rgba(240,237,229,0.85) !important;
+}
+
+/* 旧価格 (取り消し線アニメーション) */
+.ks-cta-old {
+  position: relative;
+  display: inline-block;
+  color: rgba(240,237,229,0.55) !important;
+  font-size: 0.95em;
+}
+.ks-cta-old-num {
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", serif !important;
+  letter-spacing: 0.02em;
+  position: relative;
+  z-index: 1;
+}
+.ks-cta-old-strike {
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  width: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #d4a875 18%, #d4a875 82%, transparent);
+  transform: translateY(-1px) rotate(-3deg);
+  transform-origin: left center;
+  border-radius: 2px;
+  z-index: 2;
+  box-shadow: 0 0 6px rgba(212,168,117,0.55);
+  transition: width 1.6s cubic-bezier(.2,.7,.2,1) 0.6s;
+}
+.ks-post-cta--v2.is-visible .ks-cta-old-strike {
+  width: calc(100% + 4px);
+}
+
+/* 「空気感」 */
+.ks-cta-quote {
+  color: #d4a875 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em;
+}
+
+/* 新価格 */
+.ks-cta-new {
+  display: inline-block;
+  color: #d4a875 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em;
+  animation: ksCtaPriceGlow 2.6s ease-in-out infinite;
+}
+.ks-cta-new-mark {
+  font-family: "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 0.85em;
+  margin-right: 1px;
+}
+.ks-cta-new-num {
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", serif !important;
+  font-size: 1.05em;
+}
+@keyframes ksCtaPriceGlow {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); color: #d4a875 !important; }
+  50% { filter: drop-shadow(0 0 14px rgba(212,168,117,0.5)); color: #e7c489 !important; }
+}
+
+/* ── trust ── */
+.ks-cta-trust {
+  position: relative;
+  z-index: 2;
+  font-family: "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 12px !important;
+  letter-spacing: 0.08em;
+  color: rgba(240,237,229,0.45) !important;
+  margin: 0 0 28px 0 !important;
+  padding: 0 !important;
+  line-height: 1.8 !important;
+}
+
+/* ── ボタン (金色塗り) ── */
+.ks-cta-btn {
+  position: relative;
+  z-index: 2;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-width: min(420px, 92%);
+  margin: 0 auto !important;
+  padding: clamp(20px, 2.6vw, 26px) clamp(28px, 4.5vw, 52px) !important;
+  background: linear-gradient(135deg, #e8c98e 0%, #d4a875 45%, #c9a16a 100%) !important;
+  color: #0c0d11 !important;
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif !important;
+  font-size: clamp(17px, 2.1vw, 21px) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.14em !important;
+  line-height: 1.4 !important;
+  text-decoration: none !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(.2,.7,.2,1), box-shadow 0.45s ease, filter 0.35s ease;
+  box-shadow:
+    0 14px 36px rgba(201, 161, 106, 0.42),
+    0 4px 10px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.12) inset;
+  animation: ksCtaBtnPulse 2.8s ease-in-out infinite;
+}
+@keyframes ksCtaBtnPulse {
+  0%, 100% {
+    box-shadow:
+      0 14px 36px rgba(201, 161, 106, 0.42),
+      0 4px 10px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+      0 -2px 0 rgba(0, 0, 0, 0.12) inset;
+  }
+  50% {
+    box-shadow:
+      0 18px 50px rgba(201, 161, 106, 0.62),
+      0 6px 14px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.3) inset,
+      0 -2px 0 rgba(0, 0, 0, 0.12) inset;
+  }
+}
+.ks-cta-btn-spark {
+  position: absolute;
+  top: 0; left: -120%;
+  width: 80%; height: 100%;
+  background: linear-gradient(95deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.85s cubic-bezier(.2,.7,.2,1);
+  z-index: 1;
+  pointer-events: none;
+}
+.ks-cta-btn:hover .ks-cta-btn-spark { left: 140%; }
+.ks-cta-btn:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.05);
+  animation-play-state: paused;
+  box-shadow:
+    0 22px 56px rgba(201, 161, 106, 0.7),
+    0 8px 18px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+}
+.ks-cta-btn:active {
+  transform: translateY(-1px);
+  filter: brightness(0.98);
+}
+.ks-cta-btn-icon {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(12,13,17,0.18);
+  color: #0c0d11 !important;
+  flex-shrink: 0;
+}
+.ks-cta-btn-icon svg { width: 9px; height: 9px; }
+.ks-cta-btn-label,
+.ks-cta-btn-arrow {
+  position: relative;
+  z-index: 2;
+  color: #0c0d11 !important;
+}
+.ks-cta-btn-arrow {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.4s cubic-bezier(.2,.7,.2,1);
+}
+.ks-cta-btn:hover .ks-cta-btn-arrow {
+  transform: translateX(6px);
+}
+
+/* ── フッター ── */
+.ks-cta-foot {
+  position: relative;
+  z-index: 2;
+  margin: 22px 0 0 0 !important;
+  padding: 0 !important;
+  font-family: "SF Mono", Monaco, "Cascadia Code", monospace !important;
+  font-size: 11px !important;
+  color: rgba(240,237,229,0.4) !important;
+  letter-spacing: 0.1em;
+  line-height: 1.6 !important;
+}
+.ks-cta-foot-url {
+  font-size: inherit !important;
+  color: inherit !important;
+}
+
+/* ── モバイル ── */
+@media (max-width: 480px) {
+  .ks-post-cta--v2 {
+    margin: 32px auto;
+    padding: 26px 20px 24px;
+    font-size: 16px !important;
+  }
+  .ks-cta-eyebrow { font-size: 10px !important; gap: 10px; }
+  .ks-cta-eyebrow-bar { width: 18px; }
+  .ks-cta-catch { font-size: 14px !important; margin-bottom: 14px !important; }
+  .ks-cta-main { font-size: 19px !important; margin-bottom: 18px !important; }
+  .ks-cta-line--big { font-size: 24px !important; }
+  .ks-cta-trust { font-size: 11px !important; margin-bottom: 22px !important; letter-spacing: 0.04em; }
+  .ks-cta-btn {
+    min-width: 100% !important;
+    font-size: 16px !important;
+    letter-spacing: 0.1em !important;
+    padding: 18px 18px !important;
+    gap: 10px;
+  }
+  .ks-cta-foot { font-size: 10px !important; }
+}
+
+/* ── prefers-reduced-motion 配慮 ── */
+@media (prefers-reduced-motion: reduce) {
+  .ks-post-cta--v2,
+  .ks-cta-old-strike,
+  .ks-cta-new,
+  .ks-cta-btn,
+  .ks-cta-btn-spark,
+  .ks-cta-btn-arrow {
+    animation: none !important;
+    transition: none !important;
+  }
+  .ks-post-cta--v2 { opacity: 1 !important; transform: none !important; }
+  .ks-cta-old-strike { width: 100% !important; }
+}
+</style>
+
+<script>
+(function () {
+  var nodes = document.querySelectorAll('.ks-post-cta--v2[data-ks-cta]:not([data-ks-cta-init])');
+  if (!nodes.length) return;
+
+  var activate = function (el) { el.classList.add('is-visible'); };
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          activate(entry.target);
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
+    nodes.forEach(function (el) {
+      el.setAttribute('data-ks-cta-init', '1');
+      io.observe(el);
+    });
+  } else {
+    nodes.forEach(function (el) {
+      el.setAttribute('data-ks-cta-init', '1');
+      activate(el);
+    });
+  }
+})();
+</script>
+<!-- ===================================================================
+     /空音開発 P-86S マイク CTA  (この行までコピー)
+     =================================================================== -->

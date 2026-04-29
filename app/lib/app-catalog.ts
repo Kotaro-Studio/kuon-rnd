@@ -43,7 +43,7 @@ export interface CatalogApp {
   category: AppCategory;
   noLogin: boolean;
   serverApp: boolean;
-  quotaKey: 'separator' | 'transcribe' | 'intonation' | null;
+  quotaKey: 'separator' | 'transcribe' | 'intonation' | 'lesson-recorder' | null;
   badges: Badge[];
   minPlan: MinPlan;
   /**
@@ -641,6 +641,29 @@ export const APP_CATALOG: CatalogApp[] = [
   // ============================================================
   // 🤖 AI 処理系 (有料プラン専用)
   // ============================================================
+  {
+    id: 'lesson-recorder',
+    name: { ja: 'LESSON RECORDER', en: 'LESSON RECORDER', es: 'LESSON RECORDER' },
+    tagline: {
+      ja: 'レッスン録音を AI で書き起こし & 要約',
+      en: 'AI lesson transcription & summary',
+      es: 'Transcripción de clases con IA',
+      ko: 'AI 레슨 받아쓰기 & 요약',
+      pt: 'Transcrição de aulas com IA',
+      de: 'KI-Stundentranskription',
+    },
+    href: '/lesson-recorder-lp',
+    launchHref: '/lesson-recorder',
+    emoji: '🎙',
+    category: 'ai',
+    noLogin: false,
+    serverApp: true,
+    quotaKey: 'lesson-recorder',
+    badges: ['NEW', 'PRO'],
+    minPlan: 'prelude',
+    releasedAt: '2026-04-30',
+  },
+
   // 2026-04-27 公開停止: SEPARATOR
   // Cloud Run CPU 単体での Demucs 運用が長尺ファイルで不安定なため、サイト掲載を停止。
   // 将来 Replicate API 等の専業サービスへ乗せ替え後に再公開予定。
