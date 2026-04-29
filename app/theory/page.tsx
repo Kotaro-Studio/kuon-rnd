@@ -64,6 +64,7 @@ const MODULES: ModuleDef[] = [
     title: { ja: '楽典基礎', en: 'Fundamentals', es: 'Fundamentos', ko: '악전 기초', pt: 'Fundamentos', de: 'Grundlagen' },
     desc: { ja: '記譜法・音程・音階・三和音・七の和音・ローマ数字・SATB・テクスチャ', en: 'Notation, intervals, scales, triads, seventh chords, Roman numerals, SATB, texture.', es: 'Notación, intervalos, escalas, tríadas, séptimas, cifrado romano, SATB.', ko: '기보법·음정·음계·삼화음·칠화음·로마숫자·SATB.', pt: 'Notação, intervalos, escalas, tríades, sétimas, cifras romanas, SATB.', de: 'Notation, Intervalle, Skalen, Dreiklänge, Septakkorde, Stufenanalyse, Vierstimmigkeit.' },
     lessonCount: 60, level: 'foundation',
+    availableLessons: ['l12'],
   },
   {
     id: 'm2', num: 'M2',

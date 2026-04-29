@@ -250,8 +250,8 @@ const FEATURES: { num: string; title: L6; desc: L6 }[] = [
 // ─────────────────────────────────────────
 const FAQS: { q: L6; a: L6 }[] = [
   {
-    q: { ja: 'いつから受講できますか？', en: 'When does enrollment open?', es: '¿Cuándo se podrá empezar?', ko: '언제부터 수강 가능합니까?', pt: 'Quando posso começar?', de: 'Wann kann ich beginnen?' },
-    a: { ja: 'KUON Music Theory Suite は現在準備中です。M0 + M1 の最初の 25 レッスン + スキルツリー UI + SRS エンジン + 診断テスト + ダッシュボードを揃える MVP として段階公開していきます。事前登録によって、公開時に最初に通知を受け取れます。', en: 'KUON Music Theory Suite is currently in preparation. We will roll out an MVP with M0 + the first 25 lessons of M1, a skill-tree UI, an SRS engine, the diagnostic test, and the dashboard. Early sign-ups receive first notice at launch.', es: 'KUON Music Theory Suite está en preparación. Lanzaremos un MVP con M0 + las primeras 25 lecciones de M1, árbol de habilidades, motor SRS, diagnóstico y panel. El registro temprano recibe aviso al abrir.', ko: 'KUON Music Theory Suite 는 현재 준비 중. M0 + M1 첫 25 레슨 + 스킬 트리 UI + SRS 엔진 + 진단 테스트 + 대시보드의 MVP 단계 공개 예정. 사전 등록자에게 우선 안내.', pt: 'KUON Music Theory Suite está em preparação. Lançaremos um MVP com M0 + primeiras 25 lições de M1, árvore de habilidades, SRS, diagnóstico e painel.', de: 'KUON Music Theory Suite ist in Vorbereitung. Wir starten mit M0 + ersten 25 Lektionen von M1, Skill-Tree, SRS, Einstufungstest und Dashboard. Frühanmeldung erhält Benachrichtigung beim Start.' },
+    q: { ja: '今すぐ受講できますか？', en: 'Can I start right now?', es: '¿Puedo empezar ya?', ko: '지금 바로 수강할 수 있습니까?', pt: 'Posso começar agora?', de: 'Kann ich jetzt beginnen?' },
+    a: { ja: 'はい、開講中です。MVP として M0「五線と音名」、M1「三和音の基本形と転回形」、M4「カデンツの種類」が利用可能で、目次から自由に入れます。残り 550 レッスンは見切り発車で順次公開していきます。早期受講者は完成後の体系すべてを最初から享受できます。', en: 'Yes — enrollment is open. As an MVP, M0 "Staff and Pitch Names," M1 "Triads and Inversions," and M4 "Cadences" are live and accessible from the table of contents. The remaining 550 lessons roll out continuously. Early subscribers gain the full curriculum as it grows.', es: 'Sí — ya puedes empezar. M0, M1-12 y M4-04 están disponibles. El resto de las 550 lecciones se lanzará continuamente.', ko: '네 — 지금 수강 가능. M0·M1-12·M4-04 가 공개되어 목차에서 자유롭게 입장. 나머지 550 레슨은 순차 공개.', pt: 'Sim — já está aberto. M0, M1-12 e M4-04 disponíveis. As 550 lições restantes virão continuamente.', de: 'Ja — die Anmeldung ist offen. M0, M1-12 und M4-04 sind verfügbar. Die restlichen 550 Lektionen folgen fortlaufend.' },
   },
   {
     q: { ja: '料金はいくらですか？', en: 'What does it cost?', es: '¿Cuánto cuesta?', ko: '요금은 얼마입니까?', pt: 'Quanto custa?', de: 'Was kostet es?' },
@@ -1327,6 +1327,9 @@ function FeatureCard({ feature: f, lang }: { feature: { num: string; title: L6; 
 }
 
 function DisabledCta({ lang, primary }: { lang: Lang; primary?: boolean }) {
+  // 2026-04-29 開講: MVP として M0-01 / M1-12 / M4-04 が公開済み。
+  // §47 の見切り発車戦略に従い、CTA を /theory ハブへの実リンクに切替。
+  // 「MVP」バッジで開発初期であることを誠実に伝える。
   const label = t({
     ja: '受講する',
     en: 'Enroll',
@@ -1335,18 +1338,17 @@ function DisabledCta({ lang, primary }: { lang: Lang; primary?: boolean }) {
     pt: 'Matricular-se',
     de: 'Einschreiben',
   }, lang);
-  const subLabel = t({
-    ja: '準備中',
-    en: 'Coming soon',
-    es: 'Próximamente',
-    ko: '준비 중',
-    pt: 'Em breve',
-    de: 'Bald verfügbar',
+  const badgeLabel = t({
+    ja: 'MVP',
+    en: 'MVP',
+    es: 'MVP',
+    ko: 'MVP',
+    pt: 'MVP',
+    de: 'MVP',
   }, lang);
   return (
-    <span
-      aria-disabled="true"
-      title={subLabel}
+    <Link
+      href="/theory"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -1354,29 +1356,37 @@ function DisabledCta({ lang, primary }: { lang: Lang; primary?: boolean }) {
         fontFamily: sans,
         fontSize: primary ? '0.95rem' : '0.85rem',
         fontWeight: 500,
-        color: primary ? PAPER : INK_SOFT,
+        color: primary ? PAPER : INK,
         background: primary ? INK : 'transparent',
-        border: primary ? 'none' : `1px dashed ${STAFF_LINE}`,
+        border: primary ? 'none' : `1px solid ${INK}`,
         borderRadius: 999,
         padding: primary ? '1rem 2rem' : '0.85rem 1.6rem',
         letterSpacing: '0.06em',
-        cursor: 'default',
-        opacity: primary ? 0.85 : 1,
+        textDecoration: 'none',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-1px)';
+        if (primary) e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.18)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'none';
       }}
     >
       <span>{label}</span>
       <span style={{
         fontFamily: mono,
-        fontSize: '0.65rem',
-        letterSpacing: '0.16em',
-        textTransform: 'uppercase',
-        color: primary ? 'rgba(255,255,255,0.65)' : INK_FAINT,
+        fontSize: '0.62rem',
+        letterSpacing: '0.18em',
+        color: primary ? 'rgba(255,255,255,0.7)' : INK_FAINT,
         padding: '0.18rem 0.55rem',
         border: primary ? '1px solid rgba(255,255,255,0.35)' : `1px solid ${STAFF_LINE}`,
         borderRadius: 999,
       }}>
-        {subLabel}
+        {badgeLabel}
       </span>
-    </span>
+      <span style={{ fontSize: '0.85em' }}>→</span>
+    </Link>
   );
 }
