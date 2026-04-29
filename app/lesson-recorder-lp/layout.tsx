@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 const TITLE_JA = 'KUON LESSON RECORDER — 音楽レッスン録音 AI 書き起こし & 要約 | 空音開発';
 const DESC_JA =
-  '音楽レッスンの録音を AI が自動で書き起こし、3 行サマリー・アクション項目・音楽用語解説まで一気に生成。話者を教師/生徒に推定、99 言語対応の Whisper-large-v3-turbo + Llama 3.3 70B + M2M100 翻訳を Cloudflare Workers AI で高速処理。Markdown / SRT / JSON エクスポート、過去レッスン意味検索付き。Prelude プラン (¥780/月) から月 20 回利用可能。';
+  '音楽レッスンの録音を AI が自動で書き起こし、3 行サマリー・アクション項目・音楽用語解説まで一気に生成。話者を教師/生徒に推定、99 言語対応の Whisper + Llama 3.3 70B + M2M100 翻訳を Cloudflare Workers AI で高速処理。Markdown / SRT / JSON エクスポート、過去レッスン意味検索付き。Prelude プラン (¥780/月) から月 15 回利用可能。';
 
 const KEYWORDS_JA = [
   'レッスン録音', '音楽レッスン書き起こし', 'AI 文字起こし', 'Whisper 音声認識',

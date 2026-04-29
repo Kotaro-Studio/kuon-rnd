@@ -260,9 +260,9 @@ export default function LessonRecorderLP() {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginTop: '2rem' }}>
             <PricingTier name="Free" price="¥0" quota="1 回 / 月" minutes="最大 60 分" desc={t({ ja: 'お試し用', en: 'Try it' }, lang)} />
-            <PricingTier name="Prelude" price="¥780" quota="20 回 / 月" minutes="最大 1,200 分 (20 時間)" desc={t({ ja: '個人練習向け', en: 'Personal practice' }, lang)} highlight />
-            <PricingTier name="Concerto" price="¥1,480" quota="80 回 / 月" minutes="最大 4,800 分 (80 時間)" desc={t({ ja: '本気の音大生・プロ', en: 'Serious musicians' }, lang)} />
-            <PricingTier name="Symphony" price="¥2,480" quota="200 回 / 月" minutes="最大 12,000 分 (200 時間)" desc={t({ ja: '教師・スタジオ', en: 'Teachers, studios' }, lang)} />
+            <PricingTier name="Prelude" price="¥780" quota="15 回 / 月" minutes="最大 900 分 (15 時間)" desc={t({ ja: '音大生・個人レッスン向け', en: 'Music students' }, lang)} highlight />
+            <PricingTier name="Concerto" price="¥1,480" quota="35 回 / 月" minutes="最大 2,100 分 (35 時間)" desc={t({ ja: 'プロ・複数指導', en: 'Pros, multi-coaching' }, lang)} />
+            <PricingTier name="Symphony" price="¥2,480" quota="80 回 / 月" minutes="最大 4,800 分 (80 時間)" desc={t({ ja: '教師・スタジオ・教育機関', en: 'Teachers, studios, schools' }, lang)} />
           </div>
           <p style={{ fontFamily: sans, fontSize: '0.78rem', color: INK_FAINT, lineHeight: 1.85, marginTop: '1.4rem', textAlign: 'center' }}>
             {t({
@@ -308,7 +308,7 @@ export default function LessonRecorderLP() {
           />
           <FaqItem
             q={t({ ja: 'いつから使えますか?', en: 'When can I start?' }, lang)}
-            a={t({ ja: '今すぐ。無料アカウントで 1 回試せます。サブスクリプション (Prelude / Concerto / Symphony) で月 20〜200 回利用可能。', en: 'Right now. Free account = 1 try. Subscriptions allow 20-200/month.' }, lang)}
+            a={t({ ja: '今すぐ。無料アカウントで 1 回試せます。サブスクリプション (Prelude / Concerto / Symphony) で月 15〜80 回利用可能。', en: 'Right now. Free account = 1 try. Subscriptions allow 15-80/month.' }, lang)}
           />
         </div>
       </section>
@@ -539,7 +539,7 @@ function JsonLd() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'Free: 1 transcription/month. Prelude (¥780/mo): 20/month. Concerto (¥1,480/mo): 80/month. Symphony (¥2,480/mo): 200/month. Annual plans save 2 months.',
+            'Free: 1 transcription/month. Prelude (¥780/mo): 15/month. Concerto (¥1,480/mo): 35/month. Symphony (¥2,480/mo): 80/month. Annual plans save 2 months.',
         },
       },
       {

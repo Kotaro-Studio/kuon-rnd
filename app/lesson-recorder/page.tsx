@@ -595,7 +595,7 @@ function HomeView({
       {/* Privacy + price callout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
         <InfoCard label="🔒" title={t({ ja: 'プライバシー保護', en: 'Privacy first' }, lang)} body={t({ ja: '音声は処理後即座に Workers AI から削除されます。書き起こしテキストのみ保存。', en: 'Audio is deleted from Workers AI immediately after processing. Only text is stored.' }, lang)} />
-        <InfoCard label="◆" title={t({ ja: 'Prelude プラン以上', en: 'Prelude plan and up' }, lang)} body={t({ ja: '月 20 回 (Prelude) / 80 回 (Concerto) / 200 回 (Symphony)', en: '20/mo (Prelude) / 80/mo (Concerto) / 200/mo (Symphony)' }, lang)} />
+        <InfoCard label="◆" title={t({ ja: 'Prelude プラン以上', en: 'Prelude plan and up' }, lang)} body={t({ ja: '月 15 回 (Prelude) / 35 回 (Concerto) / 80 回 (Symphony)', en: '15/mo (Prelude) / 35/mo (Concerto) / 80/mo (Symphony)' }, lang)} />
         <InfoCard label="✦" title={t({ ja: '音楽専門用語に対応', en: 'Music vocabulary aware' }, lang)} body={t({ ja: 'カデンツ・モーダル・ピチカート等を正しく認識', en: 'Cadence, modal, pizzicato etc. recognized correctly' }, lang)} />
       </div>
     </div>
