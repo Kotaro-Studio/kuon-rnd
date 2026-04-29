@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'M0-01 五線と音名 | KUON Music Theory Suite',
-  description: '五線と音名を学ぶ最初のレッスン。グイド・ダレッツォ起源の譜表を、本物の音とともに対話的に理解する。Layer 1 (物語) + Layer 2 (Living Score) + Layer 3 (記憶)。',
+  // Kuon オリジナル M0 (Pre-notational) — OMT v2 範囲外
+  title: 'M0-01 音とは何か | KUON Music Theory Suite',
+  description: '音楽を理解する最初のレッスン。空気の振動・耳の仕組み・周波数と音色 — 譜面を読む前に、音そのものに触れる。Kuon オリジナル M0「音楽との最初の出会い」第 1 弾。',
   alternates: { canonical: 'https://kuon-rnd.com/theory/m0/l01' },
   openGraph: {
-    title: 'M0-01 五線と音名 — KUON Music Theory Suite',
-    description: 'The Staff and Pitch Names — first lesson of KUON Music Theory Suite.',
+    title: 'M0-01 What is Sound? — KUON Music Theory Suite',
+    description: 'The first lesson before notation. Air vibration, the ear, frequency and timbre — touch the sound itself before reading any staff.',
     url: 'https://kuon-rnd.com/theory/m0/l01',
     type: 'article',
   },

@@ -59,10 +59,10 @@ const MODULES: ModuleDef[] = [
   {
     id: 'm0', num: 'M0',
     title: { ja: '音楽との最初の出会い', en: 'First Encounter with Music', es: 'Primer encuentro con la música', ko: '음악과의 첫 만남', pt: 'Primeiro encontro com a música', de: 'Erste Begegnung mit Musik' },
-    desc: { ja: '完全初心者向け導入。譜表・音名・拍子記号・基本リズムまで。', en: 'For absolute beginners. Staff, pitch names, time signatures, basic rhythm.', es: 'Para principiantes absolutos. Pentagrama, notas, compases, ritmo básico.', ko: '완전 초급자용. 오선·음이름·박자기호·기본 리듬.', pt: 'Para iniciantes absolutos. Pauta, notas, compassos, ritmo básico.', de: 'Für absolute Anfänger. Notensystem, Tonnamen, Taktarten, Grundrhythmen.' },
+    desc: { ja: '譜面を読まずに音楽そのものに触れる入門。音とは何か・リズム・声・楽器・世界の音楽システム。', en: 'A pre-notational introduction. What sound is, rhythm, voice, instruments, world music systems — touch music itself before reading any staff.', es: 'Introducción pre-notacional. Qué es el sonido, ritmo, voz, instrumentos, sistemas musicales del mundo.', ko: '기보를 읽지 않고 음악 자체에 닿는 입문. 소리란 무엇인가·리듬·목소리·악기·세계 음악.', pt: 'Introdução pré-notacional. O que é o som, ritmo, voz, instrumentos, sistemas musicais do mundo.', de: 'Vornotationale Einführung. Was Klang ist, Rhythmus, Stimme, Instrumente, Weltmusiksysteme.' },
     lessonCount: 15, level: 'foundation',
     availableLessons: [
-      { id: 'l01', title: { ja: '五線と音名', en: 'Staff and Pitch Names', es: 'Pentagrama y notas', ko: '오선과 음이름', pt: 'Pauta e notas', de: 'Notensystem & Tonnamen' } },
+      { id: 'l01', title: { ja: '音とは何か', en: 'What is Sound?', es: '¿Qué es el sonido?', ko: '소리란 무엇인가', pt: 'O que é o som?', de: 'Was ist Klang?' } },
     ],
   },
   {
