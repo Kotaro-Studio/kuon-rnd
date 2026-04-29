@@ -1,46 +1,49 @@
 'use client';
 
 /**
- * KUON CLASSICAL LAB (BETA)
+ * KUON CLASSICAL LAB (BETA) — 音大生のための美しい分析環境
  * =========================================================
- * Pyodide (CPython on WebAssembly) + music21 をブラウザ内で動かす音楽分析環境。
+ * Pyodide + music21 がブラウザ内で動くが、ユーザーには楽譜と分析結果しか見えない設計。
  *
- * 設計思想:
- *   - 30MB ロード（Pyodide 10MB + music21 20MB）は PC/Mac/WiFi 環境前提で許容
- *   - 起動後はサーバー完全不要、無限スケール、月額コストゼロ
- *   - コードジェネレーターで music21 を学ぶ環境にもなる（音楽情報学教育）
- *   - 出力は標準出力のみ（楽譜描画は OSMD、音声再生は Tone.js が別途担当）
+ * UX 思想:
+ *   - 楽曲を選ぶ → 自動で分析 → 美しい楽譜が描画される
+ *   - Python コードは完全に裏で実行（デフォルトで非表示）
+ *   - 興味のある上級ユーザーは "🔬 コードを表示" で展開可能
+ *   - 音大生（特に非エンジニア）が楽しく使える
  *
- * 永続性 (CLAUDE.md §44.11 準拠):
- *   - 静的ページ（Next.js プレレンダー）→ エッジワーカー消費ゼロ
- *   - Pyodide は CDN (jsdelivr) からランタイム読み込み → バンドル増加ゼロ
- *   - 楽譜は既存の /api/classical/analyze-from-library から取得 → 新規ルートなし
- *
- * UX:
- *   - 初回ロード: ~30-60 秒（WiFi 推奨）
- *   - 2 回目以降: ブラウザキャッシュから即起動
- *   - スマートフォン非対応（明示・LP で告知）
+ * 技術 (CLAUDE.md §44.11 準拠):
+ *   - 静的ページ → エッジワーカー消費ゼロ
+ *   - Pyodide は CDN ロード → バンドル増加ゼロ
+ *   - 楽譜は既存 API から取得 → 新規ルートなし
+ *   - ScoreViewer コンポーネントを再利用（/classical と同じ描画品質）
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { AuthGate } from '@/components/AuthGate';
 import { useLang } from '@/context/LangContext';
 import type { Lang } from '@/context/LangContext';
 
+const ScoreViewer = dynamic(() => import('@/components/ScoreViewer'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>
+      Loading score renderer…
+    </div>
+  ),
+});
+
 const ACCENT = '#5b21b6';
 const BG_CREAM = '#fafaf7';
+const GOLD = '#b45309';
 const PLAY_GREEN = '#059669';
 const serif = '"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 const sans = '"Helvetica Neue", "Hiragino Kaku Gothic ProN", Arial, sans-serif';
 const mono = '"SF Mono", "Fira Code", Consolas, monospace';
 
-// Pyodide の最新安定版 (2026-01 リリース)
 const PYODIDE_VERSION = 'v0.29.3';
 const PYODIDE_BASE_URL = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/`;
-// バックアップ CDN：jsdelivr が落ちている場合に備えて
-const PYODIDE_FALLBACK_URL = `https://pyodide-cdn2.iodide.io/${PYODIDE_VERSION}/full/`;
-// スクリプトロードのタイムアウト
 const SCRIPT_LOAD_TIMEOUT_MS = 30000;
 
 type L6 = { ja: string; en: string; es: string; ko: string; pt: string; de: string };
@@ -52,198 +55,189 @@ interface LabPiece {
   composer: string;
 }
 
-// MVP: 動作確認済みの代表曲を厳選してクイックピック
+interface ChordData { measure: number; beat: number; chord: string; roman: string; function: string; }
+interface CadenceData { measure: number; beat: number; type: string; progression: string[]; }
+interface ModulationData { from_measure: number; to_measure: number; key: string; }
+
+interface AnalysisResult {
+  key: string;
+  key_confidence: number;
+  chords: ChordData[];
+  cadences: CadenceData[];
+  modulations: ModulationData[];
+  chord_count: number;
+  midi_b64: string | null;
+}
+
 const QUICK_PICKS: LabPiece[] = [
-  { id: 'bach/bwv1.6', title: 'BWV 1.6 (Choral)', composer: 'J.S. Bach' },
-  { id: 'bach/bwv66.6', title: 'BWV 66.6 (Choral)', composer: 'J.S. Bach' },
-  { id: 'bach/bwv112.5', title: 'BWV 112.5 (Choral)', composer: 'J.S. Bach' },
-  { id: 'bach/bwv227.7', title: 'BWV 227.7 (Choral)', composer: 'J.S. Bach' },
-  { id: 'beethoven/opus18no1/movement1', title: 'Op.18 No.1 Mvt.1 (Quartet)', composer: 'L.v. Beethoven' },
-  { id: 'beethoven/opus18no3/movement1', title: 'Op.18 No.3 Mvt.1 (Quartet)', composer: 'L.v. Beethoven' },
-  { id: 'mozart/k155/movement1', title: 'K.155 Mvt.1 (Quartet)', composer: 'W.A. Mozart' },
-  { id: 'mozart/k156/movement1', title: 'K.156 Mvt.1 (Quartet)', composer: 'W.A. Mozart' },
-  { id: 'haydn/opus20no1/movement1', title: 'Op.20 No.1 Mvt.1 (Quartet)', composer: 'F.J. Haydn' },
-  { id: 'palestrina/Agnus_01', title: 'Agnus Dei I (Mass)', composer: 'G.P. da Palestrina' },
+  { id: 'bach/bwv1.6', title: 'BWV 1.6', composer: 'J.S. Bach' },
+  { id: 'bach/bwv66.6', title: 'BWV 66.6', composer: 'J.S. Bach' },
+  { id: 'bach/bwv112.5', title: 'BWV 112.5', composer: 'J.S. Bach' },
+  { id: 'bach/bwv227.7', title: 'BWV 227.7', composer: 'J.S. Bach' },
+  { id: 'beethoven/opus18no1/movement1', title: 'Op.18 No.1 Mvt.1', composer: 'L.v. Beethoven' },
+  { id: 'beethoven/opus18no3/movement1', title: 'Op.18 No.3 Mvt.1', composer: 'L.v. Beethoven' },
+  { id: 'mozart/k155/movement1', title: 'K.155 Mvt.1', composer: 'W.A. Mozart' },
+  { id: 'mozart/k156/movement1', title: 'K.156 Mvt.1', composer: 'W.A. Mozart' },
+  { id: 'haydn/opus20no1/movement1', title: 'Op.20 No.1 Mvt.1', composer: 'F.J. Haydn' },
+  { id: 'palestrina/Agnus_01', title: 'Agnus Dei I', composer: 'G.P. da Palestrina' },
   { id: 'monteverdi/madrigal.3.1', title: 'Madrigal Book 3 No.1', composer: 'C. Monteverdi' },
-  { id: 'schoenberg/opus19/movement2', title: 'Op.19 Mvt.2 (Atonal)', composer: 'A. Schoenberg' },
+  { id: 'schoenberg/opus19/movement2', title: 'Op.19 Mvt.2', composer: 'A. Schoenberg' },
 ];
 
-// 4 つのコードテンプレート — 教育的価値の高い順
-const CODE_TEMPLATES: Record<string, { label: L6; code: string; description: L6 }> = {
-  basic: {
-    label: { ja: '① 基本：調性 + ローマ数字', en: '1. Basic: key + Roman numerals', es: '1. Básico: tonalidad + números romanos', ko: '① 기본: 조성 + 로마 숫자', pt: '1. Básico: tonalidade + algarismos romanos', de: '1. Basis: Tonart + Stufen' },
-    description: { ja: 'music21 の基礎：調性判定とローマ数字分析', en: 'music21 basics: key detection + Roman numeral analysis', es: 'Lo básico: detección de tonalidad + análisis con números romanos', ko: 'music21 기초: 조성 판정 + 로마 숫자 분석', pt: 'Básico do music21: detecção de tonalidade + análise', de: 'music21 Grundlagen: Tonart + Stufenanalyse' },
-    code: `from music21 import converter, roman
+const ANALYSIS_PYTHON_SCRIPT = `
+import json, base64, tempfile, os
+from music21 import converter, roman, analysis
 
-# score_xml は Kuon Lab があなたの選んだ楽曲の MusicXML を自動で渡しています
+def _function(roman_str):
+    rs = roman_str.upper().replace('7','').replace('6','').replace('4','').replace('2','')
+    if rs.startswith('I') and not rs.startswith('II') and not rs.startswith('III') and not rs.startswith('IV'):
+        return 'tonic'
+    if rs.startswith('V') or rs.startswith('VII'):
+        return 'dominant'
+    if rs.startswith('II') or rs.startswith('IV') or rs.startswith('VI'):
+        return 'predominant'
+    return 'other'
+
 score = converter.parseData(score_xml, format='musicxml')
-
-# 調性判定 (Krumhansl-Schmuckler アルゴリズム)
 detected_key = score.analyze('key')
-print(f"Detected key: {detected_key}")
-print(f"Confidence: {detected_key.tonalCertainty():.1%}")
-print()
+raw_conf = detected_key.tonalCertainty() if hasattr(detected_key, 'tonalCertainty') else 0.85
+confidence = max(0.0, min(1.0, float(raw_conf)))
 
-# 全和音にローマ数字を付与
-print("=== Roman Numeral Analysis ===")
+chords_data = []
 chordified = score.chordify()
-count = 0
 for c in chordified.recurse().getElementsByClass('Chord'):
-    if count >= 40:
-        print("... (showing first 40 chords)")
-        break
-    rn = roman.romanNumeralFromChord(c, detected_key)
-    print(f"M{c.measureNumber:>3} beat {c.beat:.1f}: {c.pitchedCommonName:<28} → {rn.figure}")
-    count += 1
-`,
-  },
+    try:
+        m_num = int(c.measureNumber) if c.measureNumber else 0
+        b_val = float(c.beat) if c.beat else 1.0
+        try:
+            rn = roman.romanNumeralFromChord(c, detected_key)
+            r_str = rn.figure
+            func = _function(r_str)
+        except Exception:
+            r_str = "?"
+            func = "unknown"
+        chords_data.append({
+            'measure': m_num,
+            'beat': round(b_val, 2),
+            'chord': str(c.pitchedCommonName),
+            'roman': r_str,
+            'function': func,
+        })
+    except Exception:
+        pass
 
-  voiceLeading: {
-    label: { ja: '② 連続 5 度・8 度の検出', en: '2. Parallel 5ths/8ves detection', es: '2. Detección de quintas/octavas paralelas', ko: '② 병행 5도·8도 검출', pt: '2. Quintas/oitavas paralelas', de: '2. Quint-/Oktavparallelen finden' },
-    description: { ja: '声部進行違反を全自動検出。和声学の宿題チェッカー', en: 'Auto-detect voice leading violations. Harmony homework checker.', es: 'Detección automática de errores de conducción de voces.', ko: '성부 진행 위반 자동 검출. 화성학 숙제 검사.', pt: 'Detecção automática de erros de condução de vozes.', de: 'Automatische Stimmführungsprüfung.' },
-    code: `from music21 import converter, interval
+cadences_data = []
+for i in range(len(chords_data) - 1):
+    cur = chords_data[i]['roman'].upper()
+    nxt = chords_data[i+1]['roman'].upper()
+    cad_type = None
+    if cur.startswith('V') and nxt.startswith('I') and not (nxt.startswith('II') or nxt.startswith('III') or nxt.startswith('IV')):
+        cad_type = 'authentic'
+    elif cur.startswith('IV') and nxt.startswith('I') and not nxt.startswith('II'):
+        cad_type = 'plagal'
+    elif cur.startswith('V') and nxt.startswith('VI'):
+        cad_type = 'deceptive'
+    elif nxt.startswith('V') and not cur.startswith('V'):
+        cad_type = 'half'
+    if cad_type:
+        cadences_data.append({
+            'measure': chords_data[i+1]['measure'],
+            'beat': chords_data[i+1]['beat'],
+            'type': cad_type,
+            'progression': [chords_data[i]['roman'], chords_data[i+1]['roman']],
+        })
 
-score = converter.parseData(score_xml, format='musicxml')
-parts = score.parts
-voice_names = ['Soprano', 'Alto', 'Tenor', 'Bass']
+modulations_data = []
+try:
+    windowed = analysis.windowed.WindowedAnalysis(score, analysis.discrete.KrumhanslSchmuckler())
+    keys_arr, _ = windowed.process(8)
+    prev_k = None
+    start_m = 1
+    for i, k in enumerate(keys_arr):
+        ks = str(k)
+        m = i + 1
+        if prev_k is None:
+            prev_k = ks
+            start_m = m
+        elif prev_k != ks:
+            modulations_data.append({'from_measure': int(start_m), 'to_measure': int(m - 1), 'key': prev_k})
+            prev_k = ks
+            start_m = m
+    if prev_k is not None:
+        modulations_data.append({'from_measure': int(start_m), 'to_measure': int(len(keys_arr)), 'key': prev_k})
+except Exception:
+    pass
 
-print("=== Parallel 5th / 8ve detection ===")
-violations = 0
+midi_b64_str = None
+try:
+    fd, path = tempfile.mkstemp(suffix='.mid')
+    os.close(fd)
+    score.write('midi', fp=path)
+    with open(path, 'rb') as f:
+        midi_b64_str = base64.b64encode(f.read()).decode('ascii')
+    os.unlink(path)
+except Exception:
+    pass
 
-for i in range(min(len(parts), 4) - 1):
-    for j in range(i + 1, min(len(parts), 4)):
-        v1 = [n for n in parts[i].recurse().notes if n.isNote]
-        v2 = [n for n in parts[j].recurse().notes if n.isNote]
-        for n in range(min(len(v1), len(v2)) - 1):
-            try:
-                int1 = interval.Interval(v2[n], v1[n])
-                int2 = interval.Interval(v2[n+1], v1[n+1])
-                if int1.simpleName == 'P5' and int2.simpleName == 'P5':
-                    if v1[n].pitch != v1[n+1].pitch and v2[n].pitch != v2[n+1].pitch:
-                        print(f"⚠️ M{v1[n+1].measureNumber}: parallel 5th between {voice_names[i]} & {voice_names[j]}")
-                        print(f"    {voice_names[i]}: {v1[n].name}→{v1[n+1].name}, {voice_names[j]}: {v2[n].name}→{v2[n+1].name}")
-                        violations += 1
-                if int1.simpleName in ('P8', 'P1') and int2.simpleName in ('P8', 'P1'):
-                    if v1[n].pitch != v1[n+1].pitch and v2[n].pitch != v2[n+1].pitch:
-                        print(f"⚠️ M{v1[n+1].measureNumber}: parallel 8ve between {voice_names[i]} & {voice_names[j]}")
-                        violations += 1
-            except Exception:
-                pass
-
-print()
-print(f"Total violations: {violations}")
-`,
-  },
-
-  modulation: {
-    label: { ja: '③ 転調マップ（窓関数解析）', en: '3. Modulation map (windowed)', es: '3. Mapa de modulaciones', ko: '③ 전조 맵 (윈도우 분석)', pt: '3. Mapa de modulações', de: '3. Modulationskarte (Fensteranalyse)' },
-    description: { ja: '8 小節ウィンドウで局所キーを連続解析。転調の場所が一目で', en: '8-bar windowed key analysis. See exactly where the piece modulates.', es: 'Análisis de tonalidad con ventana de 8 compases.', ko: '8마디 윈도우로 국소 조성 분석.', pt: 'Análise de tonalidade com janela de 8 compassos.', de: '8-Takt-Fensteranalyse der lokalen Tonart.' },
-    code: `from music21 import converter, analysis
-
-score = converter.parseData(score_xml, format='musicxml')
-
-# 8 小節ウィンドウでキー解析を実行
-windowed = analysis.windowed.WindowedAnalysis(
-    score,
-    analysis.discrete.KrumhanslSchmuckler()
-)
-keys, coefficients = windowed.process(8)  # 8 小節幅
-
-print("=== Modulation map (8-bar windows) ===")
-prev_key = None
-start_measure = 1
-for i, k in enumerate(keys):
-    measure_num = i + 1
-    key_str = str(k)
-    if prev_key is None:
-        prev_key = key_str
-        start_measure = measure_num
-    elif prev_key != key_str:
-        print(f"M{start_measure:>3}-M{measure_num-1:>3}: {prev_key}")
-        prev_key = key_str
-        start_measure = measure_num
-if prev_key:
-    print(f"M{start_measure:>3}-M{len(keys):>3}: {prev_key}")
-
-print()
-print(f"Total windows analyzed: {len(keys)}")
-print(f"Unique keys detected: {len(set(str(k) for k in keys))}")
-`,
-  },
-
-  custom: {
-    label: { ja: '④ 自由実験（白紙）', en: '4. Free playground (blank)', es: '4. Experimento libre', ko: '④ 자유 실험', pt: '4. Experimentação livre', de: '4. Freie Experimente' },
-    description: { ja: 'music21 を自由に書く。score_xml 変数が使える', en: 'Write music21 freely. score_xml variable is available.', es: 'Escriba music21 libremente.', ko: '자유롭게 music21 작성.', pt: 'Escreva music21 livremente.', de: 'music21 frei schreiben.' },
-    code: `from music21 import converter, roman, key, interval, chord, note, stream
-
-# score_xml: 選んだ楽曲の MusicXML 文字列
-score = converter.parseData(score_xml, format='musicxml')
-
-# ここから自由に書いてみてください ──
-# たとえば...
-
-# 全パートの音域を調べる
-print("=== Pitch ranges per part ===")
-for i, part in enumerate(score.parts):
-    notes = [n for n in part.recurse().notes if n.isNote]
-    if notes:
-        lowest = min(notes, key=lambda n: n.pitch.midi)
-        highest = max(notes, key=lambda n: n.pitch.midi)
-        print(f"Part {i+1}: {lowest.nameWithOctave} - {highest.nameWithOctave}")
-`,
-  },
-};
+_kuon_lab_result = json.dumps({
+    'key': str(detected_key),
+    'key_confidence': confidence,
+    'chords': chords_data,
+    'cadences': cadences_data,
+    'modulations': modulations_data,
+    'chord_count': len(chords_data),
+    'midi_b64': midi_b64_str,
+})
+`;
 
 const LABELS = {
   hero: {
     eyebrow: { ja: 'KUON CLASSICAL LAB · BETA', en: 'KUON CLASSICAL LAB · BETA', es: 'KUON CLASSICAL LAB · BETA', ko: 'KUON CLASSICAL LAB · BETA', pt: 'KUON CLASSICAL LAB · BETA', de: 'KUON CLASSICAL LAB · BETA' } as L6,
     title: {
-      ja: 'ブラウザの中で\nmusic21 を動かす。',
-      en: 'Run music21\ninside your browser.',
-      es: 'Ejecute music21\ndentro de su navegador.',
-      ko: '브라우저 안에서\nmusic21을 실행.',
-      pt: 'Execute music21\nno seu navegador.',
-      de: 'music21\nim Browser ausführen.',
+      ja: 'ブラウザの中の\n音楽分析室。',
+      en: 'A music analysis room\ninside your browser.',
+      es: 'Una sala de análisis musical\nen su navegador.',
+      ko: '브라우저 안의\n음악 분석실.',
+      pt: 'Uma sala de análise musical\nno seu navegador.',
+      de: 'Ein Musikanalyse-Raum\nin Ihrem Browser.',
     } as L6,
     sub: {
-      ja: 'サーバー不要、Python の本物の music21 をブラウザ内で起動。コードを編集・実行して、和声分析を「ブラックボックス」から「学べる対象」に変える。',
-      en: 'No server. Real music21 Python running in your browser. Edit and run code to turn analysis from a black box into something you can learn from.',
-      es: 'Sin servidor. music21 Python real corriendo en su navegador.',
-      ko: '서버 불필요. 실제 music21 Python이 브라우저 안에서 동작.',
-      pt: 'Sem servidor. music21 Python real rodando no seu navegador.',
-      de: 'Kein Server. Echtes music21 Python läuft in Ihrem Browser.',
+      ja: '楽曲を選ぶだけで、調性・ローマ数字・カデンツ・転調が一瞬で。サーバー不要、すべてあなたのブラウザの中で完結します。',
+      en: 'Pick a piece. Get key, Roman numerals, cadences, modulations — instantly. Everything runs in your browser, no server needed.',
+      es: 'Elija una pieza. Obtenga tonalidad, números romanos, cadencias y modulaciones al instante.',
+      ko: '곡을 선택하면 조성·로마 숫자·종지·전조가 즉시 분석됩니다.',
+      pt: 'Escolha uma peça. Tonalidade, algarismos romanos, cadências e modulações instantaneamente.',
+      de: 'Wählen Sie ein Werk. Tonart, Stufen, Kadenzen, Modulationen — sofort.',
     } as L6,
   },
   warning: {
     title: { ja: '📡 初回ロードについて', en: '📡 First-time load notice', es: '📡 Primera carga', ko: '📡 첫 로딩 안내', pt: '📡 Primeira carga', de: '📡 Erstmaliges Laden' } as L6,
     body: {
-      ja: 'Music Lab は Python ランタイム + music21（合計約 30MB）をブラウザに読み込んで動作します。初回は WiFi 環境を推奨（30 秒〜1 分）。2 回目以降はキャッシュから即起動。スマートフォン非対応・PC/Mac 推奨。',
-      en: 'Music Lab loads Python runtime + music21 (~30MB total) into your browser. WiFi recommended for first load (30s–1min). Subsequent loads are instant from cache. PC/Mac required, smartphones not supported.',
-      es: 'Music Lab carga Python + music21 (~30MB) en su navegador. Se recomienda WiFi para la primera carga.',
-      ko: 'Music Lab은 Python + music21 (약 30MB) 을 브라우저에 로드합니다. 첫 로딩은 WiFi 권장.',
-      pt: 'Music Lab carrega Python + music21 (~30MB) no seu navegador. WiFi recomendado para a primeira carga.',
-      de: 'Music Lab lädt Python + music21 (~30MB) in Ihren Browser. WiFi empfohlen beim ersten Mal.',
+      ja: '初回のみ、ブラウザに分析エンジン（約 30MB）を読み込みます。WiFi 環境を推奨（30 秒〜1 分）。2 回目以降はキャッシュから即起動します。スマートフォン非対応・PC/Mac 推奨。',
+      en: 'First-time only: ~30MB analysis engine loads to your browser. WiFi recommended (30s–1min). Subsequent visits load instantly from cache. PC/Mac required.',
+      es: 'Primera vez: ~30MB del motor de análisis se carga en su navegador. Se recomienda WiFi.',
+      ko: '첫 로딩 시 분석 엔진(약 30MB)을 브라우저에 로드합니다. WiFi 권장.',
+      pt: 'Primeira vez: ~30MB do motor de análise carrega no seu navegador. WiFi recomendado.',
+      de: 'Beim ersten Mal lädt eine ~30MB Analyse-Engine in Ihren Browser. WiFi empfohlen.',
     } as L6,
   },
   loading: {
-    pyodideScript: { ja: 'Pyodide スクリプトをダウンロード中…', en: 'Downloading Pyodide script…', es: 'Descargando Pyodide…', ko: 'Pyodide 스크립트 다운로드 중…', pt: 'Baixando Pyodide…', de: 'Pyodide-Skript wird heruntergeladen…' } as L6,
-    pyodideRuntime: { ja: 'Python ランタイムを起動中…', en: 'Initializing Python runtime…', es: 'Inicializando Python…', ko: 'Python 런타임 초기화 중…', pt: 'Inicializando Python…', de: 'Python-Laufzeit wird initialisiert…' } as L6,
-    micropip: { ja: 'micropip + 依存パッケージを準備中…', en: 'Preparing micropip + dependencies…', es: 'Preparando micropip + dependencias…', ko: 'micropip + 의존성 준비 중…', pt: 'Preparando micropip + dependências…', de: 'micropip + Abhängigkeiten werden vorbereitet…' } as L6,
-    music21: { ja: 'music21 を PyPI からインストール中… (約 25MB)', en: 'Installing music21 from PyPI… (~25MB)', es: 'Instalando music21 desde PyPI… (~25MB)', ko: 'music21을 PyPI에서 설치 중… (약 25MB)', pt: 'Instalando music21 do PyPI… (~25MB)', de: 'music21 wird von PyPI installiert… (~25MB)' } as L6,
+    pyodideScript: { ja: '分析エンジンをダウンロード中…', en: 'Downloading analysis engine…', es: 'Descargando motor…', ko: '분석 엔진 다운로드 중…', pt: 'Baixando motor…', de: 'Analyse-Engine wird heruntergeladen…' } as L6,
+    pyodideRuntime: { ja: 'エンジンを起動中…', en: 'Initializing engine…', es: 'Inicializando motor…', ko: '엔진 초기화 중…', pt: 'Inicializando motor…', de: 'Engine wird initialisiert…' } as L6,
+    micropip: { ja: '音楽分析ライブラリを準備中…', en: 'Preparing music analysis library…', es: 'Preparando biblioteca…', ko: '음악 분석 라이브러리 준비 중…', pt: 'Preparando biblioteca…', de: 'Musikanalyse-Bibliothek wird vorbereitet…' } as L6,
+    music21: { ja: 'music21 を読み込み中…', en: 'Loading music21…', es: 'Cargando music21…', ko: 'music21 로딩 중…', pt: 'Carregando music21…', de: 'music21 wird geladen…' } as L6,
     ready: { ja: '準備完了', en: 'Ready', es: 'Listo', ko: '준비 완료', pt: 'Pronto', de: 'Bereit' } as L6,
   },
   ui: {
-    pickPiece: { ja: '📚 楽曲を選ぶ', en: '📚 Pick a piece', es: '📚 Elige una pieza', ko: '📚 곡 선택', pt: '📚 Escolha uma peça', de: '📚 Werk auswählen' } as L6,
-    template: { ja: '💡 コードテンプレート', en: '💡 Code template', es: '💡 Plantilla de código', ko: '💡 코드 템플릿', pt: '💡 Modelo de código', de: '💡 Code-Vorlage' } as L6,
-    pythonCode: { ja: '💻 Python コード（編集可）', en: '💻 Python code (editable)', es: '💻 Código Python (editable)', ko: '💻 Python 코드 (편집 가능)', pt: '💻 Código Python (editável)', de: '💻 Python-Code (bearbeitbar)' } as L6,
-    output: { ja: '🖥️ 出力', en: '🖥️ Output', es: '🖥️ Salida', ko: '🖥️ 출력', pt: '🖥️ Saída', de: '🖥️ Ausgabe' } as L6,
-    run: { ja: '▶ 実行', en: '▶ Run', es: '▶ Ejecutar', ko: '▶ 실행', pt: '▶ Executar', de: '▶ Ausführen' } as L6,
-    running: { ja: '⏳ 実行中…', en: '⏳ Running…', es: '⏳ Ejecutando…', ko: '⏳ 실행 중…', pt: '⏳ Executando…', de: '⏳ Wird ausgeführt…' } as L6,
-    pickFirst: { ja: '楽曲を選んで「実行」を押すと結果が表示されます', en: 'Pick a piece and press Run to see results', es: 'Elige una pieza y presiona Ejecutar', ko: '곡을 선택하고 실행을 누르세요', pt: 'Escolha uma peça e pressione Executar', de: 'Werk auswählen und Ausführen drücken' } as L6,
-    pieceLoading: { ja: '楽曲ロード中…', en: 'Loading piece…', es: 'Cargando pieza…', ko: '곡 로딩 중…', pt: 'Carregando peça…', de: 'Werk wird geladen…' } as L6,
-    pieceReady: { ja: 'score_xml に読み込み完了', en: 'Loaded into score_xml', es: 'Cargado en score_xml', ko: 'score_xml에 로드됨', pt: 'Carregado em score_xml', de: 'In score_xml geladen' } as L6,
-    backToClassical: { ja: '← Classical に戻る', en: '← Back to Classical', es: '← Volver a Classical', ko: '← Classical로 돌아가기', pt: '← Voltar', de: '← Zurück' } as L6,
-    errorTitle: { ja: 'Pyodide のロードに失敗', en: 'Failed to load Pyodide', es: 'Error al cargar Pyodide', ko: 'Pyodide 로딩 실패', pt: 'Falha ao carregar Pyodide', de: 'Pyodide konnte nicht geladen werden' } as L6,
+    pickPiece: { ja: '楽曲を選んで、分析を始めましょう', en: 'Pick a piece to start analyzing', es: 'Elija una pieza para empezar', ko: '곡을 선택하여 분석을 시작하세요', pt: 'Escolha uma peça', de: 'Wählen Sie ein Werk' } as L6,
+    fetchingPiece: { ja: '楽譜を取得しています…', en: 'Fetching the score…', es: 'Obteniendo partitura…', ko: '악보를 가져오는 중…', pt: 'Obtendo partitura…', de: 'Werk wird geladen…' } as L6,
+    analyzing: { ja: '和声分析中… (Python が裏で動いています)', en: 'Analyzing harmony… (Python running silently)', es: 'Analizando armonía…', ko: '화성 분석 중…', pt: 'Analisando harmonia…', de: 'Harmonik-Analyse läuft…' } as L6,
+    backToClassical: { ja: '← Classical に戻る', en: '← Back to Classical', es: '← Volver', ko: '← 돌아가기', pt: '← Voltar', de: '← Zurück' } as L6,
+    errorTitle: { ja: 'エンジンのロードに失敗', en: 'Failed to load engine', es: 'Error al cargar motor', ko: '엔진 로딩 실패', pt: 'Falha ao carregar motor', de: 'Engine konnte nicht geladen werden' } as L6,
+    devModeShow: { ja: '🔬 内部の Python コードを表示する', en: '🔬 Show internal Python code', es: '🔬 Mostrar código Python interno', ko: '🔬 내부 Python 코드 표시', pt: '🔬 Mostrar código Python', de: '🔬 Internen Python-Code anzeigen' } as L6,
+    devModeHide: { ja: '🔬 コードを隠す', en: '🔬 Hide code', es: '🔬 Ocultar código', ko: '🔬 코드 숨기기', pt: '🔬 Ocultar código', de: '🔬 Code verbergen' } as L6,
+    devModeIntro: { ja: 'これはあなたが選んだ楽曲を分析している、実際の Python コードです。バックグラウンドで自動実行されています。興味があればコピーして、ご自分のローカル環境でも実行できます。', en: 'This is the actual Python code analyzing your selected piece. It runs automatically in the background. Copy it to use in your own Python environment.', es: 'Este es el código Python real que analiza su pieza.', ko: '이것은 선택한 곡을 분석하는 실제 Python 코드입니다.', pt: 'Este é o código Python real que analisa sua peça.', de: 'Dies ist der echte Python-Code, der Ihr Werk analysiert.' } as L6,
+    analysisFailed: { ja: '分析に失敗しました', en: 'Analysis failed', es: 'Análisis falló', ko: '분석 실패', pt: 'Análise falhou', de: 'Analyse fehlgeschlagen' } as L6,
   },
 };
 
@@ -260,29 +254,22 @@ function LabInner() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pyodideRef = useRef<any>(null);
-  const startedRef = useRef(false);  // 二重起動防止（Strict Mode + 依存変化 両対策）
+  const startedRef = useRef(false);
   const [pyodideStatus, setPyodideStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [loadProgress, setLoadProgress] = useState({ message: '', pct: 0 });
 
   const [selectedPiece, setSelectedPiece] = useState<LabPiece | null>(null);
   const [musicxml, setMusicxml] = useState<string | null>(null);
-  const [pieceLoading, setPieceLoading] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analyzePhase, setAnalyzePhase] = useState<'idle' | 'fetching' | 'analyzing' | 'done' | 'error'>('idle');
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
-  const [templateKey, setTemplateKey] = useState<keyof typeof CODE_TEMPLATES>('basic');
-  const [code, setCode] = useState(CODE_TEMPLATES.basic.code);
-
-  const [running, setRunning] = useState(false);
-  const [output, setOutput] = useState('');
-  const [errorOut, setErrorOut] = useState('');
+  const [showDevMode, setShowDevMode] = useState(false);
 
   // Pyodide ロード（マウント時に 1 回だけ）
-  // 重要: 依存配列を空 [] にして、useEffect の再実行を防ぐ
-  // (state 更新で依存変化 → cleanup → cancelled=true → 直後の await チェックポイントで脱出
-  //  という useEffect の罠を避ける)
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
-
     setPyodideStatus('loading');
 
     (async () => {
@@ -292,21 +279,16 @@ function LabInner() {
 
         setLoadProgress({ message: t(LABELS.loading.pyodideRuntime, lang), pct: 25 });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const py = await (window as any).loadPyodide({
-          indexURL: PYODIDE_BASE_URL,
-        });
+        const py = await (window as any).loadPyodide({ indexURL: PYODIDE_BASE_URL });
 
-        // micropip + 既知の native deps (numpy 等) を事前ロード
-        // music21 は事前ビルドされていないので、micropip 経由で PyPI からインストールする必要がある
         setLoadProgress({ message: t(LABELS.loading.micropip, lang), pct: 45 });
         await py.loadPackage(['micropip', 'numpy']);
 
-        // PyPI から music21 を動的インストール
         setLoadProgress({ message: t(LABELS.loading.music21, lang), pct: 65 });
         await py.runPythonAsync(`
-import micropip
+import micropip, warnings
+warnings.filterwarnings('ignore')
 await micropip.install('music21')
-print('music21 installed via micropip')
         `);
 
         pyodideRef.current = py;
@@ -321,63 +303,78 @@ print('music21 installed via micropip')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // テンプレート切替
-  const handleTemplateChange = useCallback((key: keyof typeof CODE_TEMPLATES) => {
-    setTemplateKey(key);
-    setCode(CODE_TEMPLATES[key].code);
-  }, []);
-
-  // 楽曲選択
+  // 楽曲選択 → 自動で分析実行
   const handlePieceSelect = useCallback(async (piece: LabPiece) => {
     setSelectedPiece(piece);
+    setAnalysisResult(null);
+    setAnalyzeError(null);
     setMusicxml(null);
-    setPieceLoading(true);
+    setAnalyzePhase('fetching');
+
     try {
+      // 1. MusicXML を取得
       const res = await fetch('/api/classical/analyze-from-library', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ piece_id: piece.id }),
       });
+      if (!res.ok) throw new Error('Failed to fetch piece');
       const data = await res.json();
-      if (data.musicxml) {
-        setMusicxml(data.musicxml);
-      }
+      const mxml = data.musicxml;
+      if (!mxml) throw new Error('No MusicXML in response');
+      setMusicxml(mxml);
+
+      // 2. Pyodide で分析実行
+      setAnalyzePhase('analyzing');
+      const py = pyodideRef.current;
+      if (!py) throw new Error('Pyodide not ready');
+
+      py.globals.set('score_xml', mxml);
+      await py.runPythonAsync(ANALYSIS_PYTHON_SCRIPT);
+      const jsonStr = py.runPython('_kuon_lab_result') as string;
+      const result: AnalysisResult = JSON.parse(jsonStr);
+      setAnalysisResult(result);
+      setAnalyzePhase('done');
     } catch (e) {
-      console.error('Piece fetch failed', e);
-    } finally {
-      setPieceLoading(false);
+      setAnalyzePhase('error');
+      setAnalyzeError(e instanceof Error ? e.message : String(e));
     }
   }, []);
 
-  // 実行
-  const handleRun = useCallback(async () => {
-    const py = pyodideRef.current;
-    if (!py || !musicxml) return;
-
-    setRunning(true);
-    setOutput('');
-    setErrorOut('');
-
-    let stdout = '';
-    let stderr = '';
-
-    try {
-      py.globals.set('score_xml', musicxml);
-      py.setStdout({ batched: (s: string) => { stdout += s; } });
-      py.setStderr({ batched: (s: string) => { stderr += s; } });
-
-      await py.runPythonAsync(code);
-
-      setOutput(stdout || '(no output)');
-      if (stderr) setErrorOut(stderr);
-    } catch (e) {
-      const msg = e instanceof Error ? (e.message || String(e)) : String(e);
-      setErrorOut(`${msg}${stderr ? '\n' + stderr : ''}`);
-      if (stdout) setOutput(stdout);
-    } finally {
-      setRunning(false);
-    }
-  }, [code, musicxml]);
+  // ScoreViewer 用のローカライズラベル
+  const scoreLabels = {
+    rendering: t({ ja: '楽譜を描画中…', en: 'Rendering score…', es: 'Renderizando…', ko: '악보 렌더링 중…', pt: 'Renderizando…', de: 'Notenbild wird erstellt…' }, lang),
+    renderError: t({ ja: '楽譜の描画に失敗', en: 'Score rendering failed', es: 'Error', ko: '실패', pt: 'Falha', de: 'Fehlgeschlagen' }, lang),
+    cadenceLegend: t({ ja: 'カデンツ', en: 'Cadences', es: 'Cadencias', ko: '종지', pt: 'Cadências', de: 'Kadenzen' }, lang),
+    modulationLegend: t({ ja: '転調', en: 'Modulations', es: 'Modulaciones', ko: '전조', pt: 'Modulações', de: 'Modulationen' }, lang),
+    romanTrack: t({ ja: '小節別ローマ数字', en: 'Roman numerals by measure', es: 'Por compás', ko: '마디별', pt: 'Por compasso', de: 'Pro Takt' }, lang),
+    measure: t({ ja: '小節', en: 'M.', es: 'C.', ko: '마디', pt: 'C.', de: 'T.' }, lang),
+    cadenceTypes: {
+      authentic: t({ ja: '完全終止', en: 'Authentic', es: 'Auténtica', ko: '완전 종지', pt: 'Autêntica', de: 'Authentisch' }, lang),
+      plagal: t({ ja: '変格終止', en: 'Plagal', es: 'Plagal', ko: '변격', pt: 'Plagal', de: 'Plagal' }, lang),
+      deceptive: t({ ja: '偽終止', en: 'Deceptive', es: 'De engaño', ko: '거짓', pt: 'Decetiva', de: 'Trugschluss' }, lang),
+      half: t({ ja: '半終止', en: 'Half', es: 'Semicadencia', ko: '반종지', pt: 'Suspensiva', de: 'Halbschluss' }, lang),
+    },
+    functions: {
+      tonic: t({ ja: '主和音', en: 'Tonic', es: 'Tónica', ko: '으뜸화음', pt: 'Tônica', de: 'Tonika' }, lang),
+      predominant: t({ ja: '下属', en: 'Pre-dom', es: 'Subdom', ko: '버금딸림', pt: 'Subdom', de: 'Subdom' }, lang),
+      dominant: t({ ja: '属', en: 'Dominant', es: 'Dominante', ko: '딸림', pt: 'Dominante', de: 'Dominante' }, lang),
+      other: t({ ja: 'その他', en: 'Other', es: 'Otro', ko: '기타', pt: 'Outro', de: 'Sonstige' }, lang),
+      unknown: '?',
+    },
+    playback: {
+      title: t({ ja: '再生', en: 'Playback', es: 'Reproducción', ko: '재생', pt: 'Reprodução', de: 'Wiedergabe' }, lang),
+      play: t({ ja: '再生', en: 'Play', es: 'Reproducir', ko: '재생', pt: 'Reproduzir', de: 'Abspielen' }, lang),
+      pause: t({ ja: '一時停止', en: 'Pause', es: 'Pausar', ko: '일시정지', pt: 'Pausar', de: 'Pause' }, lang),
+      restart: t({ ja: '最初から', en: 'Restart', es: 'Reiniciar', ko: '처음부터', pt: 'Reiniciar', de: 'Neu' }, lang),
+      tempo: t({ ja: 'テンポ', en: 'Tempo', es: 'Tempo', ko: '템포', pt: 'Tempo', de: 'Tempo' }, lang),
+      voices: t({ ja: '声部', en: 'Voices', es: 'Voces', ko: '성부', pt: 'Vozes', de: 'Stimmen' }, lang),
+      loadingMidi: t({ ja: 'MIDI を読み込み中…', en: 'Loading MIDI…', es: 'Cargando…', ko: '로딩 중…', pt: 'Carregando…', de: 'Wird geladen…' }, lang),
+      midiError: t({ ja: 'MIDI 再生不可', en: 'MIDI unavailable', es: 'No disponible', ko: '재생 불가', pt: 'Indisponível', de: 'Nicht verfügbar' }, lang),
+      mute: t({ ja: 'ミュート', en: 'Mute', es: 'Silenciar', ko: '음소거', pt: 'Silenciar', de: 'Stumm' }, lang),
+      solo: t({ ja: 'ソロ', en: 'Solo', es: 'Solo', ko: '솔로', pt: 'Solo', de: 'Solo' }, lang),
+    },
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: BG_CREAM, fontFamily: sans, color: '#0f172a' }}>
@@ -397,7 +394,7 @@ print('music21 installed via micropip')
         </p>
       </section>
 
-      {/* 警告（ロード前に表示） */}
+      {/* 警告（ロード前のみ） */}
       {pyodideStatus !== 'ready' && (
         <section style={{ maxWidth: 800, margin: '0 auto', padding: '0 1.5rem 2rem' }}>
           <div style={{ background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 12, padding: '1.2rem 1.4rem', fontSize: '0.85rem', color: '#92400e' }}>
@@ -411,14 +408,11 @@ print('music21 installed via micropip')
       {pyodideStatus === 'loading' && (
         <section style={{ maxWidth: 800, margin: '0 auto', padding: '0 1.5rem 2rem' }}>
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.5rem' }}>
-            <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '0.8rem', fontFamily: mono }}>
+            <div style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '0.8rem', fontFamily: serif }}>
               {loadProgress.message}
             </div>
             <div style={{ height: 6, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden' }}>
               <div style={{ height: '100%', background: ACCENT, width: `${loadProgress.pct}%`, transition: 'width 0.4s ease' }} />
-            </div>
-            <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.6rem', fontFamily: mono }}>
-              {loadProgress.pct}%
             </div>
           </div>
         </section>
@@ -434,156 +428,184 @@ print('music21 installed via micropip')
         </section>
       )}
 
-      {/* メイン UI */}
+      {/* メイン UI（Pyodide 準備完了後のみ） */}
       {pyodideStatus === 'ready' && (
-        <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem 4rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+        <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem 4rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
           {/* 楽曲ピッカー */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.2rem 1.4rem' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.7rem' }}>
-              {t(LABELS.ui.pickPiece, lang)}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.5rem' }}>
-              {QUICK_PICKS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => handlePieceSelect(p)}
-                  style={{
-                    background: selectedPiece?.id === p.id ? '#ede9fe' : '#f8fafc',
-                    border: selectedPiece?.id === p.id ? `2px solid ${ACCENT}` : '1px solid #e2e8f0',
-                    borderRadius: 8, padding: '0.7rem 0.9rem', textAlign: 'left',
-                    cursor: 'pointer', fontFamily: sans, transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>{p.composer}</div>
-                  <div style={{ fontFamily: serif, fontSize: '0.92rem', fontWeight: 500, color: '#0f172a', marginTop: 2 }}>{p.title}</div>
-                </button>
-              ))}
-            </div>
-            {selectedPiece && (
-              <div style={{ marginTop: '0.8rem', fontSize: '0.78rem', color: pieceLoading ? '#94a3b8' : (musicxml ? '#059669' : '#94a3b8'), fontFamily: mono }}>
-                {pieceLoading
-                  ? `⏳ ${t(LABELS.ui.pieceLoading, lang)} (${selectedPiece.id})`
-                  : musicxml
-                    ? `✓ ${t(LABELS.ui.pieceReady, lang)}: ${selectedPiece.id} (${musicxml.length.toLocaleString()} bytes)`
-                    : `⚠️ Failed to load: ${selectedPiece.id}`
-                }
-              </div>
-            )}
-          </div>
-
-          {/* テンプレート */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.2rem 1.4rem' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.7rem' }}>
-              {t(LABELS.ui.template, lang)}
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.6rem' }}>
-              {(Object.keys(CODE_TEMPLATES) as Array<keyof typeof CODE_TEMPLATES>).map((k) => (
-                <button
-                  key={k}
-                  onClick={() => handleTemplateChange(k)}
-                  style={{
-                    background: templateKey === k ? ACCENT : 'transparent',
-                    color: templateKey === k ? '#fff' : ACCENT,
-                    border: `1px solid ${ACCENT}`, borderRadius: 999,
-                    padding: '0.4rem 1rem', fontSize: '0.78rem', fontWeight: 500,
-                    cursor: 'pointer', fontFamily: sans,
-                  }}
-                >
-                  {t(CODE_TEMPLATES[k].label, lang)}
-                </button>
-              ))}
-            </div>
-            <div style={{ fontSize: '0.78rem', color: '#64748b', fontStyle: 'italic' }}>
-              {t(CODE_TEMPLATES[templateKey].description, lang)}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 'clamp(1.5rem, 3vw, 2rem)', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+            <h2 style={{ fontFamily: serif, fontSize: 'clamp(1.1rem, 2.2vw, 1.4rem)', fontWeight: 400, color: '#0f172a', margin: '0 0 1.2rem 0', letterSpacing: '0.02em' }}>
+              📚 {t(LABELS.ui.pickPiece, lang)}
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.6rem' }}>
+              {QUICK_PICKS.map((p) => {
+                const isSelected = selectedPiece?.id === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => handlePieceSelect(p)}
+                    disabled={analyzePhase === 'fetching' || analyzePhase === 'analyzing'}
+                    style={{
+                      background: isSelected ? '#ede9fe' : '#f8fafc',
+                      border: isSelected ? `2px solid ${ACCENT}` : '1px solid #e2e8f0',
+                      borderRadius: 10, padding: '0.85rem 1rem', textAlign: 'left',
+                      cursor: (analyzePhase === 'fetching' || analyzePhase === 'analyzing') ? 'wait' : 'pointer',
+                      fontFamily: sans, transition: 'all 0.2s ease',
+                      opacity: (analyzePhase === 'fetching' || analyzePhase === 'analyzing') && !isSelected ? 0.5 : 1,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected && analyzePhase !== 'fetching' && analyzePhase !== 'analyzing') {
+                        e.currentTarget.style.borderColor = ACCENT;
+                        e.currentTarget.style.background = '#fff';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = '#e2e8f0';
+                        e.currentTarget.style.background = '#f8fafc';
+                      }
+                    }}
+                  >
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>{p.composer}</div>
+                    <div style={{ fontFamily: serif, fontSize: '1rem', fontWeight: 500, color: '#0f172a', marginTop: 4 }}>{p.title}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* コード + 実行ボタン */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.2rem 1.4rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.7rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                {t(LABELS.ui.pythonCode, lang)}
+          {/* 分析中の状態表示 */}
+          {(analyzePhase === 'fetching' || analyzePhase === 'analyzing') && (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '2rem', textAlign: 'center' }}>
+              <div style={{ width: 40, height: 40, margin: '0 auto 1rem', border: '3px solid #e2e8f0', borderTopColor: ACCENT, borderRadius: '50%', animation: 'lab-spin 0.8s linear infinite' }} />
+              <style>{`@keyframes lab-spin { to { transform: rotate(360deg); } }`}</style>
+              <div style={{ fontFamily: serif, fontSize: '1rem', color: '#475569' }}>
+                {analyzePhase === 'fetching' ? t(LABELS.ui.fetchingPiece, lang) : t(LABELS.ui.analyzing, lang)}
               </div>
+              {selectedPiece && (
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '0.6rem', fontFamily: mono }}>
+                  {selectedPiece.composer} — {selectedPiece.title}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 分析エラー */}
+          {analyzePhase === 'error' && (
+            <div style={{ background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 12, padding: '1.2rem 1.4rem', color: '#92400e' }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>⚠️ {t(LABELS.ui.analysisFailed, lang)}</div>
+              {analyzeError && (
+                <pre style={{ fontSize: '0.78rem', fontFamily: mono, whiteSpace: 'pre-wrap', margin: 0, opacity: 0.7 }}>
+                  {analyzeError}
+                </pre>
+              )}
+            </div>
+          )}
+
+          {/* 分析結果（ScoreViewer で楽譜 + 全分析を美しく表示） */}
+          {analyzePhase === 'done' && analysisResult && musicxml && (
+            <>
+              {/* サマリーカード */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
+                <SummaryCard
+                  label={t({ ja: '判定された調性', en: 'Detected key', es: 'Tonalidad', ko: '판정된 조성', pt: 'Tonalidade', de: 'Erkannte Tonart' }, lang)}
+                  value={analysisResult.key}
+                  color={ACCENT}
+                />
+                <SummaryCard
+                  label={t({ ja: '確信度', en: 'Confidence', es: 'Confianza', ko: '신뢰도', pt: 'Confiança', de: 'Sicherheit' }, lang)}
+                  value={`${Math.round(Math.max(0, Math.min(1, analysisResult.key_confidence)) * 100)}%`}
+                  color="#0284c7"
+                />
+                <SummaryCard
+                  label={t({ ja: '抽出した和音', en: 'Chords', es: 'Acordes', ko: '화음', pt: 'Acordes', de: 'Akkorde' }, lang)}
+                  value={String(analysisResult.chord_count)}
+                  color={PLAY_GREEN}
+                />
+                <SummaryCard
+                  label={t({ ja: 'カデンツ', en: 'Cadences', es: 'Cadencias', ko: '종지', pt: 'Cadências', de: 'Kadenzen' }, lang)}
+                  value={String(analysisResult.cadences.length)}
+                  color={GOLD}
+                />
+              </div>
+
+              {/* ScoreViewer 統合 — 楽譜 + ローマ数字 + カデンツ + 転調 + 再生 */}
+              <ScoreViewer
+                musicxml={musicxml}
+                midiB64={analysisResult.midi_b64 ?? undefined}
+                chords={analysisResult.chords}
+                cadences={analysisResult.cadences}
+                modulations={analysisResult.modulations}
+                labels={scoreLabels}
+              />
+            </>
+          )}
+
+          {/* 開発者モード（デフォルト非表示・興味ある人だけ展開） */}
+          {pyodideStatus === 'ready' && (
+            <div style={{ marginTop: '2rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem' }}>
               <button
-                onClick={handleRun}
-                disabled={running || !musicxml}
+                onClick={() => setShowDevMode(!showDevMode)}
                 style={{
-                  background: running ? '#94a3b8' : (musicxml ? PLAY_GREEN : '#cbd5e1'),
-                  color: '#fff', border: 'none', borderRadius: 999,
-                  padding: '0.55rem 1.6rem', fontSize: '0.9rem', fontWeight: 600,
-                  cursor: running || !musicxml ? 'not-allowed' : 'pointer', fontFamily: sans,
+                  background: 'transparent', border: 'none', color: '#94a3b8',
+                  fontSize: '0.78rem', cursor: 'pointer', fontFamily: sans,
+                  padding: '0.4rem 0', textDecoration: 'underline', textUnderlineOffset: 4,
                 }}
               >
-                {running ? t(LABELS.ui.running, lang) : t(LABELS.ui.run, lang)}
+                {showDevMode ? t(LABELS.ui.devModeHide, lang) : t(LABELS.ui.devModeShow, lang)}
               </button>
-            </div>
-            <textarea
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              spellCheck={false}
-              style={{
-                width: '100%', minHeight: 280, padding: '1rem',
-                fontFamily: mono, fontSize: '0.85rem', lineHeight: 1.65,
-                border: '1px solid #cbd5e1', borderRadius: 8,
-                background: '#0f172a', color: '#e2e8f0',
-                resize: 'vertical', outline: 'none', boxSizing: 'border-box',
-                tabSize: 4,
-              }}
-            />
-          </div>
 
-          {/* 出力 */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.2rem 1.4rem' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.7rem' }}>
-              {t(LABELS.ui.output, lang)}
+              {showDevMode && (
+                <div style={{ marginTop: '1rem', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.2rem 1.4rem' }}>
+                  <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.8, margin: '0 0 1rem 0' }}>
+                    {t(LABELS.ui.devModeIntro, lang)}
+                  </p>
+                  <pre style={{
+                    background: '#0f172a', color: '#e2e8f0', padding: '1.2rem',
+                    borderRadius: 8, fontFamily: mono, fontSize: '0.78rem',
+                    lineHeight: 1.65, overflow: 'auto', maxHeight: 500,
+                    margin: 0, whiteSpace: 'pre',
+                  }}>
+{ANALYSIS_PYTHON_SCRIPT.trim()}
+                  </pre>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.8rem', fontFamily: mono }}>
+                    Pyodide {PYODIDE_VERSION} · music21 (CPython on WebAssembly)
+                  </div>
+                </div>
+              )}
             </div>
-            {!output && !errorOut && (
-              <div style={{ color: '#94a3b8', fontSize: '0.85rem', fontFamily: mono }}>
-                {t(LABELS.ui.pickFirst, lang)}
-              </div>
-            )}
-            {output && (
-              <pre style={{
-                background: '#f8fafc', padding: '1rem', borderRadius: 6,
-                fontFamily: mono, fontSize: '0.78rem', lineHeight: 1.65,
-                color: '#0f172a', overflow: 'auto', maxHeight: 500,
-                whiteSpace: 'pre-wrap', margin: 0, border: '1px solid #e2e8f0',
-              }}>{output}</pre>
-            )}
-            {errorOut && (
-              <pre style={{
-                background: '#fee2e2', padding: '1rem', borderRadius: 6,
-                fontFamily: mono, fontSize: '0.78rem', lineHeight: 1.65,
-                color: '#991b1b', overflow: 'auto', maxHeight: 250,
-                whiteSpace: 'pre-wrap', margin: '0.5rem 0 0', border: '1px solid #fecaca',
-              }}>{errorOut}</pre>
-            )}
-          </div>
-
-          {/* フッター情報 */}
-          <div style={{ fontSize: '0.7rem', color: '#94a3b8', textAlign: 'center', padding: '1rem', fontFamily: mono }}>
-            Pyodide {PYODIDE_VERSION} · music21 (CPython on WebAssembly) · score_xml is auto-injected
-          </div>
+          )}
         </section>
       )}
     </div>
   );
 }
 
+function SummaryCard({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12,
+      padding: '1rem 1.2rem', textAlign: 'center',
+    }}>
+      <div style={{ fontSize: '0.65rem', color: '#94a3b8', letterSpacing: '0.08em', marginBottom: 6, textTransform: 'uppercase', fontWeight: 600 }}>
+        {label}
+      </div>
+      <div style={{ fontFamily: serif, fontSize: '1.4rem', fontWeight: 600, color }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function loadPyodideScript(): Promise<void> {
-  // 既にロード済みなら即解決
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (typeof window !== 'undefined' && (window as any).loadPyodide) {
-    console.log('[Lab] Pyodide already loaded, skipping');
     return Promise.resolve();
   }
 
   return new Promise((resolve, reject) => {
-    // 既存タグがあれば再利用
     const existing = document.querySelector('script[data-pyodide-loader]') as HTMLScriptElement | null;
     if (existing) {
-      console.log('[Lab] Reusing existing Pyodide script tag');
       const onSuccess = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((window as any).loadPyodide) resolve();
@@ -591,14 +613,12 @@ function loadPyodideScript(): Promise<void> {
       };
       existing.addEventListener('load', onSuccess);
       existing.addEventListener('error', () => reject(new Error('Existing script tag fired error event')));
-      // 念のため、既に load 完了している可能性を確認
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((window as any).loadPyodide) resolve();
       return;
     }
 
     const url = `${PYODIDE_BASE_URL}pyodide.js`;
-    console.log('[Lab] Loading Pyodide script from:', url);
     const s = document.createElement('script');
     s.src = url;
     s.async = true;
@@ -606,7 +626,6 @@ function loadPyodideScript(): Promise<void> {
     s.dataset.pyodideLoader = 'true';
 
     const timeoutId = setTimeout(() => {
-      console.error('[Lab] Script load timeout after', SCRIPT_LOAD_TIMEOUT_MS, 'ms');
       reject(new Error(
         `Pyodide スクリプトのロードが ${SCRIPT_LOAD_TIMEOUT_MS / 1000} 秒以内に完了しませんでした。\n` +
         `URL: ${url}\n\n` +
@@ -620,17 +639,15 @@ function loadPyodideScript(): Promise<void> {
 
     s.onload = () => {
       clearTimeout(timeoutId);
-      console.log('[Lab] pyodide.js script loaded successfully');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((window as any).loadPyodide) {
         resolve();
       } else {
-        reject(new Error('Script loaded but window.loadPyodide is undefined. Possibly a CSP or version mismatch issue.'));
+        reject(new Error('Script loaded but window.loadPyodide is undefined.'));
       }
     };
-    s.onerror = (event) => {
+    s.onerror = () => {
       clearTimeout(timeoutId);
-      console.error('[Lab] Script onerror:', event);
       reject(new Error(`Pyodide script load failed: ${url}`));
     };
 
