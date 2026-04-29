@@ -13,8 +13,10 @@
  *   - 「すごい」「Great」式の励まし禁止
  *   - 全レッスン固定 URL でいつでも復習可能
  *
- * MVP 段階:
- *   - M0-01「五線と音名」だけが入れる状態
+ * MVP 段階 (2026-04-29 OMT v2 章順準拠に再番号化):
+ *   - M0-01「五線と音名」(Kuon オリジナル M0)
+ *   - M1-40「三和音の基本形と転回形」(OMT v2 Part I 第 17+19 章)
+ *   - M4-01「カデンツの種類」(OMT v2 Part IV 第 1 章)
  *   - 他のレッスンは「準備中」表示
  *   - 診断テストはプレースホルダー (Phase 2)
  */
@@ -64,7 +66,7 @@ const MODULES: ModuleDef[] = [
     title: { ja: '楽典基礎', en: 'Fundamentals', es: 'Fundamentos', ko: '악전 기초', pt: 'Fundamentos', de: 'Grundlagen' },
     desc: { ja: '記譜法・音程・音階・三和音・七の和音・ローマ数字・SATB・テクスチャ', en: 'Notation, intervals, scales, triads, seventh chords, Roman numerals, SATB, texture.', es: 'Notación, intervalos, escalas, tríadas, séptimas, cifrado romano, SATB.', ko: '기보법·음정·음계·삼화음·칠화음·로마숫자·SATB.', pt: 'Notação, intervalos, escalas, tríades, sétimas, cifras romanas, SATB.', de: 'Notation, Intervalle, Skalen, Dreiklänge, Septakkorde, Stufenanalyse, Vierstimmigkeit.' },
     lessonCount: 60, level: 'foundation',
-    availableLessons: ['l12'],
+    availableLessons: ['l40'], // OMT v2 Part I 第 17+19 章 (Triads + Inversion)
   },
   {
     id: 'm2', num: 'M2',
@@ -83,7 +85,7 @@ const MODULES: ModuleDef[] = [
     title: { ja: '機能和声', en: 'Diatonic Harmony', es: 'Armonía diatónica', ko: '기능 화성', pt: 'Harmonia diatônica', de: 'Diatonische Harmonik' },
     desc: { ja: 'カデンツ・V7・属前和音・装飾音・トニカイゼーション・転調', en: 'Cadences, V7, predominants, embellishing tones, tonicization, modulation.', es: 'Cadencias, V7, predominantes, ornamentos, tonicización, modulación.', ko: '카덴츠·V7·속전화음·장식음·전조.', pt: 'Cadências, V7, predominantes, ornamentos, tonicização.', de: 'Kadenzen, V7, Subdominanten, Verzierungen, Modulation.' },
     lessonCount: 55, level: 'intermediate',
-    availableLessons: ['l04'],
+    availableLessons: ['l01'], // OMT v2 Part IV 第 1 章 (Cadences intro)
   },
   {
     id: 'm5', num: 'M5',

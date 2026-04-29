@@ -251,7 +251,7 @@ const FEATURES: { num: string; title: L6; desc: L6 }[] = [
 const FAQS: { q: L6; a: L6 }[] = [
   {
     q: { ja: '今すぐ受講できますか？', en: 'Can I start right now?', es: '¿Puedo empezar ya?', ko: '지금 바로 수강할 수 있습니까?', pt: 'Posso começar agora?', de: 'Kann ich jetzt beginnen?' },
-    a: { ja: 'はい、開講中です。MVP として M0「五線と音名」、M1「三和音の基本形と転回形」、M4「カデンツの種類」が利用可能で、目次から自由に入れます。残り 550 レッスンは見切り発車で順次公開していきます。早期受講者は完成後の体系すべてを最初から享受できます。', en: 'Yes — enrollment is open. As an MVP, M0 "Staff and Pitch Names," M1 "Triads and Inversions," and M4 "Cadences" are live and accessible from the table of contents. The remaining 550 lessons roll out continuously. Early subscribers gain the full curriculum as it grows.', es: 'Sí — ya puedes empezar. M0, M1-12 y M4-04 están disponibles. El resto de las 550 lecciones se lanzará continuamente.', ko: '네 — 지금 수강 가능. M0·M1-12·M4-04 가 공개되어 목차에서 자유롭게 입장. 나머지 550 레슨은 순차 공개.', pt: 'Sim — já está aberto. M0, M1-12 e M4-04 disponíveis. As 550 lições restantes virão continuamente.', de: 'Ja — die Anmeldung ist offen. M0, M1-12 und M4-04 sind verfügbar. Die restlichen 550 Lektionen folgen fortlaufend.' },
+    a: { ja: 'はい、開講中です。MVP として M0-01「五線と音名」、M1-40「三和音の基本形と転回形」、M4-01「カデンツの種類」が利用可能で、目次から自由に入れます。残り 550 レッスンは Open Music Theory v2 の章順に従って順次公開していきます。早期受講者は完成後の体系すべてを最初から享受できます。', en: 'Yes — enrollment is open. As an MVP, M0-01 "Staff and Pitch Names," M1-40 "Triads and Inversions," and M4-01 "Cadences" are live and accessible from the table of contents. The remaining 550 lessons roll out following the Open Music Theory v2 chapter order. Early subscribers gain the full curriculum as it grows.', es: 'Sí — ya puedes empezar. M0-01, M1-40 y M4-01 están disponibles. El resto de las 550 lecciones se lanzará siguiendo el orden de capítulos de OMT v2.', ko: '네 — 지금 수강 가능. M0-01·M1-40·M4-01 이 공개되어 목차에서 자유롭게 입장. 나머지 550 레슨은 OMT v2 의 장 순서로 순차 공개.', pt: 'Sim — já está aberto. M0-01, M1-40 e M4-01 disponíveis. As 550 lições restantes virão seguindo a ordem dos capítulos do OMT v2.', de: 'Ja — die Anmeldung ist offen. M0-01, M1-40 und M4-01 sind verfügbar. Die restlichen 550 Lektionen folgen der Kapitelreihenfolge von OMT v2.' },
   },
   {
     q: { ja: '料金はいくらですか？', en: 'What does it cost?', es: '¿Cuánto cuesta?', ko: '요금은 얼마입니까?', pt: 'Quanto custa?', de: 'Was kostet es?' },
@@ -1327,7 +1327,7 @@ function FeatureCard({ feature: f, lang }: { feature: { num: string; title: L6; 
 }
 
 function DisabledCta({ lang, primary }: { lang: Lang; primary?: boolean }) {
-  // 2026-04-29 開講: MVP として M0-01 / M1-12 / M4-04 が公開済み。
+  // 2026-04-29 開講: MVP として M0-01 / M1-40 / M4-01 が公開済み (OMT v2 章順準拠)。
   // §47 の見切り発車戦略に従い、CTA を /theory ハブへの実リンクに切替。
   // 「MVP」バッジで開発初期であることを誠実に伝える。
   const label = t({

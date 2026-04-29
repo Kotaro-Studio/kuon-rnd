@@ -30,9 +30,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'classical/lab', // KUON CLASSICAL LAB - Pyodide + music21 in browser (world's first)
     // 🎓 Music Theory Suite (2026-04-29 ハブ + MVP レッスン公開)
     'theory', // KUON Music Theory Suite ハブ (Norton Critical Edition 型目次・16 モジュール)
-    'theory/m0/l01', // M0-01 五線と音名 (MVP 第 1 弾・Layer 1+2+3 + Pyodide 戦略実証)
-    'theory/m1/l12', // M1-12 三和音の基本形と転回形 (基本形・第 1 転回・第 2 転回)
-    'theory/m4/l04', // M4-04 カデンツの種類 (Living Score 本領発揮・PAC/IAC/HC/Deceptive 4 声体)
+    'theory/m0/l01', // M0-01 五線と音名 (Kuon オリジナル M0・OMT v2 範囲外)
+    'theory/m1/l40', // M1-40 三和音の基本形と転回形 (OMT v2 Part I 第 17+19 章)
+    'theory/m4/l01', // M4-01 カデンツの種類 (OMT v2 Part IV 第 1 章・機能和声導入)
     // 2026-04-26 開発保留: 'drum' (専門家監修パターン再構築待ち・URL は残存)
   ];
 
