@@ -35,8 +35,13 @@ const serif = '"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "Noto Ser
 const sans = '"Helvetica Neue", "Hiragino Kaku Gothic ProN", Arial, sans-serif';
 const mono = '"SF Mono", "Fira Code", Consolas, monospace';
 
-const PYODIDE_VERSION = 'v0.27.7';
+// Pyodide の最新安定版 (2026-01 リリース)
+const PYODIDE_VERSION = 'v0.29.3';
 const PYODIDE_BASE_URL = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/`;
+// バックアップ CDN：jsdelivr が落ちている場合に備えて
+const PYODIDE_FALLBACK_URL = `https://pyodide-cdn2.iodide.io/${PYODIDE_VERSION}/full/`;
+// スクリプトロードのタイムアウト
+const SCRIPT_LOAD_TIMEOUT_MS = 30000;
 
 type L6 = { ja: string; en: string; es: string; ko: string; pt: string; de: string };
 const t = (m: L6, lang: Lang): string => (m as Record<Lang, string>)[lang] ?? m.en;
@@ -557,25 +562,68 @@ function LabInner() {
 }
 
 function loadPyodideScript(): Promise<void> {
+  // 既にロード済みなら即解決
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof window !== 'undefined' && (window as any).loadPyodide) {
+    console.log('[Lab] Pyodide already loaded, skipping');
+    return Promise.resolve();
+  }
+
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector('script[data-pyodide-loader]');
+    // 既存タグがあれば再利用
+    const existing = document.querySelector('script[data-pyodide-loader]') as HTMLScriptElement | null;
     if (existing) {
-      // 既にロード済み（HMR 等）
+      console.log('[Lab] Reusing existing Pyodide script tag');
+      const onSuccess = () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((window as any).loadPyodide) resolve();
+        else reject(new Error('Script loaded but window.loadPyodide is not defined'));
+      };
+      existing.addEventListener('load', onSuccess);
+      existing.addEventListener('error', () => reject(new Error('Existing script tag fired error event')));
+      // 念のため、既に load 完了している可能性を確認
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).loadPyodide) resolve();
+      return;
+    }
+
+    const url = `${PYODIDE_BASE_URL}pyodide.js`;
+    console.log('[Lab] Loading Pyodide script from:', url);
+    const s = document.createElement('script');
+    s.src = url;
+    s.async = true;
+    s.crossOrigin = 'anonymous';
+    s.dataset.pyodideLoader = 'true';
+
+    const timeoutId = setTimeout(() => {
+      console.error('[Lab] Script load timeout after', SCRIPT_LOAD_TIMEOUT_MS, 'ms');
+      reject(new Error(
+        `Pyodide スクリプトのロードが ${SCRIPT_LOAD_TIMEOUT_MS / 1000} 秒以内に完了しませんでした。\n` +
+        `URL: ${url}\n\n` +
+        `考えられる原因:\n` +
+        `1. ブラウザ拡張機能 (uBlock Origin 等) が cdn.jsdelivr.net をブロックしている\n` +
+        `2. ネットワークが CDN へのアクセスを拒否している (会社/学校 Proxy)\n` +
+        `3. Service Worker のキャッシュが破損している\n\n` +
+        `対処: シークレットウィンドウで開く / 拡張機能を一時無効化 / 別ネットワーク`
+      ));
+    }, SCRIPT_LOAD_TIMEOUT_MS);
+
+    s.onload = () => {
+      clearTimeout(timeoutId);
+      console.log('[Lab] pyodide.js script loaded successfully');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((window as any).loadPyodide) {
         resolve();
-        return;
+      } else {
+        reject(new Error('Script loaded but window.loadPyodide is undefined. Possibly a CSP or version mismatch issue.'));
       }
-      existing.addEventListener('load', () => resolve());
-      existing.addEventListener('error', () => reject(new Error('Failed to load Pyodide script')));
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = `${PYODIDE_BASE_URL}pyodide.js`;
-    s.async = true;
-    s.dataset.pyodideLoader = 'true';
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error(`Failed to load Pyodide from ${PYODIDE_BASE_URL}`));
+    };
+    s.onerror = (event) => {
+      clearTimeout(timeoutId);
+      console.error('[Lab] Script onerror:', event);
+      reject(new Error(`Pyodide script load failed: ${url}`));
+    };
+
     document.head.appendChild(s);
   });
 }
