@@ -1,0 +1,170 @@
+import type { Metadata } from 'next';
+
+const TITLE = 'KUON Music Theory Suite — 世界最高峰の音楽理論オンライン学習 | 楽典・和声・対位法・ソルフェージュ・聴音 | 16モジュール 553レッスン | 空音開発';
+const TITLE_EN = 'KUON Music Theory Suite — The World\'s Most Comprehensive Online Music Theory Course | 16 Modules · 553 Lessons | Harmony · Counterpoint · Solfège · Ear Training | Kuon R&D';
+const DESCRIPTION = 'バッハ・モーツァルトを読み解く本格カリキュラム。Open Music Theory v2(ケンブリッジ大ほか執筆) を骨格に、楽典基礎から音大卒業レベルまで 16 モジュール 553 レッスンで完全網羅。コールユーブンゲン全 87 番をインタラクティブ化、ローマ数字分析・対位法・ソルフェージュ・聴音・視唱を一気通貫で。診断テスト + SRS (科学的復習) + 模擬試験 + 多言語対応。Prelude プラン (¥780/月) から無制限利用。準備中のため事前登録受付中。';
+const DESCRIPTION_EN = 'Master classical music from Bach to Brahms. Built on Open Music Theory v2 (Cambridge / GMU faculty) — 16 modules, 553 lessons covering everything from fundamentals to graduate-level analysis. The world\'s first interactive Coleübungen (all 87 lessons), Roman numeral analysis, counterpoint, solfège, ear training, sight singing — fully integrated. Diagnostic test + FSRS spaced repetition + mock exams (Tokyo Geidai, ABRSM, AP). Available from Prelude plan. Currently in preparation — early access registration open.';
+
+export const metadata: Metadata = {
+  metadataBase: new URL('https://kuon-rnd.com'),
+  title: TITLE,
+  description: DESCRIPTION,
+  keywords: [
+    // ─── 日本語 ───
+    'KUON Music Theory Suite', 'KUON THEORY', '空音開発 楽典', '空音開発 音楽理論',
+    '楽典オンライン', '楽典アプリ', '音楽理論 オンライン', '音楽理論 アプリ',
+    '音楽理論 学習', '音楽理論 サブスク', '楽典 サブスクリプション', '楽典 ドリル',
+    '楽典 練習問題', '音楽理論 教科書', '音楽理論 入門', '楽典 中級', '楽典 上級',
+    '音大受験 楽典', '音大予備校 楽典', '音大受験 ソルフェージュ', '音大受験 聴音',
+    '音大受験対策', '東京藝大 楽典', '東京藝大 入試', '芸大 楽典', '芸大 ソルフェージュ',
+    '桐朋学園 楽典', '国立音大 楽典', '武蔵野音大 楽典', '昭和音大 楽典',
+    '和声学', '和声 入門', '和声学 オンライン', '和声 ローマ数字', 'ローマ数字分析',
+    'ローマ数字 楽典', '機能和声', '機能和声 入門', '和音記号', '7の和音',
+    '対位法', '対位法 入門', '対位法 アプリ', 'パレストリーナ様式', 'バッハ コラール',
+    'コールユーブンゲン', 'コールユーブンゲン アプリ', 'コールユーブンゲン オンライン',
+    'ポッツォーリ', 'ボーナ', 'ヒンデミット', '視唱', '聴音', '聴音 練習', '聴音 アプリ',
+    '聴音 オンライン', '視唱 オンライン', '視唱 練習', '内的聴覚', '相対音感',
+    'ソルフェージュ', 'ソルフェージュ アプリ', 'ソルフェージュ オンライン',
+    'ソルフェージュ 移動ド', 'ソルフェージュ 固定ド', '移動ド', '固定ド',
+    '音楽史', '音楽様式', '楽式', 'ソナタ形式', '楽曲分析', 'シェンカー分析',
+    'ジャズ理論', 'ポップ和声', '20世紀音楽理論', '12音技法', 'ピッチクラス集合',
+    'オーケストレーション', '編曲', '作曲 入門', '対位法 課題', '和声 課題',
+    'リズム聴音', '旋律聴音', '4声聴音', '和声聴音', 'カデンツ', '転調',
+    '音大生 アプリ', '音大生 おすすめ', '音楽学生 アプリ', 'プロ志望 音楽',
+    '社会人 音楽 学習', '大人 音楽 学習', '独学 音楽理論', 'ブラウザ 音楽理論',
+    'AI 音楽理論', '音楽理論 ゲーミフィケーション', '音楽理論 SRS',
+
+    // ─── English ───
+    'music theory online', 'music theory app', 'music theory course',
+    'online music theory', 'best music theory app', 'music theory subscription',
+    'comprehensive music theory', 'music theory curriculum', 'music theory textbook online',
+    'harmony online', 'harmony course', 'tonal harmony', 'functional harmony',
+    'Roman numeral analysis', 'roman numeral analysis online', 'voice leading',
+    'voice leading checker', 'four-part writing', 'SATB harmony',
+    'counterpoint online', 'species counterpoint', 'Palestrina counterpoint',
+    'Bach chorales', 'fugue analysis', 'invertible counterpoint',
+    'ear training online', 'ear training app', 'aural skills', 'aural training',
+    'sight singing online', 'sight singing app', 'solfège', 'solfege',
+    'movable do', 'fixed do', 'do re mi', 'sol-fa', 'tonic sol-fa',
+    'melodic dictation', 'rhythmic dictation', 'harmonic dictation',
+    'chord identification', 'interval ear training', 'chord progression ear training',
+    'AP Music Theory', 'AP Music Theory prep', 'ABRSM theory', 'ABRSM grade 8 theory',
+    'Royal Conservatory theory', 'RCM theory', 'Trinity theory',
+    'conservatory prep', 'music college prep', 'music school audition prep',
+    'Juilliard prep', 'Berklee theory', 'Manhattan School prep',
+    'Open Music Theory', 'Open Music Theory v2', 'OMT v2',
+    'music theory for adults', 'adult music learning', 'serious amateur music',
+    'professional music education', 'music theory self study', 'music theory online learning',
+    'spaced repetition music', 'music theory SRS', 'FSRS music theory',
+    'classical music analysis', 'tonal music analysis', 'Bach analysis',
+    'Mozart analysis', 'Beethoven analysis', 'Schenkerian analysis',
+    'jazz theory', 'jazz harmony', 'pop harmony', 'modal harmony',
+    'twelve-tone music', 'serialism', 'pitch class set theory', 'atonal analysis',
+    'orchestration', 'arrangement', 'composition course', 'figured bass',
+    'music theory diagnostic test', 'music theory placement test',
+    'mock music theory exam', 'music theory practice problems',
+
+    // ─── Español ───
+    'teoría musical online', 'teoría musical curso', 'teoría musical app',
+    'aprender teoría musical', 'curso de teoría musical', 'teoría musical España',
+    'armonía musical', 'armonía tonal', 'armonía clásica', 'cifrado romano',
+    'análisis con números romanos', 'conducción de voces', 'escritura a cuatro voces',
+    'contrapunto', 'contrapunto especies', 'contrapunto Palestrina', 'contrapunto Bach',
+    'solfeo', 'solfeo online', 'solfeo móvil', 'solfeo fijo', 'do móvil', 'do fijo',
+    'entrenamiento auditivo', 'dictado musical', 'dictado melódico', 'dictado armónico',
+    'lectura a primera vista', 'canto a primera vista', 'audición musical',
+    'preparación conservatorio', 'examen conservatorio España', 'oposiciones música',
+    'oposiciones secundaria música', 'preparación grado profesional música',
+    'teoría jazz', 'teoría pop', 'análisis musical', 'forma musical',
+    'orquestación', 'composición curso', 'cifrado armónico', 'modulación',
+
+    // ─── 한국어 ───
+    '음악 이론', '음악 이론 온라인', '음악 이론 앱', '음악 이론 강의',
+    '화성학', '화성학 온라인', '화성학 강의', '대위법', '대위법 강의',
+    '솔페지오', '솔페지오 온라인', '시창', '청음', '청음 훈련', '시창 청음',
+    '음대 입시', '음대 입시 화성학', '한국예술종합학교 입시', '예종 입시',
+    '서울대 음대 입시', '서울대 음악 입시', '음대 시험 대비', '음대 화성학 학습',
+    '이동도', '고정도', '계이름', '음악 이론 자습', '음악 이론 인강',
+    '재즈 화성', '음악 분석', '바흐 코랄', '모차르트 분석', '베토벤 분석',
+    '12음 기법', '20세기 음악', '음악 이론 SRS', '음악 이론 간격 반복',
+
+    // ─── Português ───
+    'teoria musical online', 'teoria musical curso', 'aprender teoria musical',
+    'harmonia musical', 'harmonia tonal', 'harmonia funcional', 'cifras romanas',
+    'análise harmônica', 'condução de vozes', 'contraponto', 'contraponto espécies',
+    'solfejo', 'solfejo móvel', 'solfejo fixo', 'percepção musical',
+    'ditado musical', 'ditado melódico', 'ditado harmônico', 'leitura à primeira vista',
+    'preparação conservatório', 'concurso público música', 'concurso música',
+    'vestibular música', 'teoria musical Brasil', 'teoria musical Portugal',
+    'análise musical', 'composição curso', 'orquestração curso', 'modulação',
+
+    // ─── Deutsch ───
+    'Musiktheorie online', 'Musiktheorie Kurs', 'Musiktheorie lernen',
+    'Musiklehre', 'Musiklehre online', 'Tonsatz', 'Tonsatz online',
+    'Harmonielehre', 'Harmonielehre online', 'Funktionsharmonik',
+    'Stufentheorie', 'Stimmführung', 'Vierstimmiger Satz',
+    'Kontrapunkt', 'Spezies-Kontrapunkt', 'Palestrina Kontrapunkt', 'Bach Kontrapunkt',
+    'Gehörbildung', 'Gehörbildung online', 'Solmisation', 'bewegliches Do', 'festes Do',
+    'Diktat Musik', 'melodisches Diktat', 'harmonisches Diktat', 'Blattsingen',
+    'Hochschulprüfung Musik', 'Aufnahmeprüfung Musik', 'Konservatorium Vorbereitung',
+    'Musikhochschule Berlin', 'Hochschule für Musik Wien', 'Musikuniversität',
+    'Coleübungen', 'Coleübungen online', 'Coleübungen interaktiv',
+    'Pozzoli', 'Bona', 'Hindemith Solfege', 'Kodály-Methode',
+    'Jazz Harmonielehre', 'Pop Harmonielehre', 'Werkanalyse', 'Schenker-Analyse',
+    'Zwölftontechnik', 'Orchestration', 'Komposition Kurs',
+  ],
+  authors: [{ name: 'Kotaro Asahina (朝比奈幸太郎)', url: 'https://kuon-rnd.com/profile' }],
+  creator: 'Kuon R&D / 空音開発',
+  publisher: 'Kuon R&D',
+  category: 'Education',
+  alternates: {
+    canonical: 'https://kuon-rnd.com/theory-lp',
+    languages: {
+      'ja-JP': 'https://kuon-rnd.com/theory-lp',
+      'en-US': 'https://kuon-rnd.com/theory-lp',
+      'es-ES': 'https://kuon-rnd.com/theory-lp',
+      'ko-KR': 'https://kuon-rnd.com/theory-lp',
+      'pt-BR': 'https://kuon-rnd.com/theory-lp',
+      'de-DE': 'https://kuon-rnd.com/theory-lp',
+    },
+  },
+  openGraph: {
+    type: 'website',
+    title: TITLE_EN,
+    description: DESCRIPTION_EN,
+    url: 'https://kuon-rnd.com/theory-lp',
+    siteName: 'Kuon R&D',
+    locale: 'ja_JP',
+    alternateLocale: ['en_US', 'es_ES', 'ko_KR', 'pt_BR', 'de_DE'],
+    images: [
+      {
+        url: 'https://kuon-rnd.com/og-theory.png',
+        width: 1200,
+        height: 630,
+        alt: 'KUON Music Theory Suite — 16 modules, 553 lessons',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE_EN,
+    description: DESCRIPTION_EN,
+    images: ['https://kuon-rnd.com/og-theory.png'],
+    creator: '@kotaro_asahina',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+};
+
+export default function TheoryLpLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}

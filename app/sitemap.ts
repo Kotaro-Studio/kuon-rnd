@@ -52,6 +52,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 🎼 作曲・分析 (2026-04-28 追加)
     'classical-lp', // KUON CLASSICAL ANALYSIS Landing Page
     'classical/lab-lp', // KUON CLASSICAL LAB Landing Page (Pyodide world's first)
+    // 🎓 Music Theory Suite (2026-04-29 LP 先行公開・MVP 開発中)
+    'theory-lp', // KUON Music Theory Suite Landing Page (16 modules · 553 lessons · OMT v2 base)
     // 2026-04-26 開発保留: 'drum-lp' (URL は残存・サイトマップには非掲載)
     // 2026-04-27 公開停止: 'separator-lp' (Cloud Run 単体運用が安定しないため
     //   将来 Replicate API 等への乗せ替えと共に再公開予定。アプリ本体コードは温存)
