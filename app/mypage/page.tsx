@@ -8,11 +8,16 @@ import type { Lang } from '@/context/LangContext';
 import { MyAppsSection } from '@/components/MyAppsSection';
 import { MemberJourneyCard } from '@/components/MemberJourneyCard';
 import { FavoritesCard } from '@/components/FavoritesCard';
+import { MypageHero } from '@/components/mypage/MypageHero';
 import type { PlanTier } from '@/app/lib/pricing-display';
 
-const serif = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
-const sans = '"Helvetica Neue", Arial, sans-serif';
+// CLAUDE.md §48「余白の知性」基準のタイポグラフィ
+// 主見出し: Shippori Mincho（楽譜の上品な余白を継承）
+// データ表示: Helvetica Neue（Swiss モダニズムの冷静さ）
+const serif = '"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
+const sans = '"Helvetica Neue", "Hiragino Kaku Gothic ProN", Arial, sans-serif';
 const ACCENT = '#0284c7';
+const PAPER_BG = '#fafaf7'; // 和紙的背景（青白い f8fafc から変更・大人の落ち着き）
 
 type L3 = Partial<Record<Lang, string>> & { en: string };
 const t3 = (m: L3, lang: Lang) => m[lang] ?? m.en;
@@ -580,28 +585,33 @@ export default function MyPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', padding: 'clamp(2rem, 5vw, 4rem) 1rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: PAPER_BG }}>
+      {/* ─── 余白の知性ハブ（CLAUDE.md §48 確定版・空音開発の魂が宿る場所） ─── */}
+      {/* 時刻挨拶 / 表示モード切替 / デイリーパルス / Theory・Lab・Achievements サマリー / 作曲家の言葉 */}
+      <MypageHero
+        userName={user.name || (user.email ? user.email.split('@')[0] : '')}
+        userEmail={user.email || ''}
+        userPlan={user.planTier || user.plan || 'free'}
+      />
 
-        {/* ─── Header ─── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-          <h1 style={{ fontFamily: serif, fontSize: 'clamp(1.3rem, 3vw, 1.6rem)', fontWeight: 400, color: '#111', letterSpacing: '0.1em' }}>
-            {t3({ ja: 'マイページ', en: 'My Page', es: 'Mi Pagina' }, lang)}
-          </h1>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {user.email === '369@kotaroasahina.com' && (
-              <Link href="/admin" style={{ fontFamily: sans, fontSize: '0.75rem', color: '#7c3aed', background: 'none', border: '1px solid #7c3aed', borderRadius: 20, padding: '0.4rem 0.8rem', textDecoration: 'none' }}>
-                Admin
-              </Link>
-            )}
-            <button onClick={handleLogout} style={{ fontFamily: sans, fontSize: '0.8rem', color: '#999', background: 'none', border: '1px solid #ddd', borderRadius: 20, padding: '0.4rem 1rem', cursor: 'pointer' }}>
-              {t3({ ja: 'ログアウト', en: 'Log Out', es: 'Cerrar sesion' }, lang)}
-            </button>
-          </div>
+      {/* ─── 残りの既存セクション（プロフィール・お気に入り・ロール選択など） ─── */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(1rem, 3vw, 2rem) 1rem clamp(2rem, 5vw, 4rem)' }}>
+
+        {/* ─── 静かなアクションバー（Admin・ログアウト） ─── */}
+        {/* Hero の後、控えめな位置に配置。子供っぽくない大人のための機能ボタン。 */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: 'clamp(1rem, 2vw, 1.5rem)' }}>
+          {user.email === '369@kotaroasahina.com' && (
+            <Link href="/admin" style={{ fontFamily: sans, fontSize: '0.72rem', color: '#7c3aed', background: 'none', border: '1px solid #7c3aed', borderRadius: 20, padding: '0.35rem 0.8rem', textDecoration: 'none', letterSpacing: '0.04em' }}>
+              Admin
+            </Link>
+          )}
+          <button onClick={handleLogout} style={{ fontFamily: sans, fontSize: '0.72rem', color: '#94a3b8', background: 'none', border: '1px solid #d4d0c4', borderRadius: 20, padding: '0.35rem 1rem', cursor: 'pointer', letterSpacing: '0.04em' }}>
+            {t3({ ja: 'ログアウト', en: 'Log Out', es: 'Cerrar sesión' }, lang)}
+          </button>
         </div>
 
-        {/* ─── ★IQ180 ブランド定着フック★ MemberJourneyCard (2026-04-26) ─── */}
-        {/* 時刻別挨拶 + ストリーク + メンバー番号 + 在籍期間 + 今日の名言 */}
+        {/* ─── 既存 MemberJourneyCard（メンバー番号・在籍期間・名言） ─── */}
+        {/* MypageHero と内容重複は意図的：MemberJourney は「Kuon メンバーとしての定着」、Hero は「今日の状況」 */}
         <MemberJourneyCard
           userName={user.name || ''}
           userEmail={user.email || ''}
