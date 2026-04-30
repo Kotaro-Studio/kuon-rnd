@@ -20,7 +20,7 @@ type VoteResp = 'yes' | 'maybe' | 'no';
 interface Member { email: string; name: string; role: string; section?: string; instrument?: string; }
 interface Ensemble { id: string; name: string; type: string; members: Member[]; ownerEmail: string; }
 interface Cand { id: string; start: string; end: string; location?: string; notes?: string; }
-interface Event { id: string; ensembleId: string; title: string; description?: string; candidates: Cand[]; status: string; lockedCandidateId?: string; createdBy: string; }
+interface Event { id: string; ensembleId: string; title: string; description?: string; candidates: Cand[]; status: string; lockedCandidateId?: string; createdBy: string; seriesId?: string; seriesIndex?: number; seriesTotal?: number; attendance?: 'all-required'|'sections'; requiredSections?: string[]; }
 interface Vote { voterId: string; voterName: string; voterEmail: string; isGuest: boolean; responses: Record<string, VoteResp>; comment?: string; }
 
 type L = Partial<Record<string, string>> & { en: string };
@@ -133,6 +133,19 @@ function EventView({ id }: { id: string }) {
           <Link href={`/tutti/ensembles/${event.ensembleId}`} style={{ fontFamily: sans, fontSize: '0.78rem', color: INK_FAINT, textDecoration: 'none' }}>← {ensemble.name}</Link>
         </div>
         <h1 style={{ fontFamily: serif, fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', margin: '0 0 0.4rem', fontWeight: 400, letterSpacing: '0.04em' }}>{event.title}</h1>
+        {/* シリーズ・セクションバッジ */}
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.7rem' }}>
+          {event.seriesId && event.seriesIndex && event.seriesTotal && (
+            <span style={{ fontFamily: sans, fontSize: '0.72rem', color: ACCENT, padding: '0.2rem 0.6rem', background: HIGHLIGHT, border: `1px solid ${ACCENT}33`, borderRadius: 999, letterSpacing: '0.05em' }}>
+              🔁 {t({ ja: 'シリーズ', en: 'Series', es: 'Serie', de: 'Serie', ko: '시리즈', pt: 'Série' }, lang)} {event.seriesIndex} / {event.seriesTotal}
+            </span>
+          )}
+          {event.attendance === 'sections' && event.requiredSections && event.requiredSections.length > 0 && (
+            <span style={{ fontFamily: sans, fontSize: '0.72rem', color: '#7e22ce', padding: '0.2rem 0.6rem', background: '#f3e8ff', borderRadius: 999, letterSpacing: '0.05em' }}>
+              👥 {t({ ja: '招集', en: 'Required', es: 'Requerido', de: 'Erforderlich', ko: '필수', pt: 'Necessário' }, lang)}: {event.requiredSections.join(', ')}
+            </span>
+          )}
+        </div>
         {event.description && <p style={{ fontFamily: sans, fontSize: '0.9rem', color: INK_FAINT, margin: '0 0 1.5rem', lineHeight: 1.7 }}>{event.description}</p>}
 
         {errorMsg && <div style={{ padding: '0.7rem 1rem', background: '#f8e6e0', color: '#7a2f1c', fontFamily: sans, fontSize: '0.85rem', marginBottom: '1rem' }}>{errorMsg}</div>}

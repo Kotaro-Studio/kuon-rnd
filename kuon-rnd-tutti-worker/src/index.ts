@@ -68,6 +68,8 @@ interface EventCandidate {
   notes?: string;
 }
 
+type RepeatPattern = 'weekly' | 'biweekly' | 'monthly';
+
 interface RehearsalEvent {
   id: string;
   ensembleId: string;
@@ -83,6 +85,10 @@ interface RehearsalEvent {
   cancelledAt?: string;
   pollDeadline?: string;
   publicEventId?: string;                    // §31 へ昇格時の events ID
+  // 繰り返しイベント (シリーズ) 用
+  seriesId?: string;                         // 同じシリーズに属するイベントを束ねる ID
+  seriesIndex?: number;                      // シリーズ内での順番 (1-based)
+  seriesTotal?: number;                      // シリーズの総回数
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -382,7 +388,7 @@ app.post('/api/tutti/ensembles/:id/invite', requireAuth, async (c) => {
 // EVENTS (リハーサル・本番)
 // ============================================================================
 
-// POST /api/tutti/events — 新規イベント (候補日提示)
+// POST /api/tutti/events — 新規イベント (単発 or 繰り返し)
 app.post('/api/tutti/events', requireAuth, async (c) => {
   try {
     const userEmail = c.get('userEmail');
@@ -395,6 +401,8 @@ app.post('/api/tutti/events', requireAuth, async (c) => {
       requiredSections?: string[];
       optionalAttendees?: string[];
       pollDeadline?: string;
+      // 繰り返しイベント
+      repeat?: { pattern: RepeatPattern; count: number };
     }>();
 
     const ensRaw = await c.env.TUTTI.get(`ensembles:${body.ensembleId}`);
@@ -409,6 +417,69 @@ app.post('/api/tutti/events', requireAuth, async (c) => {
       return c.json({ error: 'At least one candidate slot required' }, 400);
     }
 
+    // ─── 繰り返しイベントの分岐 ───
+    if (body.repeat && body.repeat.count > 1) {
+      // シリーズ生成: 最初の候補をベースに、N 回分のイベントを作成
+      // 各イベントは status='locked' で固定時刻のみ提示・メンバーは出席 RSVP のみ
+      if (body.candidates.length !== 1) {
+        return c.json({ error: 'Repeating events must have exactly 1 candidate' }, 400);
+      }
+      const seriesId = generateId();
+      const total = Math.min(Math.max(body.repeat.count, 2), 52); // 最大 52 回 (1 年分)
+      const baseStart = new Date(body.candidates[0].start);
+      const baseEnd = new Date(body.candidates[0].end);
+      const baseLocation = body.candidates[0].location;
+      const baseNotes = body.candidates[0].notes;
+      const intervalDays = body.repeat.pattern === 'weekly' ? 7 : body.repeat.pattern === 'biweekly' ? 14 : 30;
+      const now = new Date().toISOString();
+      const createdEvents: RehearsalEvent[] = [];
+
+      for (let i = 0; i < total; i++) {
+        const eventId = generateId();
+        const offsetMs = intervalDays * i * 24 * 60 * 60 * 1000;
+        const startThis = new Date(baseStart.getTime() + offsetMs);
+        const endThis = new Date(baseEnd.getTime() + offsetMs);
+        const candidateId = generateShortId();
+        const event: RehearsalEvent = {
+          id: eventId,
+          ensembleId: body.ensembleId,
+          title: body.title.slice(0, 200),
+          description: body.description?.slice(0, 2000),
+          candidates: [{ id: candidateId, start: startThis.toISOString(), end: endThis.toISOString(), location: baseLocation, notes: baseNotes }],
+          status: 'locked', // 時刻は固定・出席 RSVP のみ可能
+          lockedCandidateId: candidateId,
+          lockedAt: now,
+          attendance: body.attendance || 'all-required',
+          requiredSections: body.requiredSections,
+          optionalAttendees: body.optionalAttendees,
+          seriesId,
+          seriesIndex: i + 1,
+          seriesTotal: total,
+          createdBy: userEmail,
+          createdAt: now,
+          updatedAt: now,
+        };
+        await c.env.TUTTI.put(`events:${eventId}`, JSON.stringify(event), { expirationTtl: ENSEMBLE_TTL });
+        createdEvents.push(event);
+      }
+
+      // ensemble の event index に新規追加 (新しい順)
+      const idxKey = `events-by-ensemble:${body.ensembleId}`;
+      const idxRaw = await c.env.TUTTI.get(idxKey);
+      const ids: string[] = idxRaw ? JSON.parse(idxRaw) : [];
+      // シリーズは時系列順に並ぶよう、reverse で挿入
+      const newIds = createdEvents.map((e) => e.id);
+      await c.env.TUTTI.put(idxKey, JSON.stringify([...newIds, ...ids]), { expirationTtl: ENSEMBLE_TTL });
+
+      // 通知メール (シリーズの初回イベントだけ送信して負荷軽減)
+      if (c.env.RESEND_API_KEY && createdEvents[0]) {
+        c.executionCtx.waitUntil(sendSeriesNotifyEmails(c.env, ensemble, createdEvents));
+      }
+
+      return c.json({ ok: true, events: createdEvents, seriesId });
+    }
+
+    // ─── 単発イベント (従来通り) ───
     const now = new Date().toISOString();
     const eventId = generateId();
     const event: RehearsalEvent = {
@@ -434,14 +505,12 @@ app.post('/api/tutti/events', requireAuth, async (c) => {
     };
     await c.env.TUTTI.put(`events:${eventId}`, JSON.stringify(event), { expirationTtl: ENSEMBLE_TTL });
 
-    // ensemble 単位の event index
     const idxKey = `events-by-ensemble:${body.ensembleId}`;
     const idxRaw = await c.env.TUTTI.get(idxKey);
     const ids: string[] = idxRaw ? JSON.parse(idxRaw) : [];
     ids.unshift(eventId);
     await c.env.TUTTI.put(idxKey, JSON.stringify(ids), { expirationTtl: ENSEMBLE_TTL });
 
-    // メンバー全員に投票依頼メール送信 (Guest トークンも生成)
     if (c.env.RESEND_API_KEY) {
       c.executionCtx.waitUntil(sendPollInviteEmails(c.env, ensemble, event));
     }
@@ -506,7 +575,8 @@ app.post('/api/tutti/events/:id/vote', requireAuth, async (c) => {
   const raw = await c.env.TUTTI.get(`events:${id}`);
   if (!raw) return c.json({ error: 'Not found' }, 404);
   const event: RehearsalEvent = JSON.parse(raw);
-  if (event.status !== 'polling') return c.json({ error: 'Poll closed' }, 400);
+  // polling: 候補時刻投票 / locked: 出席 RSVP / cancelled: 不可
+  if (event.status === 'cancelled') return c.json({ error: 'Event cancelled' }, 400);
 
   const ensRaw = await c.env.TUTTI.get(`ensembles:${event.ensembleId}`);
   if (!ensRaw) return c.json({ error: 'Ensemble missing' }, 404);
@@ -652,7 +722,7 @@ app.post('/api/tutti/guest-vote/:token', requireBearer, async (c) => {
   const eventRaw = await c.env.TUTTI.get(`events:${guestToken.eventId}`);
   if (!eventRaw) return c.json({ error: 'Event not found' }, 404);
   const event: RehearsalEvent = JSON.parse(eventRaw);
-  if (event.status !== 'polling') return c.json({ error: 'Poll closed' }, 400);
+  if (event.status === 'cancelled') return c.json({ error: 'Event cancelled' }, 400);
 
   const voterId = `guest:${guestToken.email}`;
   const vote: Vote = {
@@ -817,6 +887,35 @@ ${event.description ? `<p>${event.description}</p>` : ''}
       });
     } catch (e) {
       console.error('poll mail error:', e);
+    }
+  }
+}
+
+async function sendSeriesNotifyEmails(env: Env, ensemble: Ensemble, events: RehearsalEvent[]): Promise<void> {
+  if (events.length === 0) return;
+  const first = events[0];
+  const total = events.length;
+  const occurrencesHtml = events.map((e) => {
+    const c = e.candidates[0];
+    const start = new Date(c.start).toLocaleString('ja-JP');
+    return `<li>${start}${c.location ? ` (${c.location})` : ''}</li>`;
+  }).join('');
+  for (const m of ensemble.members) {
+    try {
+      await sendEmail(env, {
+        to: m.email,
+        subject: `[シリーズ予約] ${first.title} (全 ${total} 回) — ${ensemble.name}`,
+        html: `<p>${m.name} 様</p>
+<p>${ensemble.name} の繰り返しリハーサル予約が登録されました。</p>
+<p><strong>${first.title}</strong> (全 ${total} 回)</p>
+<p>予定一覧:</p>
+<ul>${occurrencesHtml}</ul>
+<p>各回の出席可否は KUON TUTTI でご回答ください:<br>
+<a href="https://kuon-rnd.com/tutti/ensembles/${ensemble.id}">https://kuon-rnd.com/tutti/ensembles/${ensemble.id}</a></p>
+<p>— KUON TUTTI / 空音開発</p>`,
+      });
+    } catch (e) {
+      console.error('series mail error:', e);
     }
   }
 }
