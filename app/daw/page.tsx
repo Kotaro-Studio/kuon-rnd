@@ -349,6 +349,17 @@ interface Region {
   fadeOutSec: number;
 }
 
+interface TrackEQ {
+  low: number;     // -12 to +12 dB (low shelf @ 250 Hz)
+  mid: number;     // -12 to +12 dB (peaking @ 1 kHz, Q=1)
+  high: number;    // -12 to +12 dB (high shelf @ 4 kHz)
+}
+
+interface TrackReverb {
+  mix: number;     // 0 to 1 (dry/wet)
+  size: number;    // 0 to 1 (decay 0.3s ~ 4s)
+}
+
 interface Track {
   id: string;
   name: string;
@@ -357,6 +368,9 @@ interface Track {
   pan: number;               // -1 (L) to +1 (R)
   mute: boolean;
   solo: boolean;
+  armed: boolean;            // 録音待機 (true = mic active + VU 表示)
+  eq: TrackEQ;               // 3 バンド EQ
+  reverb: TrackReverb;       // シンプルリバーブ
   regions: Region[];
 }
 
@@ -404,6 +418,15 @@ function DawApp() {
   const playStartTimeRef = useRef(0);
   const playRafRef = useRef<number | null>(null);
 
+  // ── 録音待機 (ARM) + VU メーター ──
+  const [armedTrackId, setArmedTrackId] = useState<string | null>(null);
+  const [vuLevels, setVuLevels] = useState<{ peak: number; rms: number }>({ peak: -Infinity, rms: -Infinity });
+  const [mixerOpen, setMixerOpen] = useState(false);
+  const monitorStreamRef = useRef<MediaStream | null>(null);
+  const monitorAnalyserRef = useRef<AnalyserNode | null>(null);
+  const monitorSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const monitorRafRef = useRef<number | null>(null);
+
   const c = THEME[theme];
 
   // Theme persistence
@@ -444,6 +467,7 @@ function DawApp() {
   // ============================================================
   const addTrack = () => {
     if (project.tracks.length >= 4) return;
+    setMixerOpen(true); // トラック追加と同時にミキサーを表示
     setProject((p) => ({
       ...p,
       tracks: [...p.tracks, makeTrack(p.tracks.length)],
@@ -496,13 +520,51 @@ function DawApp() {
   };
 
   // ============================================================
-  // Recording (Phase 1: streaming write to IndexedDB every 250ms)
+  // 録音待機 (ARM) — マイクを開いて AnalyserNode で VU メーター駆動
   // ============================================================
-  // クラッシュ耐性: 250ms 毎に chunk を即 IndexedDB へ書き込み。
-  // ブラウザ落ち / タブ閉じ / 電源断でも、最悪 250ms 分の損失で済む。
-  // 復旧は起動時に自動検出 (showRecoveryDialog 経由)。
-  // ============================================================
-  const startRecording = async (trackId: string) => {
+  const disarmTrack = useCallback(() => {
+    if (monitorRafRef.current) {
+      cancelAnimationFrame(monitorRafRef.current);
+      monitorRafRef.current = null;
+    }
+    if (monitorSourceRef.current) {
+      try { monitorSourceRef.current.disconnect(); } catch {}
+      monitorSourceRef.current = null;
+    }
+    if (monitorAnalyserRef.current) {
+      try { monitorAnalyserRef.current.disconnect(); } catch {}
+      monitorAnalyserRef.current = null;
+    }
+    if (monitorStreamRef.current) {
+      monitorStreamRef.current.getTracks().forEach((tr) => tr.stop());
+      monitorStreamRef.current = null;
+    }
+    setVuLevels({ peak: -Infinity, rms: -Infinity });
+    if (armedTrackId) {
+      setProject((p) => ({
+        ...p,
+        tracks: p.tracks.map((tr) => (tr.id === armedTrackId ? { ...tr, armed: false } : tr)),
+      }));
+    }
+    setArmedTrackId(null);
+  }, [armedTrackId]);
+
+  const armTrack = useCallback(async (trackId: string) => {
+    // 既に同じトラックが armed なら disarm
+    if (armedTrackId === trackId) {
+      disarmTrack();
+      return;
+    }
+    // 別トラックが armed ならまず解除
+    if (armedTrackId !== null) {
+      disarmTrack();
+    }
+    // 録音中なら ARM 不可
+    if (recState === 'recording') {
+      alert(t({ ja: '録音中は待機モードに切り替えできません', en: 'Cannot arm while recording', es: 'No se puede armar durante grabación' }, lang));
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -513,6 +575,99 @@ function DawApp() {
           autoGainControl: false,
         },
       });
+      monitorStreamRef.current = stream;
+
+      const ctx = getCtx();
+      // suspended 状態なら resume
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.3;
+      source.connect(analyser);
+      // ★モニター音は AudioContext.destination には繋がない (ハウリング防止)★
+      monitorSourceRef.current = source;
+      monitorAnalyserRef.current = analyser;
+
+      setArmedTrackId(trackId);
+      setProject((p) => ({
+        ...p,
+        tracks: p.tracks.map((tr) => (tr.id === trackId ? { ...tr, armed: true } : tr)),
+      }));
+
+      // 60fps で VU 更新
+      const buf = new Float32Array(analyser.fftSize);
+      const animate = () => {
+        if (!monitorAnalyserRef.current) return;
+        monitorAnalyserRef.current.getFloatTimeDomainData(buf);
+        let sum = 0;
+        let peak = 0;
+        for (let i = 0; i < buf.length; i++) {
+          const abs = Math.abs(buf[i]);
+          if (abs > peak) peak = abs;
+          sum += buf[i] * buf[i];
+        }
+        const rms = Math.sqrt(sum / buf.length);
+        setVuLevels({
+          peak: peak > 0 ? 20 * Math.log10(peak) : -Infinity,
+          rms: rms > 0 ? 20 * Math.log10(rms) : -Infinity,
+        });
+        monitorRafRef.current = requestAnimationFrame(animate);
+      };
+      monitorRafRef.current = requestAnimationFrame(animate);
+    } catch (e) {
+      console.error('arm failed:', e);
+      alert(t({ ja: 'マイクアクセスが必要です', en: 'Microphone access required', es: 'Acceso al micrófono requerido' }, lang));
+    }
+  }, [armedTrackId, recState, lang, project.sampleRate, getCtx, disarmTrack]);
+
+  // unmount 時クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (monitorRafRef.current) cancelAnimationFrame(monitorRafRef.current);
+      if (monitorStreamRef.current) {
+        monitorStreamRef.current.getTracks().forEach((tr) => tr.stop());
+      }
+    };
+  }, []);
+
+  // armed トラックが削除されたら自動で disarm
+  useEffect(() => {
+    if (armedTrackId && !project.tracks.some((tr) => tr.id === armedTrackId)) {
+      disarmTrack();
+    }
+  }, [project.tracks, armedTrackId, disarmTrack]);
+
+  // ============================================================
+  // Recording (Phase 1: streaming write to IndexedDB every 250ms)
+  // ============================================================
+  // クラッシュ耐性: 250ms 毎に chunk を即 IndexedDB へ書き込み。
+  // ブラウザ落ち / タブ閉じ / 電源断でも、最悪 250ms 分の損失で済む。
+  // 復旧は起動時に自動検出 (showRecoveryDialog 経由)。
+  //
+  // 仕様変更 (v2): ARM 状態 → マスター REC で開始する 2 段階フロー。
+  // 直接 startRecording(trackId) を呼ぶ場合は、対象トラックに既存ストリームを使う。
+  // ============================================================
+  const startRecording = async (trackId: string) => {
+    try {
+      // armed track のストリームがあればそれを再利用 (連続 2 回 mic 開かない)
+      let stream: MediaStream;
+      if (armedTrackId === trackId && monitorStreamRef.current) {
+        stream = monitorStreamRef.current;
+        // monitor は record 中も継続させる (VU 表示維持)
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 2,
+            sampleRate: project.sampleRate,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        });
+      }
       mediaStreamRef.current = stream;
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
@@ -607,10 +762,12 @@ function DawApp() {
 
   const stopRecording = () => {
     if (mediaRecRef.current && mediaRecRef.current.state !== 'inactive') mediaRecRef.current.stop();
-    if (mediaStreamRef.current) {
+    // armed と同じトラックを録音中ならストリームは保持 (VU 続行)
+    const sharedWithMonitor = mediaStreamRef.current && monitorStreamRef.current === mediaStreamRef.current;
+    if (mediaStreamRef.current && !sharedWithMonitor) {
       mediaStreamRef.current.getTracks().forEach((t) => t.stop());
-      mediaStreamRef.current = null;
     }
+    mediaStreamRef.current = null;
     if (recIntervalRef.current) {
       window.clearInterval(recIntervalRef.current);
       recIntervalRef.current = null;
@@ -758,7 +915,11 @@ function DawApp() {
       const trackPan = ctx.createStereoPanner();
       trackGain.gain.value = dbToLinear(track.gainDb);
       trackPan.pan.value = track.pan;
-      trackGain.connect(trackPan).connect(ctx.destination);
+      trackPan.connect(ctx.destination);
+
+      // EQ + Reverb チェーン: source → regionGain → eqIn → ... → trackGain → trackPan → out
+      const eqInput = buildTrackEffects(ctx, track, trackGain);
+      trackGain.connect(trackPan);
 
       track.regions.forEach((r) => {
         const buf = audioBuffers.get(r.bufferId);
@@ -777,7 +938,7 @@ function DawApp() {
         regionGain.gain.setValueAtTime(1, endAt - fadeOut);
         if (fadeOut > 0) regionGain.gain.linearRampToValueAtTime(0, endAt);
 
-        src.connect(regionGain).connect(trackGain);
+        src.connect(regionGain).connect(eqInput);
         src.start(startAt, r.offsetInBuffer, r.duration);
         src.stop(endAt + 0.05);
         playSourcesRef.current.push(src);
@@ -816,7 +977,10 @@ function DawApp() {
       const trackPan = offlineCtx.createStereoPanner();
       trackGain.gain.value = dbToLinear(track.gainDb);
       trackPan.pan.value = track.pan;
-      trackGain.connect(trackPan).connect(offlineCtx.destination);
+      trackPan.connect(offlineCtx.destination);
+      // EQ + Reverb チェーン
+      const eqInput = buildTrackEffects(offlineCtx, track, trackGain);
+      trackGain.connect(trackPan);
       track.regions.forEach((r) => {
         const buf = audioBuffers.get(r.bufferId);
         if (!buf) return;
@@ -831,7 +995,7 @@ function DawApp() {
         if (fadeIn > 0) regionGain.gain.linearRampToValueAtTime(1, startAt + fadeIn);
         regionGain.gain.setValueAtTime(1, endAt - fadeOut);
         if (fadeOut > 0) regionGain.gain.linearRampToValueAtTime(0, endAt);
-        src.connect(regionGain).connect(trackGain);
+        src.connect(regionGain).connect(eqInput);
         src.start(startAt, r.offsetInBuffer, r.duration);
       });
     });
@@ -1138,12 +1302,27 @@ function DawApp() {
               style={{ background: c.accent, color: theme === 'dark' ? '#0a1226' : '#fff', border: 'none', padding: '0.55rem 1.25rem', borderRadius: 999, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
               {playing ? '■ Stop' : '▶ Play'}
             </button>
+            <button onClick={() => setMixerOpen(true)}
+              style={{ background: c.surface, color: c.textPrimary, border: `1px solid ${c.borderStrong}`, padding: '0.55rem 1rem', borderRadius: 999, fontSize: '0.78rem', cursor: 'pointer' }}>
+              🎚️ {t({ ja: 'ミキサー', en: 'Mixer', es: 'Mezclador' }, lang)}
+            </button>
             <button onClick={addTrack} disabled={project.tracks.length >= 4}
               style={{ background: c.surface, color: c.textPrimary, border: `1px solid ${c.borderStrong}`, padding: '0.55rem 1rem', borderRadius: 999, fontSize: '0.78rem', cursor: project.tracks.length >= 4 ? 'not-allowed' : 'pointer', opacity: project.tracks.length >= 4 ? 0.5 : 1 }}>
               + {t({ ja: 'トラック追加', en: 'Add Track', es: 'Añadir' }, lang)} ({project.tracks.length}/4)
             </button>
           </div>
         </div>
+
+        {/* ミキサーパネル (モーダル) */}
+        {mixerOpen && (
+          <MixerPanel
+            tracks={project.tracks}
+            theme={c}
+            onUpdateTrack={(trackId, u) => updateTrack(trackId, u)}
+            onClose={() => setMixerOpen(false)}
+            lang={lang}
+          />
+        )}
 
         {/* ━━━ Storage Info Bar (Phase 1) ━━━ */}
         {storageInfo && (
@@ -1186,6 +1365,9 @@ function DawApp() {
               onUpload={(file) => uploadToTrack(track.id, file)}
               onStartRecord={() => startRecording(track.id)}
               onStopRecord={stopRecording}
+              onArm={() => armTrack(track.id)}
+              isArmed={armedTrackId === track.id}
+              vuLevels={armedTrackId === track.id ? vuLevels : { peak: -Infinity, rms: -Infinity }}
               onUpdateTrack={(u) => updateTrack(track.id, u)}
               onRemoveTrack={() => removeTrack(track.id)}
               onUpdateRegion={(rid, u) => updateRegion(track.id, rid, u)}
@@ -1235,6 +1417,9 @@ interface TrackRowProps {
   onUpload: (file: File) => void;
   onStartRecord: () => void;
   onStopRecord: () => void;
+  onArm: () => void;                     // 録音待機トグル
+  isArmed: boolean;                      // このトラックが現在 armed か
+  vuLevels: { peak: number; rms: number }; // VU メーター値 (dB・armed トラックのみ意味あり)
   onUpdateTrack: (u: Partial<Track>) => void;
   onRemoveTrack: () => void;
   onUpdateRegion: (rid: string, u: Partial<Region>) => void;
@@ -1246,6 +1431,7 @@ interface TrackRowProps {
 function TrackRow(props: TrackRowProps) {
   const { track, theme: c, themeMode, audioBuffers, projectDuration, isRecording, recElapsed,
     playing, playPos, selectedRegionId, setSelectedRegionId, onUpload, onStartRecord, onStopRecord,
+    onArm, isArmed, vuLevels,
     onUpdateTrack, onRemoveTrack, onUpdateRegion, onDeleteRegion, onSplitRegion, lang } = props;
   const fileRef = useRef<HTMLInputElement>(null);
   const jewel = TRACK_JEWELS[track.jewelIdx % TRACK_JEWELS.length];
@@ -1291,10 +1477,42 @@ function TrackRow(props: TrackRowProps) {
           <button onClick={() => onUpdateTrack({ solo: !track.solo })}
             style={{ flex: 1, background: track.solo ? '#f59e0b' : c.surface, color: track.solo ? '#000' : c.textSecondary, border: `1px solid ${track.solo ? '#f59e0b' : c.border}`, padding: '0.3rem', borderRadius: 4, fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}>S</button>
         </div>
+        {/* ARM ボタン + VU メーター */}
+        <div style={{ marginBottom: '0.4rem' }}>
+          <button onClick={onArm}
+            disabled={isRecording && !isArmed}
+            style={{
+              width: '100%',
+              background: isArmed ? c.danger : c.surface,
+              color: isArmed ? '#fff' : c.textSecondary,
+              border: `1px solid ${isArmed ? c.danger : c.border}`,
+              padding: '0.4rem', borderRadius: 4,
+              fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em',
+              cursor: isRecording && !isArmed ? 'not-allowed' : 'pointer',
+              opacity: isRecording && !isArmed ? 0.4 : 1,
+            }}>
+            {isArmed ? '🎤 ' + (lang === 'ja' ? '待機中 (解除)' : lang === 'es' ? 'Listo (cancelar)' : 'ARMED (cancel)')
+              : '🎤 ' + (lang === 'ja' ? '録音待機' : lang === 'es' ? 'Armar' : 'ARM')}
+          </button>
+          {/* VU メーター (armed の時のみ表示) */}
+          {isArmed && <VuMeter levels={vuLevels} accent={jewel.hex} themeMode={themeMode} />}
+        </div>
         {/* Record / Upload */}
         <div style={{ display: 'flex', gap: '0.3rem' }}>
           <button onClick={isRecording ? onStopRecord : onStartRecord}
-            style={{ flex: 1, background: isRecording ? c.danger : c.surface, color: isRecording ? '#fff' : c.textSecondary, border: `1px solid ${isRecording ? c.danger : c.border}`, padding: '0.4rem', borderRadius: 4, fontSize: '0.7rem', cursor: 'pointer' }}>
+            disabled={!isArmed && !isRecording}
+            title={!isArmed && !isRecording
+              ? (lang === 'ja' ? '先に「録音待機」でマイクを開いてください' : 'Press ARM first to open the mic')
+              : ''}
+            style={{
+              flex: 1,
+              background: isRecording ? c.danger : (isArmed ? '#dc2626' : c.surface),
+              color: (isRecording || isArmed) ? '#fff' : c.textSecondary,
+              border: `1px solid ${isRecording || isArmed ? c.danger : c.border}`,
+              padding: '0.4rem', borderRadius: 4, fontSize: '0.7rem',
+              cursor: (!isArmed && !isRecording) ? 'not-allowed' : 'pointer',
+              opacity: (!isArmed && !isRecording) ? 0.5 : 1,
+            }}>
             {isRecording ? '■' : '⚫'} {isRecording ? recElapsed.toFixed(1) + 's' : 'REC'}
           </button>
           <button onClick={() => fileRef.current?.click()}
@@ -1622,8 +1840,308 @@ function makeTrack(idx: number): Track {
     pan: 0,
     mute: false,
     solo: false,
+    armed: false,
+    eq: { low: 0, mid: 0, high: 0 },
+    reverb: { mix: 0, size: 0.4 },
     regions: [],
   };
+}
+
+// ============================================================
+// VuMeter — 録音待機中のリアルタイム入力レベル (peak + RMS)
+// ============================================================
+function VuMeter({ levels, accent, themeMode }: { levels: { peak: number; rms: number }; accent: string; themeMode: ThemeMode }) {
+  // dB → 0..1 マッピング (-60dB 以下は 0、0dB が 1)
+  const toUnit = (db: number) => {
+    if (!isFinite(db)) return 0;
+    if (db <= -60) return 0;
+    if (db >= 0) return 1;
+    return (db + 60) / 60;
+  };
+  const peakUnit = toUnit(levels.peak);
+  const rmsUnit = toUnit(levels.rms);
+  const trackBg = themeMode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const dangerColor = '#ef4444'; // 0dB クリップ警告
+  const warnColor = '#f59e0b';   // -6dB 注意
+  // peak バーの色 (0dB 付近で赤、-6dB 付近で黄、それ以下で aqua/緑系)
+  const peakColor = levels.peak >= -1
+    ? dangerColor
+    : levels.peak >= -6
+    ? warnColor
+    : accent;
+  return (
+    <div style={{ marginTop: '0.4rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: 'inherit', opacity: 0.7, marginBottom: 2 }}>
+        <span>{isFinite(levels.peak) ? levels.peak.toFixed(1) : '−∞'} dB peak</span>
+        <span>{isFinite(levels.rms) ? levels.rms.toFixed(1) : '−∞'} dB RMS</span>
+      </div>
+      {/* RMS バー (背景) + peak バー (前景) */}
+      <div style={{ position: 'relative', height: 10, background: trackBg, borderRadius: 3, overflow: 'hidden' }}>
+        {/* RMS (緑系・薄め) */}
+        <div style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0,
+          width: `${rmsUnit * 100}%`,
+          background: `linear-gradient(90deg, ${accent}66, ${accent}aa)`,
+          transition: 'width 0.05s linear',
+        }} />
+        {/* Peak (現状値) */}
+        <div style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0,
+          width: `${peakUnit * 100}%`,
+          background: `linear-gradient(90deg, transparent 0%, ${peakColor}88 80%, ${peakColor} 100%)`,
+          transition: 'width 0.03s linear',
+          borderRight: peakUnit > 0.01 ? `1px solid ${peakColor}` : 'none',
+          mixBlendMode: 'screen',
+        }} />
+        {/* -6dB マーカー */}
+        <div style={{
+          position: 'absolute',
+          left: `${toUnit(-6) * 100}%`,
+          top: 0, bottom: 0,
+          width: 1,
+          background: warnColor,
+          opacity: 0.5,
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Mixer Panel — 全トラックの EQ + Reverb 一覧編集
+// ============================================================
+interface MixerPanelProps {
+  tracks: Track[];
+  theme: ThemeColors;
+  onUpdateTrack: (trackId: string, u: Partial<Track>) => void;
+  onClose: () => void;
+  lang: Lang;
+}
+function MixerPanel({ tracks, theme: c, onUpdateTrack, onClose, lang }: MixerPanelProps) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(0, 0, 0, 0.65)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '1rem', zIndex: 1000,
+    }}
+    onClick={onClose}
+    >
+      <div onClick={(e) => e.stopPropagation()}
+        style={{
+          background: c.bg,
+          border: `1px solid ${c.border}`,
+          borderRadius: 12,
+          padding: '1.5rem',
+          maxWidth: 1100, width: '100%',
+          maxHeight: '85vh', overflowY: 'auto',
+          color: c.textPrimary,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.2rem' }}>
+          <h2 style={{ fontFamily: serif, fontSize: '1.3rem', fontWeight: 400, margin: 0, letterSpacing: '0.04em' }}>
+            🎚️ {t({ ja: 'ミキサー', en: 'Mixer', es: 'Mezclador' }, lang)}
+          </h2>
+          <button onClick={onClose}
+            style={{ background: 'transparent', color: c.textSecondary, border: `1px solid ${c.border}`, borderRadius: 4, padding: '0.4rem 1rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+            ✕ {t({ ja: '閉じる', en: 'Close', es: 'Cerrar' }, lang)}
+          </button>
+        </div>
+        <p style={{ fontSize: '0.78rem', color: c.textTertiary, lineHeight: 1.7, marginTop: 0, marginBottom: '1rem' }}>
+          {t({
+            ja: '各トラックの 3 バンド EQ (低 250Hz・中 1kHz・高 4kHz) とシンプルリバーブ。再生・書き出しにも反映されます。',
+            en: '3-band EQ (Low 250Hz / Mid 1kHz / High 4kHz) + simple reverb per track. Applied during playback and export.',
+            es: 'EQ de 3 bandas + reverb simple por pista. Se aplica en reproducción y exportación.',
+          }, lang)}
+        </p>
+        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+          {tracks.map((track) => {
+            const jewel = TRACK_JEWELS[track.jewelIdx % TRACK_JEWELS.length];
+            return (
+              <div key={track.id}
+                style={{
+                  padding: '1rem',
+                  background: c.surface,
+                  border: `1px solid ${c.border}`,
+                  borderLeft: `4px solid ${jewel.hex}`,
+                  borderRadius: 8,
+                }}>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.5rem' }}>{track.name}</div>
+                <div style={{ fontSize: '0.6rem', color: jewel.hex, letterSpacing: '0.1em', marginBottom: '0.8rem', textTransform: 'uppercase', fontWeight: 600 }}>{jewel.name}</div>
+
+                {/* EQ 3 バンド */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.7rem', color: c.textTertiary, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                    EQ ({t({ ja: '3 バンド', en: '3-band', es: '3 bandas' }, lang)})
+                  </div>
+                  <EqKnob label={t({ ja: '低音', en: 'Low', es: 'Bajos' }, lang)} hint="250 Hz" value={track.eq.low} accent={jewel.hex} c={c}
+                    onChange={(v) => onUpdateTrack(track.id, { eq: { ...track.eq, low: v } })} />
+                  <EqKnob label={t({ ja: '中音', en: 'Mid', es: 'Medios' }, lang)} hint="1 kHz" value={track.eq.mid} accent={jewel.hex} c={c}
+                    onChange={(v) => onUpdateTrack(track.id, { eq: { ...track.eq, mid: v } })} />
+                  <EqKnob label={t({ ja: '高音', en: 'High', es: 'Agudos' }, lang)} hint="4 kHz" value={track.eq.high} accent={jewel.hex} c={c}
+                    onChange={(v) => onUpdateTrack(track.id, { eq: { ...track.eq, high: v } })} />
+                </div>
+
+                {/* Reverb */}
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: c.textTertiary, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                    {t({ ja: 'リバーブ', en: 'Reverb', es: 'Reverb' }, lang)}
+                  </div>
+                  <SliderRow label={t({ ja: 'ミックス', en: 'Mix', es: 'Mezcla' }, lang)}
+                    value={track.reverb.mix} min={0} max={1} step={0.01}
+                    display={`${Math.round(track.reverb.mix * 100)}%`}
+                    accent={jewel.hex} c={c}
+                    onChange={(v) => onUpdateTrack(track.id, { reverb: { ...track.reverb, mix: v } })}
+                  />
+                  <SliderRow label={t({ ja: 'サイズ', en: 'Size', es: 'Tamaño' }, lang)}
+                    value={track.reverb.size} min={0} max={1} step={0.01}
+                    display={`${(0.3 + track.reverb.size * 3.7).toFixed(1)}s`}
+                    accent={jewel.hex} c={c}
+                    onChange={(v) => onUpdateTrack(track.id, { reverb: { ...track.reverb, size: v } })}
+                  />
+                </div>
+
+                {/* リセットボタン */}
+                <button
+                  onClick={() => onUpdateTrack(track.id, {
+                    eq: { low: 0, mid: 0, high: 0 },
+                    reverb: { mix: 0, size: 0.4 },
+                  })}
+                  style={{
+                    marginTop: '0.8rem',
+                    width: '100%',
+                    background: 'transparent',
+                    color: c.textTertiary,
+                    border: `1px solid ${c.border}`,
+                    borderRadius: 4,
+                    padding: '0.4rem',
+                    fontSize: '0.7rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ↺ {t({ ja: 'リセット', en: 'Reset', es: 'Reset' }, lang)}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EqKnob({ label, hint, value, accent, c, onChange }: {
+  label: string; hint: string; value: number; accent: string; c: ThemeColors; onChange: (v: number) => void;
+}) {
+  return (
+    <div style={{ marginBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: c.textTertiary, marginBottom: 2 }}>
+        <span>{label} <span style={{ opacity: 0.6 }}>{hint}</span></span>
+        <span style={{ color: c.textSecondary }}>{value > 0 ? '+' : ''}{value.toFixed(1)} dB</span>
+      </div>
+      <input type="range" min={-12} max={12} step={0.5} value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        style={{ width: '100%', accentColor: accent }}
+      />
+    </div>
+  );
+}
+
+function SliderRow({ label, value, min, max, step, display, accent, c, onChange }: {
+  label: string; value: number; min: number; max: number; step: number; display: string;
+  accent: string; c: ThemeColors; onChange: (v: number) => void;
+}) {
+  return (
+    <div style={{ marginBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: c.textTertiary, marginBottom: 2 }}>
+        <span>{label}</span><span style={{ color: c.textSecondary }}>{display}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        style={{ width: '100%', accentColor: accent }}
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Helper: 旧プロジェクトデータの互換補完 (eq/reverb/armed が無い場合)
+// ============================================================
+function ensureTrackDefaults(t: any): Track {
+  return {
+    ...t,
+    armed: typeof t.armed === 'boolean' ? t.armed : false,
+    eq: t.eq && typeof t.eq.low === 'number' ? t.eq : { low: 0, mid: 0, high: 0 },
+    reverb: t.reverb && typeof t.reverb.mix === 'number' ? t.reverb : { mix: 0, size: 0.4 },
+  };
+}
+
+// ============================================================
+// 簡易インパルス応答生成 (size 0~1 で 0.3s〜4s の指数減衰ノイズ)
+// ============================================================
+function makeReverbImpulse(ctx: BaseAudioContext, size: number): AudioBuffer {
+  const sampleRate = ctx.sampleRate;
+  const duration = 0.3 + Math.max(0, Math.min(1, size)) * 3.7; // 0.3s〜4s
+  const length = Math.floor(sampleRate * duration);
+  const ir = ctx.createBuffer(2, length, sampleRate);
+  const decay = 2 + size * 2; // 大きいほどゆっくり減衰
+  for (let ch = 0; ch < 2; ch++) {
+    const data = ir.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      const env = Math.pow(1 - i / length, decay);
+      data[i] = (Math.random() * 2 - 1) * env;
+    }
+  }
+  return ir;
+}
+
+// ============================================================
+// EQ + Reverb チェーン構築 (再生・書き出し共通)
+// 戻り値: 入力ノード (source を connect する先)
+// ============================================================
+function buildTrackEffects(
+  ctx: BaseAudioContext,
+  track: Track,
+  destination: AudioNode,
+): AudioNode {
+  // EQ: 3 段の BiquadFilter (low shelf 250Hz, peaking 1kHz, high shelf 4kHz)
+  const lowShelf = ctx.createBiquadFilter();
+  lowShelf.type = 'lowshelf';
+  lowShelf.frequency.value = 250;
+  lowShelf.gain.value = track.eq.low;
+
+  const peaking = ctx.createBiquadFilter();
+  peaking.type = 'peaking';
+  peaking.frequency.value = 1000;
+  peaking.Q.value = 1;
+  peaking.gain.value = track.eq.mid;
+
+  const highShelf = ctx.createBiquadFilter();
+  highShelf.type = 'highshelf';
+  highShelf.frequency.value = 4000;
+  highShelf.gain.value = track.eq.high;
+
+  // Reverb: ConvolverNode + Wet/Dry mix
+  const reverbMix = Math.max(0, Math.min(1, track.reverb.mix));
+  const eqOut = lowShelf;
+  lowShelf.connect(peaking).connect(highShelf);
+
+  if (reverbMix > 0.001) {
+    const dryGain = ctx.createGain();
+    const wetGain = ctx.createGain();
+    const convolver = ctx.createConvolver();
+    convolver.buffer = makeReverbImpulse(ctx, track.reverb.size);
+
+    dryGain.gain.value = 1 - reverbMix;
+    wetGain.gain.value = reverbMix * 1.4; // wet 側はリバーブで音量下がるので少し補正
+
+    highShelf.connect(dryGain).connect(destination);
+    highShelf.connect(convolver).connect(wetGain).connect(destination);
+  } else {
+    highShelf.connect(destination);
+  }
+
+  return eqOut; // ← source.connect(eqOut) すれば良い
 }
 
 function createBlankProject(): Project {
