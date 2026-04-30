@@ -244,7 +244,7 @@ function LessonRecorderApp() {
   const submitTranscribe = useCallback(async () => {
     if (!recordedBlob) return;
     setView('processing');
-    setProgressMessage(t({ ja: '音声を Workers AI Whisper で書き起こし中…', en: 'Transcribing with Workers AI Whisper…' }, lang));
+    setProgressMessage(t({ ja: '音楽特化 AI が書き起こし中…', en: 'Music-tuned AI is transcribing…' }, lang));
     setError(null);
 
     try {
@@ -384,7 +384,7 @@ function LessonRecorderApp() {
         maxWidth: 1100, margin: '0 auto',
       }}>
         <div style={{ fontFamily: mono, fontSize: '0.7rem', color: INK_FAINT, letterSpacing: '0.32em', textTransform: 'uppercase', marginBottom: '0.7rem' }}>
-          KUON · Lesson Recorder · Powered by Workers AI
+          KUON · Lesson Recorder · 音楽家の知識装置
         </div>
         <h1 style={{ fontFamily: serif, fontSize: 'clamp(1.8rem, 4.5vw, 3rem)', fontWeight: 400, letterSpacing: '0.04em', lineHeight: 1.4, margin: 0, color: INK }}>
           {t({
@@ -398,12 +398,12 @@ function LessonRecorderApp() {
         </h1>
         <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)', color: INK_SOFT, lineHeight: 2, marginTop: '1rem', maxWidth: 720, letterSpacing: '0.02em' }}>
           {t({
-            ja: '録音 → 書き起こし → 3 行サマリー → アクション項目。Workers AI が音楽専門用語を理解し、教師と生徒の発話を自動で識別します。',
-            en: 'Record → transcribe → 3-line summary → action items. Workers AI understands musical terminology and automatically distinguishes teacher and student.',
-            es: 'Grabar → transcribir → resumen → acciones. Workers AI entiende terminología musical.',
-            ko: '녹음 → 받아쓰기 → 요약 → 액션 항목. Workers AI가 음악 용어를 이해합니다.',
-            pt: 'Gravar → transcrever → resumo → ações. Workers AI entende terminologia musical.',
-            de: 'Aufnehmen → Transkribieren → Zusammenfassung → Aktionen. Workers AI versteht Musikterminologie.',
+            ja: '録音 → 書き起こし → 3 行サマリー → アクション項目。音楽特化 AI が専門用語を理解し、教師と生徒の発話を自動で識別します。',
+            en: 'Record → transcribe → 3-line summary → action items. Music-specialized AI understands terminology and distinguishes teacher and student.',
+            es: 'Grabar → transcribir → resumen → acciones. IA especializada en música entiende terminología.',
+            ko: '녹음 → 받아쓰기 → 요약 → 액션 항목. 음악 특화 AI가 용어를 이해합니다.',
+            pt: 'Gravar → transcrever → resumo → ações. IA especializada em música entende terminologia.',
+            de: 'Aufnehmen → Transkribieren → Zusammenfassung → Aktionen. Musik-spezialisierte KI versteht Fachbegriffe.',
           }, lang)}
         </p>
       </header>
@@ -594,8 +594,8 @@ function HomeView({
 
       {/* Privacy + price callout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
-        <InfoCard label="🔒" title={t({ ja: 'プライバシー保護', en: 'Privacy first' }, lang)} body={t({ ja: '音声は処理後即座に Workers AI から削除されます。書き起こしテキストのみ保存。', en: 'Audio is deleted from Workers AI immediately after processing. Only text is stored.' }, lang)} />
-        <InfoCard label="◆" title={t({ ja: 'Prelude プラン以上', en: 'Prelude plan and up' }, lang)} body={t({ ja: '月 15 回 (Prelude) / 35 回 (Concerto) / 80 回 (Symphony)', en: '15/mo (Prelude) / 35/mo (Concerto) / 80/mo (Symphony)' }, lang)} />
+        <InfoCard label="🔒" title={t({ ja: 'プライバシー保護', en: 'Privacy first' }, lang)} body={t({ ja: '音声は処理後即座に消去されます。書き起こしテキストだけがあなたのアカウントに残ります。', en: 'Audio is wiped immediately after processing. Only the transcript stays in your account.' }, lang)} />
+        <InfoCard label="◆" title={t({ ja: 'Prelude プラン以上', en: 'Prelude plan and up' }, lang)} body={t({ ja: '月 15 回 (Prelude) / 25 回 (Concerto) / 50 回 (Symphony)', en: '15/mo (Prelude) / 25/mo (Concerto) / 50/mo (Symphony)' }, lang)} />
         <InfoCard label="✦" title={t({ ja: '音楽専門用語に対応', en: 'Music vocabulary aware' }, lang)} body={t({ ja: 'カデンツ・モーダル・ピチカート等を正しく認識', en: 'Cadence, modal, pizzicato etc. recognized correctly' }, lang)} />
       </div>
     </div>
@@ -673,8 +673,8 @@ function ProcessingView({ lang, message }: any) {
       </h2>
       <p style={{ fontFamily: sans, fontSize: '0.85rem', color: INK_FAINT, lineHeight: 1.8, maxWidth: 500, margin: '0 auto' }}>
         {t({
-          ja: 'Cloudflare Workers AI でリアルタイム処理中。所要時間は録音長の約 1/10 です。',
-          en: 'Real-time processing on Cloudflare Workers AI. Takes ~10% of recording length.',
+          ja: 'リアルタイム処理中。所要時間は録音長の約 1/10 です。',
+          en: 'Real-time processing. Takes ~10% of recording length.',
         }, lang)}
       </p>
       <style>{`@keyframes kuonSpin { to { transform: rotate(360deg); } }`}</style>

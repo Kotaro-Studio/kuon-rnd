@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 const TITLE = 'KUON LESSON RECORDER — レッスン録音 AI 書き起こし | 空音開発';
 const DESC =
-  '音楽レッスンの録音を AI が自動で書き起こし・要約・アクション項目化。話者を教師/生徒に推定、音楽専門用語を自動認識、6 言語翻訳、Markdown/PDF/SRT 出力。Workers AI Whisper + Llama 3.3 70B + M2M100。Prelude プランから月 15 回利用可能。';
+  '音楽レッスンの録音を AI が自動で書き起こし・要約・アクション項目化。話者を教師/生徒に推定、音楽専門用語を自動認識、多言語翻訳、Markdown/PDF/SRT 出力。Prelude プランから月 15 回利用可能。';
 
 export const metadata: Metadata = {
   title: TITLE,

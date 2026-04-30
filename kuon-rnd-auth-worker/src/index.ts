@@ -246,7 +246,7 @@ const APP_QUOTAS_TIER: Record<string, Record<QuotaPlan, number>> = {
   //   メモしたい講義のみ記録 → 学生 (Prelude) は 15 回が適正
   //   Concerto はその 2.3 倍 (プロ・教師複数生徒)、Symphony は 5 倍 (スタジオ・教育機関)
   //   Opus は legacy 互換のため Symphony × 2.5 に設定
-  'lesson-recorder': { free: 1, prelude: 15, concerto: 35, symphony: 80, opus: 200 },
+  'lesson-recorder': { free: 1, prelude: 15, concerto: 25, symphony: 50, opus: 150 },
 };
 
 /**

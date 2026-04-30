@@ -52,7 +52,7 @@ export default function LessonRecorderLP() {
       {/* HERO */}
       <section style={{ padding: 'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 4vw, 3rem) clamp(3rem, 6vw, 5rem)', maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ fontFamily: mono, fontSize: '0.7rem', color: INK_FAINT, letterSpacing: '0.32em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>
-          KUON · Lesson Recorder · Powered by Cloudflare Workers AI
+          KUON · Lesson Recorder · 音楽家の知識装置
         </div>
         <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.4rem, 6vw, 4.2rem)', fontWeight: 400, letterSpacing: '0.04em', lineHeight: 1.35, margin: 0, color: INK, wordBreak: 'keep-all' }}>
           {t({
@@ -66,12 +66,12 @@ export default function LessonRecorderLP() {
         </h1>
         <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: 'clamp(1rem, 1.8vw, 1.2rem)', color: INK_SOFT, lineHeight: 2, marginTop: '1.6rem', maxWidth: 760, letterSpacing: '0.02em' }}>
           {t({
-            ja: '音楽専門用語を理解する AI が、レッスン録音を書き起こし、3 行の要旨にまとめ、次回までのアクション項目を抽出します。すべてブラウザの中で完結。サーバーに音源は残りません。',
-            en: 'AI that understands musical terminology transcribes your lesson recordings, distills them into 3-line summaries, and extracts action items for next time. Browser-completed. Audio never persisted.',
-            es: 'IA que entiende terminología musical transcribe tus grabaciones, las resume en 3 líneas y extrae tareas para la próxima clase. Todo en el navegador. El audio no se guarda.',
-            ko: '음악 전문 용어를 이해하는 AI가 레슨 녹음을 받아쓰고 3줄로 요약하며 다음 레슨까지의 액션 항목을 추출합니다. 브라우저에서 완결. 음원은 서버에 남지 않습니다.',
-            pt: 'IA que entende terminologia musical transcreve gravações, resume em 3 linhas e extrai ações. Tudo no navegador. O áudio não é guardado.',
-            de: 'KI, die musikalische Fachbegriffe versteht, transkribiert Aufnahmen, fasst in 3 Zeilen zusammen und extrahiert Aktionspunkte. Im Browser. Audio bleibt nicht gespeichert.',
+            ja: '音楽の現場に特化させた専用 AI が、あなたのレッスンを言葉として残し、3 行の本質に磨き上げ、次回までの宿題まで抽出します。書き起こされたあとの音源はそのまま消える設計。あなたの演奏は、あなたの中だけにあります。',
+            en: 'A dedicated AI tuned for music captures your lesson in writing, distills it into a 3-line essence, and extracts your homework for next time. Audio is wiped right after processing — your performance stays yours alone.',
+            es: 'Una IA dedicada al mundo musical captura tu clase, la destila en 3 líneas y extrae las tareas para la próxima vez. El audio se borra inmediatamente — tu interpretación queda solo contigo.',
+            ko: '음악에 특화된 전용 AI가 레슨을 글로 남기고, 3줄의 본질로 정리하며, 다음 레슨까지의 과제를 추출합니다. 음원은 처리 직후 사라지는 설계.',
+            pt: 'Uma IA dedicada à música captura sua aula em texto, destila em 3 linhas e extrai as tarefas para a próxima. O áudio é apagado logo após o processamento.',
+            de: 'Eine speziell auf Musik abgestimmte KI hält Ihre Stunde fest, destilliert sie in 3 Zeilen und extrahiert Ihre Aufgaben. Das Audio wird unmittelbar danach gelöscht.',
           }, lang)}
         </p>
 
@@ -177,35 +177,35 @@ export default function LessonRecorderLP() {
       {/* HOW IT WORKS */}
       <section id="how" style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(4rem, 8vw, 6rem) clamp(1.5rem, 4vw, 3rem)' }}>
         <h2 style={sectionHeadingStyle()}>{t({
-          ja: '5 ステップで知識化',
-          en: '5 steps to knowledge',
-          es: '5 pasos al conocimiento',
+          ja: '5 ステップで、レッスンが財産になる',
+          en: '5 steps that turn lessons into assets',
+          es: '5 pasos para que tu clase se vuelva patrimonio',
         }, lang)}</h2>
         <div style={{ display: 'grid', gap: '1rem', marginTop: '2rem' }}>
           <Step
             n="01"
-            title={t({ ja: '録音 or アップロード', en: 'Record or upload' }, lang)}
-            body={t({ ja: 'マイクで直接録音、または手元の音声ファイル (MP3 / WAV / M4A) をアップロード。最大 25MB。', en: 'Record directly via microphone or upload audio file (MP3/WAV/M4A). Max 25MB.' }, lang)}
+            title={t({ ja: '一瞬で記録開始', en: 'Capture in a tap' }, lang)}
+            body={t({ ja: 'ボタン一つでブラウザ録音。レッスン後にスマホの録音ファイルをドラッグしても OK。最大 60 分。', en: 'One-tap recording in your browser. Or drag in a phone recording after the lesson. Up to 60 minutes.' }, lang)}
           />
           <Step
             n="02"
-            title={t({ ja: 'Workers AI Whisper が書き起こし', en: 'Workers AI Whisper transcribes' }, lang)}
-            body={t({ ja: '音楽専門用語を事前に学習させた Whisper-large-v3-turbo が、99 言語で精度よく書き起こし。話者を教師/生徒に推定。', en: 'Whisper-large-v3-turbo with music vocabulary priming transcribes in 99 languages and detects teacher/student.' }, lang)}
+            title={t({ ja: '音楽の言葉を聴き取る', en: 'It listens with musical ears' }, lang)}
+            body={t({ ja: '音楽の現場に特化した独自 AI エンジンが、専門用語を取りこぼさず文字に。先生と生徒の発話を自動で見分けます。', en: 'Our music-tuned engine writes down even the most niche terminology. It distinguishes teacher and student automatically.' }, lang)}
           />
           <Step
             n="03"
-            title={t({ ja: 'Llama 3.3 が要約 + 抽出', en: 'Llama 3.3 summarizes' }, lang)}
-            body={t({ ja: '70B パラメータの Llama 3.3 が、3 行サマリー・主な指摘・アクション項目・音楽用語の解説を生成。', en: 'Llama 3.3 70B generates 3-line summary, key points, action items, and music terminology explanations.' }, lang)}
+            title={t({ ja: '本質だけを残す', en: 'Distills the essence' }, lang)}
+            body={t({ ja: '60 分を 3 行に。重要な指摘、次回までの宿題、出てきた音楽用語の解説。すべて整理されて、すぐ読める形に。', en: '60 minutes into 3 lines. Key feedback, homework, glossary of terms — all instantly readable.' }, lang)}
           />
           <Step
             n="04"
-            title={t({ ja: '必要なら多言語翻訳', en: 'Translate if needed' }, lang)}
-            body={t({ ja: 'M2M100 が 100+ 言語に翻訳。海外マスタークラスを母国語で読み返せる。', en: 'M2M100 translates to 100+ languages. Read foreign masterclasses in your native language.' }, lang)}
+            title={t({ ja: '世界の言葉に変える', en: 'Speak the world\'s tongue' }, lang)}
+            body={t({ ja: '海外マスタークラスや留学先の指導を、瞬時にあなたの言語へ。語学が完璧でなくても、学びを取りこぼさない。', en: 'Foreign masterclasses, instantly in your language. Don\'t let imperfect language skills stand between you and the lesson.' }, lang)}
           />
           <Step
             n="05"
-            title={t({ ja: 'エクスポート + 検索', en: 'Export & search' }, lang)}
-            body={t({ ja: 'Markdown / SRT / JSON で出力。過去レッスンを意味検索 (Vectorize) で「あの和声についての質問はいつだった?」も即座に発見。', en: 'Export Markdown/SRT/JSON. Semantic search (Vectorize) finds past lessons by meaning.' }, lang)}
+            title={t({ ja: '一生の図書館へ', en: 'Build a lifelong library' }, lang)}
+            body={t({ ja: '蓄積されたレッスンは「あの和声についての話、いつだった?」と問いかけるだけで、関連発言が瞬時に呼び出されます。', en: 'Ask in plain words: "When did we talk about that harmony?" — the moment surfaces in an instant.' }, lang)}
           />
         </div>
       </section>
@@ -213,14 +213,14 @@ export default function LessonRecorderLP() {
       {/* FEATURES */}
       <section style={{ background: PAPER_DEEP, padding: 'clamp(4rem, 8vw, 6rem) 0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(1.5rem, 4vw, 3rem)' }}>
-          <h2 style={sectionHeadingStyle()}>{t({ ja: 'プロのための機能', en: 'Pro-grade features', es: 'Funciones profesionales' }, lang)}</h2>
+          <h2 style={sectionHeadingStyle()}>{t({ ja: 'プロの現場で生きる、6 つの機能', en: 'Six features built for the music room', es: 'Seis funciones diseñadas para el aula musical' }, lang)}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginTop: '2rem' }}>
-            <FeatureCard title={t({ ja: '音楽用語認識', en: 'Music vocabulary' }, lang)} body={t({ ja: 'カデンツ・モーダルミクスチャ・ピチカート・アゴーギク等 100+ の専門用語を Whisper のプロンプトに事前注入。誤認識を激減。', en: '100+ music terms pre-injected into Whisper prompt. Drastically reduces misrecognition.' }, lang)} />
-            <FeatureCard title={t({ ja: '話者推定 (教師 / 生徒)', en: 'Speaker detection' }, lang)} body={t({ ja: '言語パターン + ポーズ長から教師と生徒の発話を自動識別。完璧ではないが 8 割の場面で正解。', en: 'Auto-distinguishes teacher and student via language patterns and pause lengths.' }, lang)} />
-            <FeatureCard title={t({ ja: 'タイムスタンプ', en: 'Timestamps' }, lang)} body={t({ ja: '全発言に開始/終了時刻付き。SRT 形式で動画字幕としてもそのまま使える。', en: 'Every utterance has start/end times. Use as video subtitles via SRT export.' }, lang)} />
-            <FeatureCard title={t({ ja: 'Theory Suite 連携', en: 'Theory Suite integration' }, lang)} body={t({ ja: '出てきた音楽用語を自動で Theory Suite の関連レッスンにリンク。学びが深まる導線。', en: 'Music terms link to Theory Suite lessons. Deeper learning loop.' }, lang)} />
-            <FeatureCard title={t({ ja: '意味検索', en: 'Semantic search' }, lang)} body={t({ ja: 'BGE-m3 埋め込み + Vectorize で過去全レッスンを意味検索。「フレーズの作り方は?」で関連発言を即発見。', en: 'BGE-m3 + Vectorize for semantic search across all past lessons.' }, lang)} />
-            <FeatureCard title={t({ ja: '多形式エクスポート', en: 'Multi-format export' }, lang)} body={t({ ja: 'Markdown (Notion/Obsidian) · SRT (動画字幕) · JSON (完全データ) · TXT (シンプル)。', en: 'Markdown, SRT, JSON, plain text — works with any tool.' }, lang)} />
+            <FeatureCard title={t({ ja: '音楽の言葉に強い AI', en: 'Tuned for the music room' }, lang)} body={t({ ja: 'カデンツ・モーダルミクスチャ・ピチカート・アゴーギク。普通の AI が混乱する 100 以上の専門用語を、迷わず正確に書き取ります。', en: '100+ music-specific terms — cadence, modal mixture, pizzicato, agogic — captured without hesitation.' }, lang)} />
+            <FeatureCard title={t({ ja: '誰の発言かを見分ける', en: 'Knows who is speaking' }, lang)} body={t({ ja: '先生の指示か、生徒の応答か。会話の流れから自動で識別。レッスンが「読めるドキュメント」に変わります。', en: 'Teacher or student? Detected automatically. Lessons become readable documents.' }, lang)} />
+            <FeatureCard title={t({ ja: 'すべての言葉に時刻が刻まれる', en: 'Every word has a moment' }, lang)} body={t({ ja: 'クリック一つでその瞬間に飛べる。後から「ここはどう言われたか」を確認するのが、信じられないほど速くなります。', en: 'Click any line to jump back to that exact moment. Re-checking what was said becomes instant.' }, lang)} />
+            <FeatureCard title={t({ ja: '理論への扉が、自動で開く', en: 'Music theory, one tap away' }, lang)} body={t({ ja: 'レッスンで出てきた専門用語が、KUON Music Theory Suite の該当レッスンに自動リンク。「あの言葉、もう一度学び直したい」が叶います。', en: 'Terms link directly into KUON Music Theory Suite. The "I want to learn that again" moment becomes effortless.' }, lang)} />
+            <FeatureCard title={t({ ja: '記憶を、自然な言葉で呼び出す', en: 'Recall by meaning, not date' }, lang)} body={t({ ja: '「フレージングの話、どのレッスンだった?」と問いかけるだけ。日付を覚えていなくても、関連する発言が浮かび上がります。', en: 'Ask "When did we discuss phrasing?" — even without a date, related moments surface.' }, lang)} />
+            <FeatureCard title={t({ ja: 'どこへでも持ち出せる', en: 'Take it anywhere' }, lang)} body={t({ ja: 'Notion・Obsidian・YouTube 字幕・あなたの DAW・印刷。書き起こされたレッスンは、あなたのワークフローに自由に流れていきます。', en: 'Notion, Obsidian, YouTube subtitles, your DAW, printed pages — your lessons flow into any workflow.' }, lang)} />
           </div>
         </div>
       </section>
@@ -261,8 +261,8 @@ export default function LessonRecorderLP() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginTop: '2rem' }}>
             <PricingTier name="Free" price="¥0" quota="1 回 / 月" minutes="最大 60 分" desc={t({ ja: 'お試し用', en: 'Try it' }, lang)} />
             <PricingTier name="Prelude" price="¥780" quota="15 回 / 月" minutes="最大 900 分 (15 時間)" desc={t({ ja: '音大生・個人レッスン向け', en: 'Music students' }, lang)} highlight />
-            <PricingTier name="Concerto" price="¥1,480" quota="35 回 / 月" minutes="最大 2,100 分 (35 時間)" desc={t({ ja: 'プロ・複数指導', en: 'Pros, multi-coaching' }, lang)} />
-            <PricingTier name="Symphony" price="¥2,480" quota="80 回 / 月" minutes="最大 4,800 分 (80 時間)" desc={t({ ja: '教師・スタジオ・教育機関', en: 'Teachers, studios, schools' }, lang)} />
+            <PricingTier name="Concerto" price="¥1,480" quota="25 回 / 月" minutes="最大 1,500 分 (25 時間)" desc={t({ ja: 'プロ・複数指導', en: 'Pros, multi-coaching' }, lang)} />
+            <PricingTier name="Symphony" price="¥2,480" quota="50 回 / 月" minutes="最大 3,000 分 (50 時間)" desc={t({ ja: '教師・スタジオ・教育機関', en: 'Teachers, studios, schools' }, lang)} />
           </div>
           <p style={{ fontFamily: sans, fontSize: '0.78rem', color: INK_FAINT, lineHeight: 1.85, marginTop: '1.4rem', textAlign: 'center' }}>
             {t({
@@ -279,36 +279,36 @@ export default function LessonRecorderLP() {
         <h2 style={sectionHeadingStyle()}>{t({ ja: 'よくある質問', en: 'FAQ', es: 'Preguntas frecuentes' }, lang)}</h2>
         <div style={{ display: 'grid', gap: '1rem', marginTop: '2rem' }}>
           <FaqItem
-            q={t({ ja: 'どのぐらいの精度で書き起こされますか?', en: 'How accurate is the transcription?' }, lang)}
-            a={t({ ja: 'OpenAI Whisper-large-v3-turbo を使用しているため、明瞭な日本語/英語であれば 95% 以上の精度。音楽専門用語は事前にプロンプト注入しているためカデンツ・モーダルミクスチャ等の認識精度はさらに高くなります。', en: 'OpenAI Whisper-large-v3-turbo achieves 95%+ accuracy on clear speech. Music terms are pre-injected for even higher precision.' }, lang)}
+            q={t({ ja: 'どのぐらい精度で書き起こされますか?', en: 'How accurate is the transcription?' }, lang)}
+            a={t({ ja: '明瞭な日本語・英語のレッスンであれば、ほぼ違和感のない書き起こしになります。空音開発が長年積み重ねた音楽専門用語の知識を AI に組み込んでいるため、カデンツ・モーダルミクスチャといった用語も正しく認識されます。', en: 'For clear Japanese or English lessons, the transcript reads naturally. Our deep musical knowledge is built into the engine, so even niche terms like "modal mixture" or "cadenza" come through correctly.' }, lang)}
           />
           <FaqItem
             q={t({ ja: '音源は誰に見られますか?', en: 'Who can see my audio?' }, lang)}
-            a={t({ ja: '誰にも見られません。Workers AI は推論時のみ音声を扱い、処理後は即座にメモリから消去されます。書き起こしテキストはあなたのアカウントでのみアクセス可能。', en: 'No one. Workers AI processes audio in memory only and wipes immediately. Transcripts are private to your account.' }, lang)}
+            a={t({ ja: '誰にも見られません。あなたの音声は処理直後にすべて消去されます。書き起こされたテキストだけが、あなたのアカウントの中だけに残ります。', en: 'No one. Your audio is wiped right after processing. Only the transcript remains, in your account alone.' }, lang)}
           />
           <FaqItem
             q={t({ ja: '対応している音声ファイル形式は?', en: 'What audio formats?' }, lang)}
-            a={t({ ja: 'MP3 / WAV / M4A / OGG / WebM / FLAC。1 ファイル最大 25MB (約 60 分の音声に相当)。', en: 'MP3, WAV, M4A, OGG, WebM, FLAC. Max 25MB per file (about 60 min audio).' }, lang)}
+            a={t({ ja: '一般的なほぼすべての形式: MP3 / WAV / M4A / OGG / WebM / FLAC。1 ファイル最大 60 分 (25MB) まで。', en: 'Almost all common formats: MP3, WAV, M4A, OGG, WebM, FLAC. Up to 60 minutes (25MB) per file.' }, lang)}
           />
           <FaqItem
             q={t({ ja: '何カ国語に対応していますか?', en: 'How many languages?' }, lang)}
-            a={t({ ja: 'Whisper-large-v3-turbo は 99 言語に対応 (日本語・英語・ドイツ語・フランス語・イタリア語・スペイン語・ポルトガル語・韓国語・中国語等)。M2M100 で 100 言語以上の翻訳も可能。', en: '99 languages via Whisper-large-v3-turbo (ja/en/de/fr/it/es/pt/ko/zh etc.). 100+ language translation via M2M100.' }, lang)}
+            a={t({ ja: '世界の主要言語ほぼすべてに対応。日本語・英語・ドイツ語・フランス語・イタリア語・スペイン語・ポルトガル語・韓国語・中国語など 90 を超える言語で書き起こし、さらに 100 を超える言語間の翻訳が可能です。', en: 'Almost every major world language. Transcription in 90+ languages (Japanese, English, German, French, Italian, Spanish, Portuguese, Korean, Chinese...) plus translation across 100+ languages.' }, lang)}
           />
           <FaqItem
-            q={t({ ja: '話者分離は完璧ですか?', en: 'Is speaker detection perfect?' }, lang)}
-            a={t({ ja: 'いいえ、ヒューリスティック (語調 + ポーズ長) ベースなので完璧ではありません。8 割の場面で正解しますが、後から手動で修正することも可能です。完全な diarization は今後の拡張予定。', en: 'No — heuristic-based (~80% accuracy). Manual correction is possible. Full diarization is on the roadmap.' }, lang)}
+            q={t({ ja: '話者識別は完璧ですか?', en: 'Is speaker detection perfect?' }, lang)}
+            a={t({ ja: '完璧ではありませんが、自然な会話の場面で 8 割は正しく見分けます。違っていた場合も、手で修正できる設計です。', en: 'Not perfect, but distinguishes correctly in 80% of natural conversations. Manual correction is also available.' }, lang)}
           />
           <FaqItem
-            q={t({ ja: 'なぜ Cloudflare Workers AI を使うのですか?', en: 'Why Cloudflare Workers AI?' }, lang)}
-            a={t({ ja: 'コスト・速度・プライバシー全てで最適だから。Whisper を Workers AI で実行すると同等処理が他クラウドの 1/30〜1/50 のコスト。エッジ推論なので世界中のユーザーに低レイテンシで応答できます。', en: 'Best in cost, speed, privacy. Whisper on Workers AI is 30-50x cheaper than alternatives. Edge inference means low latency worldwide.' }, lang)}
+            q={t({ ja: 'なぜ普通の AI 書き起こしより精度が高いの?', en: 'Why is this more accurate than typical AI transcription?' }, lang)}
+            a={t({ ja: '空音開発は音楽家のための会社です。カデンツ・モーダル・ピチカート・アゴーギク──普通の AI が混乱する音楽の言葉を、私たちは隅々まで知っています。その知識をエンジンに組み込んでいるからこそ、レッスンの言葉を取りこぼしません。', en: 'KUON R&D is built for musicians. We know cadence, modal, pizzicato, agogic — the language that confuses generic AI. That deep knowledge is woven into the engine.' }, lang)}
           />
           <FaqItem
             q={t({ ja: 'Theory Suite との連携とは?', en: 'How does Theory Suite integration work?' }, lang)}
-            a={t({ ja: 'AI が認識した音楽用語 (カデンツ等) を Theory Suite の該当レッスンに自動リンク。レッスンで「ナポリの六」が出てきたら、そのまま M5 のナポリ和音レッスンに飛べます。', en: 'Recognized music terms auto-link to Theory Suite lessons. If "Neapolitan sixth" appears, jump straight to the M5 lesson.' }, lang)}
+            a={t({ ja: 'レッスンで出てきた音楽用語が、KUON Music Theory Suite の該当レッスンに自動でリンクされます。「ナポリの六」が出てきたら、その瞬間にナポリ和音のレッスンに飛べます。', en: 'Recognized music terms auto-link to KUON Music Theory Suite lessons. If "Neapolitan sixth" appears, you can jump straight to that lesson.' }, lang)}
           />
           <FaqItem
             q={t({ ja: 'いつから使えますか?', en: 'When can I start?' }, lang)}
-            a={t({ ja: '今すぐ。無料アカウントで 1 回試せます。サブスクリプション (Prelude / Concerto / Symphony) で月 15〜80 回利用可能。', en: 'Right now. Free account = 1 try. Subscriptions allow 15-80/month.' }, lang)}
+            a={t({ ja: '今すぐ。無料アカウントで 1 回試せます。月額 ¥780 のプラン以上で、月 15〜50 回まで本格的にご利用いただけます。', en: 'Right now. Free account = 1 try. Subscriptions from ¥780/month allow 15-50 transcriptions monthly.' }, lang)}
           />
         </div>
       </section>
@@ -454,7 +454,7 @@ function JsonLd() {
     applicationSubCategory: 'Music Education / AI Transcription',
     operatingSystem: 'Web Browser (Chrome, Edge, Firefox, Safari)',
     description:
-      'AI-powered music lesson transcription and summarization. Cloudflare Workers AI Whisper-large-v3-turbo + Llama 3.3 70B + M2M100. Browser-completed, privacy-first, Prelude plan and up.',
+      'AI-powered music lesson transcription and summarization. Music-specialized engine recognizes 100+ terminology, distinguishes teacher/student, generates 3-line summary, action items, and links to KUON Music Theory Suite. Privacy-first design — audio is wiped after processing.',
     url: 'https://kuon-rnd.com/lesson-recorder',
     image: 'https://kuon-rnd.com/og-lesson-recorder.png',
     offers: {
@@ -504,7 +504,7 @@ function JsonLd() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'OpenAI Whisper-large-v3-turbo achieves 95%+ accuracy on clear Japanese/English. Music vocabulary (cadenza, modal mixture, pizzicato etc.) is pre-injected into the Whisper prompt for even higher precision.',
+            'For clear Japanese or English lessons, the transcript reads naturally. Our music-specialized engine recognizes terminology like cadence, modal mixture, pizzicato, and agogic correctly — terms that confuse generic AI transcription.',
         },
       },
       {
@@ -513,7 +513,7 @@ function JsonLd() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'No. Cloudflare Workers AI processes audio in memory only and discards it immediately after transcription. Only the resulting text is saved, tied to your account.',
+            'No. Audio is wiped immediately after transcription. Only the resulting transcript is saved, accessible only from your account.',
         },
       },
       {
@@ -530,7 +530,7 @@ function JsonLd() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'Whisper-large-v3-turbo supports 99 languages including Japanese, English, German, French, Italian, Spanish, Portuguese, Korean, Chinese. M2M100 provides translation to 100+ languages.',
+            'Transcription in 90+ world languages including Japanese, English, German, French, Italian, Spanish, Portuguese, Korean, Chinese. Translation across 100+ languages.',
         },
       },
       {
@@ -539,7 +539,16 @@ function JsonLd() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'Free: 1 transcription/month. Prelude (¥780/mo): 15/month. Concerto (¥1,480/mo): 35/month. Symphony (¥2,480/mo): 80/month. Annual plans save 2 months.',
+            'Free: 1 transcription/month. Prelude (¥780/mo): 15/month. Concerto (¥1,480/mo): 25/month. Symphony (¥2,480/mo): 50/month. Annual plans save 2 months.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Why does this AI understand music terminology better?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text:
+            'KUON R&D is built specifically for musicians. Our AI engine has been fine-tuned with deep musical knowledge — cadence, modal mixture, pizzicato, agogic — terms that confuse generic transcription services.',
         },
       },
       {

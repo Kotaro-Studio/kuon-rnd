@@ -111,8 +111,10 @@ export default function PublicProfilePage() {
         const data = await res.json();
         if (!cancelled) {
           setProfile(data.profile);
+          // avatar endpoint expects email (URL-encoded), not avatarKey
           if (data.profile.avatarKey) {
-            setAvatarUrl(`${AUTH_WORKER}/api/auth/avatar/${data.profile.avatarKey}`);
+            const email = slug.replace(/-at-/, '@').replace(/-/g, '.');
+            setAvatarUrl(`${AUTH_WORKER}/api/auth/avatar/${encodeURIComponent(email)}`);
           }
           setLoading(false);
         }

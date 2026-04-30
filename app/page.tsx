@@ -497,7 +497,12 @@ const HomePage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             {APP_CATALOG
               .filter((a) => isAppNew(a)) // releasedAt 必須・30 日以内のみ
-              .sort((a, b) => (b.releasedAt || '').localeCompare(a.releasedAt || ''))
+              .sort((a, b) => {
+                // lesson-recorder を常に最前面に固定 (発見性向上のため)
+                if (a.id === 'lesson-recorder') return -1;
+                if (b.id === 'lesson-recorder') return 1;
+                return (b.releasedAt || '').localeCompare(a.releasedAt || '');
+              })
               .slice(0, 4)
               .map((a) => {
                 const tag = (a.tagline as Record<string, string>)[lang] ?? a.tagline.en;
