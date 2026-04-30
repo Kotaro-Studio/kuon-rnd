@@ -43,7 +43,7 @@ export interface CatalogApp {
   category: AppCategory;
   noLogin: boolean;
   serverApp: boolean;
-  quotaKey: 'separator' | 'transcribe' | 'intonation' | 'lesson-recorder' | 'theory-tutor' | null;
+  quotaKey: 'separator' | 'transcribe' | 'intonation' | 'lesson-recorder' | 'theory-tutor' | 'libretto' | null;
   badges: Badge[];
   minPlan: MinPlan;
   /**
@@ -640,7 +640,29 @@ export const APP_CATALOG: CatalogApp[] = [
     serverApp: true,
     quotaKey: 'theory-tutor',
     badges: ['NEW', 'PRO'],
-    minPlan: 'free-with-login', // Free でも 5 質問試せる
+    minPlan: 'concerto', // Concerto 以上限定 (LP は誰でも見られる)
+    releasedAt: '2026-04-30',
+  },
+  {
+    id: 'libretto',
+    name: { ja: 'LIBRETTO TRANSLATOR', en: 'LIBRETTO TRANSLATOR', es: 'LIBRETTO TRANSLATOR' },
+    tagline: {
+      ja: 'オペラリブレットを 5 段で読む (伊・独・仏 → 日本語/英語)',
+      en: 'Opera libretti in 5 layers (it/de/fr → ja/en)',
+      es: 'Libretos de ópera en 5 capas',
+      ko: '오페라 리브레토 5 단 표시',
+      pt: 'Libretos de ópera em 5 camadas',
+      de: 'Opernlibretti in 5 Schichten',
+    },
+    href: '/libretto-lp',
+    launchHref: '/libretto',
+    emoji: '🎭',
+    category: 'ai',
+    noLogin: false,
+    serverApp: true,
+    quotaKey: 'libretto',
+    badges: ['NEW', 'PRO'],
+    minPlan: 'concerto', // Concerto 以上限定
     releasedAt: '2026-04-30',
   },
   {

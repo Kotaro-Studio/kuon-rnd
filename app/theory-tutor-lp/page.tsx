@@ -177,8 +177,8 @@ export default function TheoryTutorLP() {
             label={t({ ja: '対応言語', en: 'Languages', es: 'Idiomas' }, lang)}
           />
           <TrustItem
-            mark="¥0"
-            label={t({ ja: 'まずは無料で 5 質問', en: 'Free 5 questions', es: '5 preguntas gratis' }, lang)}
+            mark="¥1,480"
+            label={t({ ja: 'Concerto から / 月 200 質問', en: 'From Concerto / 200 q/mo', es: 'Desde Concerto / 200 preguntas' }, lang)}
           />
         </div>
       </section>
@@ -316,8 +316,8 @@ export default function TheoryTutorLP() {
         >
           {t(
             {
-              ja: 'まずは無料で 5 質問。本格的に学びたい音大生・プロ音楽家には Prelude プランで月 50 質問。',
-              en: 'Start with 5 free questions. Conservatory students and pros: 50 questions/month with Prelude.',
+              ja: 'KUON THEORY TUTOR は Concerto プラン以上で利用可能です。プロ音楽家・音大生・指導者向けの本格的な学習環境です。',
+              en: 'KUON THEORY TUTOR is available on Concerto and above — for serious musicians, conservatory students, and teachers.',
             },
             lang,
           )}
@@ -325,30 +325,23 @@ export default function TheoryTutorLP() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
             gap: '1rem',
             marginTop: '2rem',
           }}
         >
-          <Tier name="Free" price="¥0" quota="5 質問 / 月" desc={t({ ja: 'お試し', en: 'Try' }, lang)} />
-          <Tier
-            name="Prelude"
-            price="¥780"
-            quota="50 質問 / 月"
-            desc={t({ ja: '音大生・個人練習', en: 'Music students' }, lang)}
-            highlight
-          />
           <Tier
             name="Concerto"
             price="¥1,480"
             quota="200 質問 / 月"
-            desc={t({ ja: 'プロ・複数指導', en: 'Pros' }, lang)}
+            desc={t({ ja: '音大生・プロ音楽家', en: 'Music students & pros' }, lang)}
+            highlight
           />
           <Tier
             name="Symphony"
             price="¥2,480"
             quota="500 質問 / 月"
-            desc={t({ ja: '教師・スタジオ', en: 'Teachers' }, lang)}
+            desc={t({ ja: '教師・スタジオ・複数指導', en: 'Teachers & studios' }, lang)}
           />
         </div>
         <p
@@ -425,8 +418,8 @@ export default function TheoryTutorLP() {
               q={t({ ja: 'いつから使えますか?', en: 'When can I start?' }, lang)}
               a={t(
                 {
-                  ja: '今すぐ。無料アカウントで 5 質問試せます。Prelude プラン以上で月 50 質問以上利用可能。',
-                  en: 'Right now. Free account gets 5 questions. Prelude plan and up: 50+ monthly.',
+                  ja: 'Concerto プラン (¥1,480/月) 以上で月 200 質問利用可能です。プロ音楽家・音大生・指導者を主な対象とした本格的なツールです。',
+                  en: 'Available on Concerto (¥1,480/mo) and up — 200 questions/month. Built for serious musicians, conservatory students, and teachers.',
                 },
                 lang,
               )}
@@ -473,7 +466,7 @@ export default function TheoryTutorLP() {
               letterSpacing: '0.12em',
             }}
           >
-            {t({ ja: '無料で試す', en: 'Try free' }, lang)} →
+            {t({ ja: 'Concerto プランで始める', en: 'Start with Concerto' }, lang)} →
           </Link>
         </div>
         <p
@@ -724,12 +717,10 @@ function JsonLd() {
     url: 'https://kuon-rnd.com/theory-tutor',
     offers: {
       '@type': 'AggregateOffer',
-      lowPrice: '0',
+      lowPrice: '1480',
       highPrice: '2480',
       priceCurrency: 'JPY',
       offers: [
-        { '@type': 'Offer', price: '0', priceCurrency: 'JPY', name: 'Free' },
-        { '@type': 'Offer', price: '780', priceCurrency: 'JPY', name: 'Prelude' },
         { '@type': 'Offer', price: '1480', priceCurrency: 'JPY', name: 'Concerto' },
         { '@type': 'Offer', price: '2480', priceCurrency: 'JPY', name: 'Symphony' },
       ],
@@ -802,7 +793,7 @@ function JsonLd() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'Free: 5 questions/month. Prelude (¥780/mo): 50/month. Concerto (¥1,480/mo): 200/month. Symphony (¥2,480/mo): 500/month.',
+            'Available on Concerto plan and above. Concerto (¥1,480/mo): 200 questions/month. Symphony (¥2,480/mo): 500 questions/month.',
         },
       },
     ],

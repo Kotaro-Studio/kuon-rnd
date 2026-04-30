@@ -249,8 +249,12 @@ const APP_QUOTAS_TIER: Record<string, Record<QuotaPlan, number>> = {
   'lesson-recorder': { free: 1, prelude: 15, concerto: 25, symphony: 50, opus: 150 },
   // 2026-04-30: KUON THEORY TUTOR (RAG: OMT v2 + Theory Suite を文脈に Llama 3.3 70B で回答)
   // 単位: 月間「質問数」(1 回 = 1 つの質問 → 1 つの回答)
-  // コスト極小 (¥0.04/質問) のため、Free でも 5 質問体験させて Prelude へ誘導
-  'theory-tutor': { free: 5, prelude: 50, concerto: 200, symphony: 500, opus: 1500 },
+  // Concerto 以上限定機能 (Free / Prelude は LP 経由でアップグレード誘導)
+  'theory-tutor': { free: 0, prelude: 0, concerto: 200, symphony: 500, opus: 1500 },
+  // 2026-04-30: KUON LIBRETTO TRANSLATOR (オペラリブレット 5 段並列翻訳 + 解釈チャット)
+  // 単位: 月間「翻訳・解釈ジョブ数」(1 回 = 1 つの翻訳 OR 1 つの解釈質問)
+  // Concerto 以上限定機能 (1 ジョブで Llama 3.3 70B が大量出力 → 単価高め)
+  'libretto': { free: 0, prelude: 0, concerto: 60, symphony: 180, opus: 600 },
 };
 
 /**

@@ -31,6 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 🤖 AI 処理系 (2026-04-30 追加) — Workers AI 完結アプリ群
     'lesson-recorder', // KUON LESSON RECORDER - Whisper + Llama 3.3 + M2M100 で完結
     'theory-tutor',    // KUON THEORY TUTOR - RAG (OMT v2 + Theory Suite) + Llama 3.3 70B
+    'libretto',        // KUON LIBRETTO TRANSLATOR - オペラリブレット 5 段並列翻訳 (Concerto+)
     // 🎓 Music Theory Suite (2026-04-29 ハブ + MVP レッスン公開)
     'theory', // KUON Music Theory Suite ハブ (Norton Critical Edition 型目次・16 モジュール)
     'theory/m0/l01', // M0-01 五線と音名 (Kuon オリジナル M0・OMT v2 範囲外)
@@ -67,6 +68,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 🎙 AI 処理系 (2026-04-30 公開) — Workers AI 完結
     'lesson-recorder-lp', // KUON LESSON RECORDER Landing Page
     'theory-tutor-lp',    // KUON THEORY TUTOR Landing Page
+    'libretto-lp',        // KUON LIBRETTO TRANSLATOR Landing Page (Concerto+ only)
     // 2026-04-26 開発保留: 'drum-lp' (URL は残存・サイトマップには非掲載)
     // 2026-04-27 公開停止: 'separator-lp' (Cloud Run 単体運用が安定しないため
     //   将来 Replicate API 等への乗せ替えと共に再公開予定。アプリ本体コードは温存)
