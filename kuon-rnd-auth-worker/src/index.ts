@@ -255,6 +255,10 @@ const APP_QUOTAS_TIER: Record<string, Record<QuotaPlan, number>> = {
   // 単位: 月間「翻訳・解釈ジョブ数」(1 回 = 1 つの翻訳 OR 1 つの解釈質問)
   // Concerto 以上限定機能 (1 ジョブで Llama 3.3 70B が大量出力 → 単価高め)
   'libretto': { free: 0, prelude: 0, concerto: 60, symphony: 180, opus: 600 },
+  // 2026-04-30: KUON SHEET (リードシートエディタ + 画像スキャン)
+  // 単位: 月間「画像スキャン回数」(エディタ使用・譜面保存はクォータ消費しない)
+  // エディタは Free でも無制限・スキャンのみ Concerto 以上で利用可能
+  'sheet': { free: 0, prelude: 0, concerto: 10, symphony: 30, opus: 100 },
 };
 
 /**

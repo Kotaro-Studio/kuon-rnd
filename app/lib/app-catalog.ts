@@ -43,7 +43,7 @@ export interface CatalogApp {
   category: AppCategory;
   noLogin: boolean;
   serverApp: boolean;
-  quotaKey: 'separator' | 'transcribe' | 'intonation' | 'lesson-recorder' | 'theory-tutor' | 'libretto' | null;
+  quotaKey: 'separator' | 'transcribe' | 'intonation' | 'lesson-recorder' | 'theory-tutor' | 'libretto' | 'sheet' | null;
   badges: Badge[];
   minPlan: MinPlan;
   /**
@@ -643,26 +643,27 @@ export const APP_CATALOG: CatalogApp[] = [
     minPlan: 'concerto', // Concerto 以上限定 (LP は誰でも見られる)
     releasedAt: '2026-04-30',
   },
+  // 2026-04-30 開発保留: 'libretto' (アプリ・LP・Worker は本番稼働継続・カタログとサイトマップには非掲載・価値検証中)
   {
-    id: 'libretto',
-    name: { ja: 'LIBRETTO TRANSLATOR', en: 'LIBRETTO TRANSLATOR', es: 'LIBRETTO TRANSLATOR' },
+    id: 'sheet',
+    name: { ja: 'KUON SHEET', en: 'KUON SHEET', es: 'KUON SHEET' },
     tagline: {
-      ja: 'オペラリブレットを 5 段で読む (伊・独・仏 → 日本語/英語)',
-      en: 'Opera libretti in 5 layers (it/de/fr → ja/en)',
-      es: 'Libretos de ópera en 5 capas',
-      ko: '오페라 리브레토 5 단 표시',
-      pt: 'Libretos de ópera em 5 camadas',
-      de: 'Opernlibretti in 5 Schichten',
+      ja: 'リードシート (メロディ + コード + 歌詞) エディタ + 画像スキャン',
+      en: 'Lead sheet editor (melody + chords + lyrics) + image scan',
+      es: 'Editor de lead sheets + escaneo de imagen',
+      ko: '리드시트 에디터 + 이미지 스캔',
+      pt: 'Editor de lead sheets + scan de imagem',
+      de: 'Lead Sheet Editor + Bild-Scan',
     },
-    href: '/libretto-lp',
-    launchHref: '/libretto',
-    emoji: '🎭',
-    category: 'ai',
+    href: '/sheet-lp',
+    launchHref: '/sheet',
+    emoji: '🎼',
+    category: 'production',
     noLogin: false,
     serverApp: true,
-    quotaKey: 'libretto',
-    badges: ['NEW', 'PRO'],
-    minPlan: 'concerto', // Concerto 以上限定
+    quotaKey: 'sheet',
+    badges: ['NEW'],
+    minPlan: 'free-with-login', // エディタは Free から、画像スキャンのみ Concerto+
     releasedAt: '2026-04-30',
   },
   {

@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "kuon-rnd-audio-worker", "kuon-rnd-player-worker", "kuon-rnd-auth-worker", "kuon-rnd-recorder-worker", "kuon-rnd-tutor-worker", "kuon-rnd-libretto-worker", "kuon-dsd-converter", "kuon-resampler"]
+  "exclude": ["node_modules", "kuon-rnd-audio-worker", "kuon-rnd-player-worker", "kuon-rnd-auth-worker", "kuon-rnd-recorder-worker", "kuon-rnd-tutor-worker", "kuon-rnd-libretto-worker", "kuon-rnd-sheet-worker", "kuon-dsd-converter", "kuon-resampler"]
 }

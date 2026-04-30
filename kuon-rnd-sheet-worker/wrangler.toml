@@ -1,0 +1,20 @@
+name = "kuon-rnd-sheet-worker"
+main = "src/index.ts"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# ───── Workers AI: Llama 3.2 11B Vision (画像→ABC notation 変換) ─────
+[ai]
+binding = "AI"
+
+# ───── KV: ユーザーのリードシート保存 ─────
+[[kv_namespaces]]
+binding = "SHEETS"
+id = "45b6b4984549495cbc01e5ead0acc764"
+
+[vars]
+ENVIRONMENT = "production"
+
+# ─── Secrets (wrangler secret put で設定) ───
+# SHEET_SECRET     - Next.js → Worker 認証
+# AUTH_WORKER_URL  - Auth Worker のベース URL
