@@ -645,6 +645,28 @@ export const APP_CATALOG: CatalogApp[] = [
   },
   // 2026-04-30 開発保留: 'libretto' (アプリ・LP・Worker は本番稼働継続・カタログとサイトマップには非掲載・価値検証中)
   {
+    id: 'tutti',
+    name: { ja: 'KUON TUTTI', en: 'KUON TUTTI', es: 'KUON TUTTI' },
+    tagline: {
+      ja: '音楽家のためのリハ予約・グループ調整 (Calendly for Musicians)',
+      en: 'Rehearsal scheduling for musicians (Calendly for Musicians)',
+      es: 'Programación de ensayos para músicos',
+      ko: '음악가를 위한 리허설 일정 조정',
+      pt: 'Agendamento de ensaios para músicos',
+      de: 'Probenplanung für Musiker',
+    },
+    href: '/tutti-lp',
+    launchHref: '/tutti',
+    emoji: '🎻',
+    category: 'sharing',
+    noLogin: false,
+    serverApp: true,
+    quotaKey: null, // クォータは Worker 側で「アンサンブル数」「メンバー数」として実装
+    badges: ['NEW'],
+    minPlan: 'free-with-login',
+    releasedAt: '2026-04-30',
+  },
+  {
     id: 'sheet',
     name: { ja: 'KUON SHEET', en: 'KUON SHEET', es: 'KUON SHEET' },
     tagline: {

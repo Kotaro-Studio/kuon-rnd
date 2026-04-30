@@ -32,6 +32,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'lesson-recorder', // KUON LESSON RECORDER - Whisper + Llama 3.3 + M2M100 で完結
     'theory-tutor',    // KUON THEORY TUTOR - RAG (OMT v2 + Theory Suite) + Llama 3.3 70B
     'sheet',           // KUON SHEET - リードシートエディタ + 画像スキャン (エディタ Free / スキャン Concerto+)
+    'tutti',           // KUON TUTTI カレンダー - 音楽家のためのリハ予約 (Calendly for Musicians)
     // 2026-04-30 開発保留: 'libretto' (URL は残存・サイトマップには非掲載・価値検証中)
     // 🎓 Music Theory Suite (2026-04-29 ハブ + MVP レッスン公開)
     'theory', // KUON Music Theory Suite ハブ (Norton Critical Edition 型目次・16 モジュール)
@@ -70,6 +71,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'lesson-recorder-lp', // KUON LESSON RECORDER Landing Page
     'theory-tutor-lp',    // KUON THEORY TUTOR Landing Page
     'sheet-lp',           // KUON SHEET Landing Page (リードシートエディタ・フリーミアム)
+    'tutti-lp',           // KUON TUTTI カレンダー Landing Page (Calendly for Musicians)
     // 2026-04-30 開発保留: 'libretto-lp' (URL は残存・サイトマップには非掲載・価値検証中)
     // 2026-04-26 開発保留: 'drum-lp' (URL は残存・サイトマップには非掲載)
     // 2026-04-27 公開停止: 'separator-lp' (Cloud Run 単体運用が安定しないため

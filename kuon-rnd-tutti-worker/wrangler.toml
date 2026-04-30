@@ -1,0 +1,17 @@
+name = "kuon-rnd-tutti-worker"
+main = "src/index.ts"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# ───── KV: アンサンブル・イベント・投票・ゲストトークン ─────
+[[kv_namespaces]]
+binding = "TUTTI"
+id = "79cdfb1675814ff7bfca907782be9ec4"
+
+[vars]
+ENVIRONMENT = "production"
+
+# ─── Secrets ───
+# TUTTI_SECRET     - Next.js → Worker 認証
+# AUTH_WORKER_URL  - Auth Worker のベース URL
+# RESEND_API_KEY   - 通知メール送信用
