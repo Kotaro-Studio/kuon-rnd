@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import AuthGate from '@/components/AuthGate';
+import { AuthGate } from '@/components/AuthGate';
 import { useLang } from '@/context/LangContext';
 import { SAMPLE_ARIAS, type SampleAria, type SampleAriaLine } from '@/app/lib/libretto-catalog';
 
