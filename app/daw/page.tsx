@@ -369,6 +369,7 @@ interface Track {
   mute: boolean;
   solo: boolean;
   armed: boolean;            // 録音待機 (true = mic active + VU 表示)
+  recordMode: 'mono' | 'stereo'; // 録音モード (デフォルト stereo・USB マイクならモノラル選択)
   eq: TrackEQ;               // 3 バンド EQ
   reverb: TrackReverb;       // シンプルリバーブ
   regions: Region[];
@@ -426,6 +427,11 @@ function DawApp() {
   const monitorAnalyserRef = useRef<AnalyserNode | null>(null);
   const monitorSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const monitorRafRef = useRef<number | null>(null);
+
+  // ── トラック単位プレビュー再生 ──
+  const [previewingTrackId, setPreviewingTrackId] = useState<string | null>(null);
+  const previewSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+  const previewTimeoutRef = useRef<number | null>(null);
 
   const c = THEME[theme];
 
@@ -520,6 +526,125 @@ function DawApp() {
   };
 
   // ============================================================
+  // トラック単位プレビュー再生 (このトラックだけ・他トラックは無音)
+  // ============================================================
+  const stopTrackPreview = useCallback(() => {
+    previewSourcesRef.current.forEach((s) => { try { s.stop(); } catch {} });
+    previewSourcesRef.current = [];
+    if (previewTimeoutRef.current) {
+      window.clearTimeout(previewTimeoutRef.current);
+      previewTimeoutRef.current = null;
+    }
+    setPreviewingTrackId(null);
+  }, []);
+
+  const playTrackOnly = useCallback((trackId: string) => {
+    // 既に同じトラックがプレビュー中なら停止
+    if (previewingTrackId === trackId) {
+      stopTrackPreview();
+      return;
+    }
+    // 別トラックがプレビュー中なら停止してから再生
+    if (previewingTrackId !== null) {
+      stopTrackPreview();
+    }
+    // メイン再生中は停止
+    if (playing) {
+      stopPlayback();
+    }
+    const track = project.tracks.find((t) => t.id === trackId);
+    if (!track || track.regions.length === 0) return;
+
+    const ctx = getCtx();
+    const startTime = ctx.currentTime + 0.05;
+
+    // EQ + Reverb チェーン (このトラック分)
+    const trackGain = ctx.createGain();
+    const trackPan = ctx.createStereoPanner();
+    trackGain.gain.value = dbToLinear(track.gainDb);
+    trackPan.pan.value = track.pan;
+    trackPan.connect(ctx.destination);
+    const eqInput = buildTrackEffects(ctx, track, trackGain);
+    trackGain.connect(trackPan);
+
+    let trackEnd = 0;
+    track.regions.forEach((r) => {
+      const buf = audioBuffers.get(r.bufferId);
+      if (!buf) return;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const regionGain = ctx.createGain();
+      const startAt = startTime + r.startInTrack;
+      const endAt = startAt + r.duration;
+      const fadeIn = Math.min(r.fadeInSec, r.duration / 2);
+      const fadeOut = Math.min(r.fadeOutSec, r.duration / 2);
+      regionGain.gain.setValueAtTime(fadeIn > 0 ? 0 : 1, startAt);
+      if (fadeIn > 0) regionGain.gain.linearRampToValueAtTime(1, startAt + fadeIn);
+      regionGain.gain.setValueAtTime(1, endAt - fadeOut);
+      if (fadeOut > 0) regionGain.gain.linearRampToValueAtTime(0, endAt);
+      src.connect(regionGain).connect(eqInput);
+      src.start(startAt, r.offsetInBuffer, r.duration);
+      src.stop(endAt + 0.05);
+      previewSourcesRef.current.push(src);
+      if (r.startInTrack + r.duration > trackEnd) trackEnd = r.startInTrack + r.duration;
+    });
+
+    setPreviewingTrackId(trackId);
+    // 終了時に自動停止
+    previewTimeoutRef.current = window.setTimeout(() => {
+      stopTrackPreview();
+    }, (trackEnd + 0.2) * 1000);
+  }, [previewingTrackId, playing, project.tracks, audioBuffers, getCtx, stopPlayback, stopTrackPreview]);
+
+  // unmount 時クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (previewTimeoutRef.current) window.clearTimeout(previewTimeoutRef.current);
+      previewSourcesRef.current.forEach((s) => { try { s.stop(); } catch {} });
+    };
+  }, []);
+
+  // ============================================================
+  // 録音モード切替 (mono ⇄ stereo)
+  // armed 中なら disarm して情報メッセージを表示 (再 ARM で新モード反映)
+  // ============================================================
+  const setTrackRecordMode = useCallback((trackId: string, mode: 'mono' | 'stereo') => {
+    updateTrack(trackId, { recordMode: mode });
+    // 録音中はモード切替不可なので警告
+    if (recState === 'recording' && activeRecordingTrackId === trackId) {
+      // 録音中はそのまま (次回録音から反映)
+    }
+    // armed 中ならストリームを再起動するため一旦 disarm
+    // (ユーザーが再度 ARM をクリックすれば新モードで開く)
+    if (armedTrackId === trackId) {
+      // disarmTrack はこの下で定義されるので、setProject 経由で armed を解除する
+      setArmedTrackId(null);
+      if (monitorRafRef.current) {
+        cancelAnimationFrame(monitorRafRef.current);
+        monitorRafRef.current = null;
+      }
+      if (monitorSourceRef.current) {
+        try { monitorSourceRef.current.disconnect(); } catch {}
+        monitorSourceRef.current = null;
+      }
+      if (monitorAnalyserRef.current) {
+        try { monitorAnalyserRef.current.disconnect(); } catch {}
+        monitorAnalyserRef.current = null;
+      }
+      if (monitorStreamRef.current) {
+        monitorStreamRef.current.getTracks().forEach((tr) => tr.stop());
+        monitorStreamRef.current = null;
+      }
+      setVuLevels({ peak: -Infinity, rms: -Infinity });
+      setProject((p) => ({
+        ...p,
+        tracks: p.tracks.map((tr) => (tr.id === trackId ? { ...tr, armed: false } : tr)),
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [armedTrackId, recState, activeRecordingTrackId]);
+
+  // ============================================================
   // 録音待機 (ARM) — マイクを開いて AnalyserNode で VU メーター駆動
   // ============================================================
   const disarmTrack = useCallback(() => {
@@ -566,9 +691,12 @@ function DawApp() {
     }
 
     try {
+      // 対象トラックの recordMode に基づいて channelCount を決定
+      const targetTrack = project.tracks.find((tr) => tr.id === trackId);
+      const channelCount = targetTrack?.recordMode === 'mono' ? 1 : 2;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          channelCount: 2,
+          channelCount: { ideal: channelCount },
           sampleRate: project.sampleRate,
           echoCancellation: false,
           noiseSuppression: false,
@@ -658,9 +786,11 @@ function DawApp() {
         stream = monitorStreamRef.current;
         // monitor は record 中も継続させる (VU 表示維持)
       } else {
+        const targetTrack = project.tracks.find((tr) => tr.id === trackId);
+        const channelCount = targetTrack?.recordMode === 'mono' ? 1 : 2;
         stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            channelCount: 2,
+            channelCount: { ideal: channelCount },
             sampleRate: project.sampleRate,
             echoCancellation: false,
             noiseSuppression: false,
@@ -1368,6 +1498,9 @@ function DawApp() {
               onArm={() => armTrack(track.id)}
               isArmed={armedTrackId === track.id}
               vuLevels={armedTrackId === track.id ? vuLevels : { peak: -Infinity, rms: -Infinity }}
+              onSetRecordMode={(mode) => setTrackRecordMode(track.id, mode)}
+              onPreviewToggle={() => playTrackOnly(track.id)}
+              isPreviewing={previewingTrackId === track.id}
               onUpdateTrack={(u) => updateTrack(track.id, u)}
               onRemoveTrack={() => removeTrack(track.id)}
               onUpdateRegion={(rid, u) => updateRegion(track.id, rid, u)}
@@ -1420,6 +1553,9 @@ interface TrackRowProps {
   onArm: () => void;                     // 録音待機トグル
   isArmed: boolean;                      // このトラックが現在 armed か
   vuLevels: { peak: number; rms: number }; // VU メーター値 (dB・armed トラックのみ意味あり)
+  onSetRecordMode: (mode: 'mono' | 'stereo') => void; // 録音モード切替
+  onPreviewToggle: () => void;           // このトラックだけ再生/停止
+  isPreviewing: boolean;                 // このトラックが現在プレビュー再生中か
   onUpdateTrack: (u: Partial<Track>) => void;
   onRemoveTrack: () => void;
   onUpdateRegion: (rid: string, u: Partial<Region>) => void;
@@ -1431,7 +1567,7 @@ interface TrackRowProps {
 function TrackRow(props: TrackRowProps) {
   const { track, theme: c, themeMode, audioBuffers, projectDuration, isRecording, recElapsed,
     playing, playPos, selectedRegionId, setSelectedRegionId, onUpload, onStartRecord, onStopRecord,
-    onArm, isArmed, vuLevels,
+    onArm, isArmed, vuLevels, onSetRecordMode, onPreviewToggle, isPreviewing,
     onUpdateTrack, onRemoveTrack, onUpdateRegion, onDeleteRegion, onSplitRegion, lang } = props;
   const fileRef = useRef<HTMLInputElement>(null);
   const jewel = TRACK_JEWELS[track.jewelIdx % TRACK_JEWELS.length];
@@ -1470,12 +1606,65 @@ function TrackRow(props: TrackRowProps) {
             style={{ width: '100%', accentColor: jewel.hex }}
           />
         </div>
-        {/* Mute / Solo */}
-        <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.5rem' }}>
-          <button onClick={() => onUpdateTrack({ mute: !track.mute })}
+        {/* Mute / Solo / Preview Play */}
+        <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.4rem' }}>
+          <button onClick={() => onUpdateTrack({ mute: !track.mute })} title={lang === 'ja' ? 'ミュート' : 'Mute'}
             style={{ flex: 1, background: track.mute ? c.danger : c.surface, color: track.mute ? '#fff' : c.textSecondary, border: `1px solid ${track.mute ? c.danger : c.border}`, padding: '0.3rem', borderRadius: 4, fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}>M</button>
-          <button onClick={() => onUpdateTrack({ solo: !track.solo })}
+          <button onClick={() => onUpdateTrack({ solo: !track.solo })} title={lang === 'ja' ? 'ソロ (これだけ再生)' : 'Solo'}
             style={{ flex: 1, background: track.solo ? '#f59e0b' : c.surface, color: track.solo ? '#000' : c.textSecondary, border: `1px solid ${track.solo ? '#f59e0b' : c.border}`, padding: '0.3rem', borderRadius: 4, fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}>S</button>
+          <button onClick={onPreviewToggle}
+            disabled={track.regions.length === 0}
+            title={track.regions.length === 0
+              ? (lang === 'ja' ? '録音/読込してから再生できます' : 'Record or load audio first')
+              : (lang === 'ja' ? 'このトラックだけ再生' : 'Preview this track only')}
+            style={{
+              flex: 1,
+              background: isPreviewing ? c.accent : c.surface,
+              color: isPreviewing ? (themeMode === 'dark' ? '#0a1226' : '#fff') : c.textSecondary,
+              border: `1px solid ${isPreviewing ? c.accent : c.border}`,
+              padding: '0.3rem', borderRadius: 4,
+              fontSize: '0.78rem', fontWeight: 600,
+              cursor: track.regions.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: track.regions.length === 0 ? 0.4 : 1,
+            }}>
+            {isPreviewing ? '⏸' : '▶'}
+          </button>
+        </div>
+
+        {/* Mono / Stereo トグル */}
+        <div style={{ display: 'flex', gap: '0', marginBottom: '0.5rem', borderRadius: 4, overflow: 'hidden', border: `1px solid ${c.border}` }}>
+          <button
+            onClick={() => onSetRecordMode('mono')}
+            disabled={isRecording}
+            title={lang === 'ja' ? 'モノラル収録 (USB マイク・1ch マイク向き)' : 'Mono recording (USB / 1ch mics)'}
+            style={{
+              flex: 1,
+              background: track.recordMode === 'mono' ? jewel.hex : 'transparent',
+              color: track.recordMode === 'mono' ? '#fff' : c.textSecondary,
+              border: 'none',
+              padding: '0.3rem', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em',
+              cursor: isRecording ? 'not-allowed' : 'pointer',
+              opacity: isRecording ? 0.5 : 1,
+            }}
+          >
+            MONO
+          </button>
+          <button
+            onClick={() => onSetRecordMode('stereo')}
+            disabled={isRecording}
+            title={lang === 'ja' ? 'ステレオ収録 (2ch マイク・オーディオI/O向き)' : 'Stereo recording (2ch / interface)'}
+            style={{
+              flex: 1,
+              background: track.recordMode === 'stereo' ? jewel.hex : 'transparent',
+              color: track.recordMode === 'stereo' ? '#fff' : c.textSecondary,
+              border: 'none',
+              padding: '0.3rem', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em',
+              cursor: isRecording ? 'not-allowed' : 'pointer',
+              opacity: isRecording ? 0.5 : 1,
+            }}
+          >
+            STEREO
+          </button>
         </div>
         {/* ARM ボタン + VU メーター */}
         <div style={{ marginBottom: '0.4rem' }}>
@@ -1841,6 +2030,7 @@ function makeTrack(idx: number): Track {
     mute: false,
     solo: false,
     armed: false,
+    recordMode: 'stereo', // デフォルトはステレオ要求 (マイクがモノラルなら自動でモノに)
     eq: { low: 0, mid: 0, high: 0 },
     reverb: { mix: 0, size: 0.4 },
     regions: [],
