@@ -247,6 +247,10 @@ const APP_QUOTAS_TIER: Record<string, Record<QuotaPlan, number>> = {
   //   Concerto はその 2.3 倍 (プロ・教師複数生徒)、Symphony は 5 倍 (スタジオ・教育機関)
   //   Opus は legacy 互換のため Symphony × 2.5 に設定
   'lesson-recorder': { free: 1, prelude: 15, concerto: 25, symphony: 50, opus: 150 },
+  // 2026-04-30: KUON THEORY TUTOR (RAG: OMT v2 + Theory Suite を文脈に Llama 3.3 70B で回答)
+  // 単位: 月間「質問数」(1 回 = 1 つの質問 → 1 つの回答)
+  // コスト極小 (¥0.04/質問) のため、Free でも 5 質問体験させて Prelude へ誘導
+  'theory-tutor': { free: 5, prelude: 50, concerto: 200, symphony: 500, opus: 1500 },
 };
 
 /**

@@ -32,6 +32,10 @@
 			"binding": "AUDIO",
 			"id": "4cd4d9ee592d418b8df67b7bc029e78e",
 			"remote": true
+		},
+		{
+			"binding": "CONVERSATIONS",
+			"id": "22a889a0fec944d9acf2ff206734afbe"
 		}
 	]
 }

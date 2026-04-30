@@ -1,0 +1,25 @@
+name = "kuon-rnd-tutor-worker"
+main = "src/index.ts"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# ───── Workers AI バインディング (Llama 3.3 + BGE-m3) ─────
+[ai]
+binding = "AI"
+
+# ───── Vectorize: OMT v2 + Theory Suite チャンクの埋め込みインデックス ─────
+[[vectorize]]
+binding = "VECTORS"
+index_name = "kuon-rnd-tutor-index"
+
+# ───── KV: 会話履歴保存 ─────
+[[kv_namespaces]]
+binding = "CONVERSATIONS"
+id = "22a889a0fec944d9acf2ff206734afbe"
+
+[vars]
+ENVIRONMENT = "production"
+
+# ─── Secrets (wrangler secret put で設定) ───
+# TUTOR_SECRET     - Next.js → Worker 認証
+# AUTH_WORKER_URL  - Auth Worker のベース URL

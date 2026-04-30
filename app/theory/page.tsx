@@ -869,9 +869,10 @@ export default function TheoryHubPage() {
             cta
           />
           <StatusItem
-            label={t({ ja: '診断テスト', en: 'Diagnostic test', es: 'Diagnóstico', ko: '진단 테스트', pt: 'Diagnóstico', de: 'Einstufungstest' }, lang)}
-            value={t({ ja: '準備中', en: 'Coming soon', es: 'Próximamente', ko: '준비 중', pt: 'Em breve', de: 'Bald verfügbar' }, lang)}
-            disabled
+            label={t({ ja: 'AI 家庭教師', en: 'AI Tutor', es: 'Tutor IA', ko: 'AI 튜터', pt: 'Tutor IA', de: 'KI-Tutor' }, lang)}
+            value={t({ ja: '質問する', en: 'Ask now', es: 'Pregunta', ko: '질문', pt: 'Pergunte', de: 'Fragen' }, lang)}
+            href="/theory-tutor"
+            cta
           />
           <StatusItem
             label={t({ ja: '復習待ち (SRS)', en: 'Review due (SRS)', es: 'Repaso pendiente', ko: '복습 대기', pt: 'Revisão pendente', de: 'Wiederholung' }, lang)}

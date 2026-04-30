@@ -43,7 +43,7 @@ export interface CatalogApp {
   category: AppCategory;
   noLogin: boolean;
   serverApp: boolean;
-  quotaKey: 'separator' | 'transcribe' | 'intonation' | 'lesson-recorder' | null;
+  quotaKey: 'separator' | 'transcribe' | 'intonation' | 'lesson-recorder' | 'theory-tutor' | null;
   badges: Badge[];
   minPlan: MinPlan;
   /**
@@ -621,6 +621,28 @@ export const APP_CATALOG: CatalogApp[] = [
   // ============================================================
   // 🤖 AI 処理系 (有料プラン専用)
   // ============================================================
+  {
+    id: 'theory-tutor',
+    name: { ja: 'THEORY TUTOR', en: 'THEORY TUTOR', es: 'THEORY TUTOR' },
+    tagline: {
+      ja: '音楽理論を 24 時間質問できる AI 家庭教師',
+      en: 'AI music theory tutor — ask anything, anytime',
+      es: 'Tutor IA de teoría musical 24/7',
+      ko: '24시간 음악 이론 AI 튜터',
+      pt: 'Tutor IA de teoria musical 24/7',
+      de: 'KI-Musiktheorielehrer rund um die Uhr',
+    },
+    href: '/theory-tutor-lp',
+    launchHref: '/theory-tutor',
+    emoji: '🎓',
+    category: 'ai',
+    noLogin: false,
+    serverApp: true,
+    quotaKey: 'theory-tutor',
+    badges: ['NEW', 'PRO'],
+    minPlan: 'free-with-login', // Free でも 5 質問試せる
+    releasedAt: '2026-04-30',
+  },
   {
     id: 'lesson-recorder',
     name: { ja: 'LESSON RECORDER', en: 'LESSON RECORDER', es: 'LESSON RECORDER' },
