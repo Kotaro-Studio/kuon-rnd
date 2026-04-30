@@ -548,9 +548,13 @@ function DawApp() {
     if (previewingTrackId !== null) {
       stopTrackPreview();
     }
-    // メイン再生中は停止
+    // メイン再生中は停止 (stopPlayback の宣言前参照を避けるためインライン化)
     if (playing) {
-      stopPlayback();
+      playSourcesRef.current.forEach((s) => { try { s.stop(); } catch {} });
+      playSourcesRef.current = [];
+      if (playRafRef.current) cancelAnimationFrame(playRafRef.current);
+      setPlaying(false);
+      setPlayPos(0);
     }
     const track = project.tracks.find((t) => t.id === trackId);
     if (!track || track.regions.length === 0) return;
@@ -594,7 +598,7 @@ function DawApp() {
     previewTimeoutRef.current = window.setTimeout(() => {
       stopTrackPreview();
     }, (trackEnd + 0.2) * 1000);
-  }, [previewingTrackId, playing, project.tracks, audioBuffers, getCtx, stopPlayback, stopTrackPreview]);
+  }, [previewingTrackId, playing, project.tracks, audioBuffers, getCtx, stopTrackPreview]);
 
   // unmount 時クリーンアップ
   useEffect(() => {
