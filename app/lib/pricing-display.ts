@@ -422,27 +422,18 @@ export const PLAN_QUOTAS: Record<PlanTier | 'free', QuotaLabels> = {
 // ============================================================
 
 // 2026-04-27 階層再編: Free を SEO 入口に絞り込み (登録なしで使える)
-// 旧 Free 多めの設計から、Free=数アプリだけ・Prelude=正規スタートへ移行
+// 2026-04-30 全面方針転換: 「無登録で使えるアプリ」をゼロに。
+// SEO は LP が完全に背負っているため、アプリ本体は登録必須にして
+// メールアドレス取得を最優先する。LP 巡回でクローラーが情報収集する分には
+// 全くの無問題 (機能・FAQ・JSON-LD・キーワード全て LP 側に揃っている)。
 //
-// 移動: master-check / ddp-checker / slowdown / ear-training / chord-quiz /
-//        sight-reading / breath / frequency → Prelude or Concerto
-// 残留: dsd / converter / analog-tools 系 (SEO ニッチ集客に必要)
-//        normalize (マイク購入者特典の legacy・パスワード kuon で保護)
+// 例外: normalize はマイク購入者特典でパスワード「kuon」保護なのでそのまま
+//       (購入者だけが知る別経路)。配列には残さない。
+//
+// SEPARATOR-LP / RECORDER-LP 等のサンドボックス・デモ表示用は LP 自体が公開なので OK。
 export const FREE_NO_LOGIN_APPS = [
-  // 技術的 SEO 差別化 (世界的にユニーク)
-  'dsd',
-  'converter',
-  'analyzer',      // 2026-04-27 Free 復帰: 課金勢育成のため Free でも利用可能に
-  'normalize',     // マイク購入者特典 (パスワード kuon で別途保護)
-  // メンタル・本番準備 (登録なしで即体験できる優れた SEO 入口)
-  'checklist',     // 2026-04-27 Free 復帰: 課金勢育成のため Free でも利用可能に
-  // ANALOG-TOOLS 系 (専門ニッチ集客)
-  'analog-tools',
-  'analog-machine-speed',
-  'tape-time',
-  'tape-remaining',
-  'jazz-time',
-  'voltage-db',
+  // 完全空配列: すべてのアプリで登録を要求する
+  // (将来 SEO ハニーポット用に何かを開放する判断をした場合のみここに追加する)
 ] as const;
 
 export type FreeNoLoginApp = typeof FREE_NO_LOGIN_APPS[number];

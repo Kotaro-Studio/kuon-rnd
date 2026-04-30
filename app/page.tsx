@@ -395,7 +395,7 @@ const HomePage: React.FC = () => {
             {t5({ ja: '無料ではじめる →', en: 'Start Free →', es: 'Comenzar Gratis →', ko: '무료로 시작 →', pt: 'Comece Grátis →', de: 'Kostenlos starten →' }, lang)}
           </Link>
           <Link href="/audio-apps" style={{ display: 'inline-block', padding: '0.875rem 2rem', border: `2px solid ${ACCENT}`, color: ACCENT, borderRadius: '9999px', textDecoration: 'none', fontWeight: 500, fontSize: '0.95rem', background: 'white', transition: 'all 0.3s ease', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ACCENT; e.currentTarget.style.transform = 'translateY(0)'; }}>
-            {t5({ ja: '30 のツールを覗く', en: 'Explore 30+ tools', es: 'Explorar 30+ herramientas', ko: '30+ 도구 보기', pt: 'Explorar 30+ ferramentas', de: '30+ Tools entdecken' }, lang)}
+            {t5({ ja: '今すぐアプリをチェック', en: 'See the apps', es: 'Ver las apps', ko: '앱 확인', pt: 'Ver os apps', de: 'Apps ansehen' }, lang)}
           </Link>
         </div>
         <div style={{ marginTop: '1.5rem', fontSize: '0.78rem', color: '#94a3b8', display: 'flex', gap: '1.25rem', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -562,10 +562,10 @@ const HomePage: React.FC = () => {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
           {[
-            { ic: '🎚', t: { ja: '30+ アプリすべて使い放題', en: '30+ apps unlocked', es: '30+ apps desbloqueadas' } },
-            { ic: '📊', t: { ja: '練習履歴・成長グラフ', en: 'Practice logs & growth chart', es: 'Registros y gráficos' } },
+            { ic: '🎚', t: { ja: '9 つの音楽家ツールが無料で使い放題', en: '9 musician tools, free forever', es: '9 herramientas para músicos, gratis' } },
             { ic: '⭐', t: { ja: 'お気に入りアプリの保存', en: 'Save favorite apps', es: 'Guardar favoritos' } },
-            { ic: '🎁', t: { ja: '初月 50% オフキャンペーン', en: '50% off first month deal', es: '50% de descuento primer mes' } },
+            { ic: '🎓', t: { ja: '音楽理論コースの公開済みレッスンが受講可能', en: 'Music Theory Suite — published lessons available', es: 'Suite de teoría — lecciones disponibles' } },
+            { ic: '🎁', t: { ja: '有料プランへ進む時、初月 50% オフ', en: '50% off your first paid month', es: '50% de descuento primer mes pago' } },
             { ic: '💌', t: { ja: '新機能の優先案内', en: 'Early feature access', es: 'Acceso anticipado' } },
             { ic: '🔒', t: { ja: 'クラウド送信ゼロ・プライバシー保護', en: 'Zero cloud upload · privacy protected', es: 'Sin upload · privacidad' } },
           ].map((item, i) => (
