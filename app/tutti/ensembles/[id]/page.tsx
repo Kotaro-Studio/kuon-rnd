@@ -20,7 +20,8 @@ interface Ensemble { id: string; name: string; type: string; description?: strin
 interface EventCandidate { id: string; start: string; end: string; location?: string; notes?: string; }
 interface RehearsalEvent { id: string; ensembleId: string; title: string; description?: string; candidates: EventCandidate[]; status: 'polling'|'locked'|'cancelled'; lockedCandidateId?: string; createdAt: string; }
 
-const t = <T extends Record<string, string>>(m: T, lang: string): string => (m[lang as keyof T] as string) || (m['ja'] as string) || (m['en'] as string) || '';
+type L = Partial<Record<string, string>> & { en: string };
+const t = (m: L, lang: string): string => (m[lang] as string) || m.en;
 
 export default function EnsembleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -107,18 +108,18 @@ function EnsembleView({ id }: { id: string }) {
     <main style={{ background: PAPER, minHeight: '100vh', color: INK, fontFamily: serif }}>
       <section style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 4vw, 3rem)' }}>
         <div style={{ marginBottom: '0.5rem' }}>
-          <Link href="/tutti" style={{ fontFamily: sans, fontSize: '0.78rem', color: INK_FAINT, textDecoration: 'none' }}>← {t({ ja: 'すべてのアンサンブル', en: 'All ensembles' }, lang)}</Link>
+          <Link href="/tutti" style={{ fontFamily: sans, fontSize: '0.78rem', color: INK_FAINT, textDecoration: 'none' }}>← {t({ ja: 'すべてのアンサンブル', en: 'All ensembles', es: 'Todos los conjuntos', de: 'Alle Ensembles', ko: '모든 앙상블', pt: 'Todos os conjuntos' }, lang)}</Link>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: `1px solid ${RULE}`, paddingBottom: '1rem', marginBottom: '2rem' }}>
           <div>
             <h1 style={{ fontFamily: serif, fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', margin: 0, fontWeight: 400, letterSpacing: '0.04em' }}>{ensemble.name}</h1>
             {ensemble.description && <p style={{ fontFamily: sans, fontSize: '0.85rem', color: INK_FAINT, margin: '0.4rem 0 0' }}>{ensemble.description}</p>}
             <p style={{ fontFamily: sans, fontSize: '0.75rem', color: INK_FAINT, margin: '0.5rem 0 0' }}>
-              {ensemble.members.length} {t({ ja: '名のメンバー', en: 'members' }, lang)}
+              {ensemble.members.length} {t({ ja: '名のメンバー', en: 'members', es: 'miembros', de: 'Mitglieder', ko: '명의 멤버', pt: 'membros' }, lang)}
             </p>
           </div>
           <button onClick={() => setShowCreateEvent(true)} style={btnPrimary()}>
-            + {t({ ja: '新しい予約 (リハ・本番)', en: 'New event' }, lang)}
+            + {t({ ja: '新しい予約 (リハ・本番)', en: 'New event', es: 'Nuevo evento', de: 'Neuer Termin', ko: '새 일정', pt: 'Novo evento' }, lang)}
           </button>
         </div>
 

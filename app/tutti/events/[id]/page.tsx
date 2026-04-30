@@ -23,7 +23,8 @@ interface Cand { id: string; start: string; end: string; location?: string; note
 interface Event { id: string; ensembleId: string; title: string; description?: string; candidates: Cand[]; status: string; lockedCandidateId?: string; createdBy: string; }
 interface Vote { voterId: string; voterName: string; voterEmail: string; isGuest: boolean; responses: Record<string, VoteResp>; comment?: string; }
 
-const t = <T extends Record<string, string>>(m: T, lang: string): string => (m[lang as keyof T] as string) || (m['ja'] as string) || (m['en'] as string) || '';
+type L = Partial<Record<string, string>> & { en: string };
+const t = (m: L, lang: string): string => (m[lang] as string) || m.en;
 
 export default function EventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
