@@ -18,6 +18,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { AuthGate } from '@/components/AuthGate';
 import { useLang } from '@/context/LangContext';
+import { SHEET_LIBRARY, LIBRARY_CATEGORIES, type LibraryCategory } from '@/app/lib/sheet-library';
 
 const PAPER = '#fbfaf6';
 const PAPER_DEEP = '#f0ece1';
@@ -132,14 +133,13 @@ function SheetEditor() {
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
   const [sheets, setSheets] = useState<SheetMeta[]>([]);
-  const [playing, setPlaying] = useState(false);
   const [showCheatSheet, setShowCheatSheet] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [libraryCategory, setLibraryCategory] = useState<LibraryCategory | 'all'>('all');
 
   const renderRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const visualObjRef = useRef<any>(null);     // play 用に visualObj を保持
-  const synthRef = useRef<any>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
+  const visualObjRef = useRef<any>(null);     // MIDI ダウンロード用に visualObj を保持
   const abcRef = useRef<string>(abc);          // クリックハンドラ用に最新 ABC を参照
   abcRef.current = abc;
 
@@ -509,63 +509,24 @@ function SheetEditor() {
     setCurrentId(null);
   }, []);
 
-  // ── 再生 / 停止 (修正版) ──
-  const handlePlay = useCallback(async () => {
-    if (!abcjsReady || !window.ABCJS) {
-      setErrorMsg(t({ ja: '譜面エンジン読み込み中', en: 'Score engine loading' }, lang));
-      return;
-    }
-    if (playing && synthRef.current) {
-      try { synthRef.current.stop(); } catch {}
-      setPlaying(false);
-      return;
-    }
-    try {
-      // AudioContext は user gesture 後に作成
-      if (!audioCtxRef.current) {
-        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-        audioCtxRef.current = new Ctx();
-      }
-      // suspended 状態なら resume
-      if (audioCtxRef.current.state === 'suspended') {
-        await audioCtxRef.current.resume();
-      }
-
-      // 既にレンダリング済みの visualObj を使う (これが重要)
-      const visualObj = visualObjRef.current;
-      if (!visualObj) {
-        setErrorMsg(t({ ja: '譜面が解析できません', en: 'Score not parsed' }, lang));
-        return;
-      }
-
-      const synth = new window.ABCJS.synth.CreateSynth();
-      await synth.init({
-        audioContext: audioCtxRef.current,
-        visualObj,
-        millisecondsPerMeasure: 2000,
-      });
-      await synth.prime();
-      synth.start();
-
-      synthRef.current = synth;
-      setPlaying(true);
-
-      // 終了検知 (synth がコールバックを提供しないため、概算で停止表示)
-      const visualObjDuration = visualObj.getTotalTime?.() || 0;
-      if (visualObjDuration > 0) {
-        setTimeout(() => setPlaying(false), visualObjDuration * 1000 + 500);
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Playback failed';
-      setErrorMsg(`${t({ ja: '再生エラー', en: 'Playback error' }, lang)}: ${msg}`);
-    }
-  }, [abcjsReady, playing, lang]);
-
-  useEffect(() => {
-    return () => {
-      if (synthRef.current) { try { synthRef.current.stop(); } catch {} }
-    };
-  }, []);
+  // ── ライブラリから読み込み ──
+  const handleLoadLibrary = useCallback((id: string) => {
+    const item = SHEET_LIBRARY.find((s) => s.id === id);
+    if (!item) return;
+    setAbc(item.abc);
+    setTitle(item.title);
+    setCurrentId(null);
+    setShowLibrary(false);
+    setSuccessMsg(
+      t(
+        {
+          ja: `「${item.title}」を読み込みました (${item.composer})。編集して保存できます。`,
+          en: `Loaded "${item.title}" (${item.composer}). You can edit and save.`,
+        },
+        lang,
+      ),
+    );
+  }, [lang]);
 
   // ── PDF ── 印刷ダイアログ経由
   const handleDownloadPDF = useCallback(() => {
@@ -682,8 +643,8 @@ function SheetEditor() {
           <button onClick={handleSave} disabled={saving} style={btnPrimary(saving)}>
             {saving ? t({ ja: '保存中', en: 'Saving' }, lang) : t({ ja: '💾 保存', en: '💾 Save' }, lang)}
           </button>
-          <button onClick={handlePlay} disabled={!abcjsReady} style={btnSecondary()}>
-            {playing ? t({ ja: '⏸ 停止', en: '⏸ Stop' }, lang) : t({ ja: '▶ 再生', en: '▶ Play' }, lang)}
+          <button onClick={() => setShowLibrary(true)} style={btnAccent(false)}>
+            {t({ ja: '📚 ライブラリ', en: '📚 Library' }, lang)}
           </button>
           <ScanButton onScan={handleScan} scanning={scanning} lang={lang} />
           <button onClick={handleDownloadPDF} style={btnSecondary()}>{t({ ja: '📄 PDF', en: '📄 PDF' }, lang)}</button>
@@ -837,6 +798,98 @@ function SheetEditor() {
           </div>
         </div>
       </section>
+
+      {/* LIBRARY MODAL */}
+      {showLibrary && (
+        <div
+          onClick={() => setShowLibrary(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(15, 12, 10, 0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem', zIndex: 100,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: PAPER, padding: 'clamp(1.5rem, 3vw, 2rem)',
+              maxWidth: 980, width: '100%', maxHeight: '85vh', overflow: 'auto',
+              borderRadius: 4, boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
+              <h2 style={{ fontFamily: serif, fontSize: '1.4rem', fontWeight: 400, margin: 0 }}>
+                📚 {t({ ja: 'パブリックドメイン譜面ライブラリ', en: 'Public Domain Library' }, lang)}
+              </h2>
+              <button onClick={() => setShowLibrary(false)} style={btnSecondary()}>✕ {t({ ja: '閉じる', en: 'Close' }, lang)}</button>
+            </div>
+            <p style={{ fontFamily: sans, fontSize: '0.82rem', color: INK_FAINT, lineHeight: 1.85, margin: '0 0 1rem' }}>
+              {t(
+                {
+                  ja: '完全にパブリックドメインの譜面のみを収録 (作曲者死後 70 年以上経過 or 1928 年以前出版・著作権切れ・トラディショナル)。クリックすると編集可能な状態で読み込まれます。',
+                  en: 'Only fully public-domain works (composer died 70+ years ago, or pre-1928 publication, or traditional). Click to load and edit freely.',
+                },
+                lang,
+              )}
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1rem' }}>
+              <button onClick={() => setLibraryCategory('all')} style={libraryCategory === 'all' ? btnPrimary() : btnSecondary()}>
+                {t({ ja: 'すべて', en: 'All' }, lang)} ({SHEET_LIBRARY.length})
+              </button>
+              {LIBRARY_CATEGORIES.map((cat) => {
+                const count = SHEET_LIBRARY.filter((s) => s.category === cat.id).length;
+                if (count === 0) return null;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setLibraryCategory(cat.id)}
+                    style={libraryCategory === cat.id ? btnPrimary() : btnSecondary()}
+                  >
+                    {t({ ja: cat.ja, en: cat.en }, lang)} ({count})
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: 'grid', gap: '0.6rem', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+              {SHEET_LIBRARY
+                .filter((s) => libraryCategory === 'all' || s.category === libraryCategory)
+                .map((sheet) => (
+                  <button
+                    key={sheet.id}
+                    onClick={() => handleLoadLibrary(sheet.id)}
+                    style={{
+                      textAlign: 'left',
+                      padding: '0.9rem 1rem',
+                      background: PAPER_DEEP,
+                      color: INK,
+                      border: `1px solid ${RULE}`,
+                      borderRadius: 3,
+                      cursor: 'pointer',
+                      fontFamily: serif,
+                    }}
+                  >
+                    <div style={{ fontSize: '1rem', fontStyle: 'italic', marginBottom: '0.3rem' }}>{sheet.title}</div>
+                    <div style={{ fontFamily: sans, fontSize: '0.75rem', color: INK_FAINT, lineHeight: 1.6 }}>
+                      {sheet.composer}{sheet.year ? ` (${sheet.year})` : ''} · <span style={{ color: ACCENT }}>{sheet.difficulty === 'easy' ? '★' : sheet.difficulty === 'medium' ? '★★' : '★★★'}</span>
+                    </div>
+                    <div style={{ fontFamily: sans, fontSize: '0.7rem', color: INK_FAINT, marginTop: '0.3rem', lineHeight: 1.5, opacity: 0.8 }}>
+                      {sheet.pdReason}
+                    </div>
+                  </button>
+                ))}
+            </div>
+            <p style={{ fontFamily: sans, fontSize: '0.7rem', color: INK_FAINT, lineHeight: 1.7, marginTop: '1.2rem', borderTop: `1px solid ${RULE}`, paddingTop: '0.8rem' }}>
+              {t(
+                {
+                  ja: '※ 主要な PD 楽曲のキュレーションです。今後の Phase 2 では The Session (5 万曲の Celtic 民謡 ABC データベース) との連携も予定。Real Book 系の現代ジャズスタンダード (Charlie Parker, Bill Evans, Coltrane 等) は著作権下のため収録できません。',
+                  en: '※ Curated public-domain works. Phase 2 will integrate The Session (50,000+ Celtic trad ABC tunes). Real Book era jazz standards (Parker, Evans, Coltrane, etc.) are still under copyright.',
+                },
+                lang,
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* SAVED SHEETS */}
       {sheets.length > 0 && (
